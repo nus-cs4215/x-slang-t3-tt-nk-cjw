@@ -58,9 +58,9 @@ export const slist = <T, U>(elems: T[], tail: U): SList<T, U> => ({
 
 export function* sconslist_iterator(
   e: SList<SExpr, SExpr> | SCons<SExpr, SExpr>
-): Iterable<SExpr> & Iterator<SExpr> {
+): Iterable<SExpr | '.'> & Iterator<SExpr | '.'> {
+  let rest: SExpr;
   while (true) {
-    let rest: SExpr;
     if (e._type === 'SList') {
       yield* e.elems;
       rest = e.tail;
@@ -71,9 +71,12 @@ export function* sconslist_iterator(
     if (rest._type === 'SList' || rest._type === 'SCons') {
       e = rest;
     } else {
-      yield rest;
-      return;
+      break;
     }
+  }
+  if (rest._type !== 'SNil') {
+    yield '.';
+    yield rest;
   }
 }
 
@@ -111,7 +114,13 @@ export function equals(e1: SExpr, e2: SExpr): boolean {
         if (done1) {
           return true;
         }
-        if (!equals(val1!, val2!)) {
+        if (val1 === '.' || val2 === '.') {
+          if (val1 !== val2) {
+            return false;
+          }
+          continue;
+        }
+        if (!equals(val1, val2)) {
           return false;
         }
       }
@@ -120,3 +129,5 @@ export function equals(e1: SExpr, e2: SExpr): boolean {
     }
   }
 }
+
+export type JsonSExpr = JsonSExpr[] | string | number | boolean;

@@ -25,15 +25,21 @@ describe('valid read tests', () => {
   });
 
   test('basic lists', () => {
+    expect(getOk(read('()'))).toMatchSnapshot();
+    expect(getOk(read('(abc)'))).toMatchSnapshot();
+    expect(getOk(read('(abc 123)'))).toMatchSnapshot();
     expect(getOk(read('(abc 123 #t)'))).toMatchSnapshot();
   });
 
   test('basic cons', () => {
     expect(getOk(read('(a . b)'))).toMatchSnapshot();
-    expect(getOk(read('(a . .)'))).toMatchSnapshot();
     expect(getOk(read('(a b . c)'))).toMatchSnapshot();
-    expect(equals(getOk(read('(a . b . c)')), getOk(read('(a . c)')))).toBe(true);
     expect(equals(getOk(read('(a . ())')), getOk(read('(a)')))).toBe(true);
+  });
+
+  test('basic infix', () => {
+    expect(equals(getOk(read('(a . b . c)')), getOk(read('(b a c)')))).toBe(true);
+    expect(equals(getOk(read('(a b . c . d e)')), getOk(read('(c a b d e)')))).toBe(true);
   });
 
   test('basic quotes', () => {
@@ -108,7 +114,7 @@ describe('invalid read tests', () => {
 
   test('bad atoms', () => {
     expectFormattedReadErr('.').toMatchInlineSnapshot(`
-      "Read error at 1:0 to 1:1: Lone dot not allowed at top level
+      "Read error at 1:0 to 1:1: Unexpected dot
         1 | .
           | ^
 
@@ -128,17 +134,59 @@ describe('invalid read tests', () => {
 
   test('bad cons', () => {
     expectFormattedReadErr('(a .)').toMatchInlineSnapshot(`
-      "Read error at 1:4 to 1:5: Unexpected parenthesis
+      "Read error at 1:4 to 1:5: Unexpected parenthesis, missing RHS of cons literal
         1 | (a .)
           |     ^
 
       "
     `);
 
-    expectFormattedReadErr('(a . . .)').toMatchInlineSnapshot(`
-      "Read error at 1:8 to 1:9: Unexpected parenthesis
-        1 | (a . . .)
-          |         ^
+    expectFormattedReadErr('(a . b c)').toMatchInlineSnapshot(`
+      "Read error at 1:3 to 1:9: Too much data on the RHS of cons literal
+        1 | (a . b c)
+          |    ^~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(. b)').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:2: Unexpected dot, missing LHS of cons literal or infix list
+        1 | (. b)
+          | ^~
+
+      "
+    `);
+  });
+
+  test('bad infix', () => {
+    expectFormattedReadErr('(a . b .)').toMatchInlineSnapshot(`
+      "Read error at 1:7 to 1:9: Unexpected parenthesis, missing RHS of infix list
+        1 | (a . b .)
+          |        ^~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . . b)').toMatchInlineSnapshot(`
+      "Read error at 1:3 to 1:6: Unexpected dot, missing data between dots of infix list
+        1 | (a . . b)
+          |    ^~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(. a . b)').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:2: Unexpected dot, missing LHS of cons literal or infix list
+        1 | (. a . b)
+          | ^~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b c . d)').toMatchInlineSnapshot(`
+      "Read error at 1:3 to 1:10: Unexpected dot, too many data between dots of infix list
+        1 | (a . b c . d)
+          |    ^~~~~~~
 
       "
     `);

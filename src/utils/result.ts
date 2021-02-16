@@ -15,15 +15,14 @@ export function getOk<T, Err>(r: Result<T, Err>): T {
 
 class ExpectedErrError<T> extends Error {
   v: T;
-  constructor(v: T, message?: string) {
-    super(message);
-    this.v = v;
+  constructor(v: T) {
+    super(`Expected Err but got: ${v}`);
   }
 }
 
 export function getErr<T, Err>(r: Result<T, Err>): Err {
   if (isGoodResult(r)) {
-    throw new ExpectedErrError(r.v, 'Expected error');
+    throw new ExpectedErrError(r.v);
   } else {
     return r.err;
   }

@@ -11,35 +11,29 @@ import {
 } from '../sexpr';
 
 test('slist iteration', () => {
-  expect([...sconslist_iterator(scons(snil(), snil()))]).toEqual([snil(), snil()]);
-  expect([...sconslist_iterator(scons(snil(), scons(snil(), snil())))]).toEqual([
-    snil(),
-    snil(),
-    snil(),
-  ]);
-  expect([...sconslist_iterator(slist([snil()], scons(snil(), snil())))]).toEqual([
-    snil(),
-    snil(),
-    snil(),
-  ]);
-  expect([...sconslist_iterator(scons(snil(), slist([snil()], snil())))]).toEqual([
-    snil(),
-    snil(),
-    snil(),
-  ]);
+  expect([...sconslist_iterator(scons(snil(), snil()))]).toEqual([snil()]);
+  expect([...sconslist_iterator(scons(snil(), scons(snil(), snil())))]).toEqual([snil(), snil()]);
+  expect([...sconslist_iterator(slist([snil()], scons(snil(), snil())))]).toEqual([snil(), snil()]);
+  expect([...sconslist_iterator(scons(snil(), slist([snil()], snil())))]).toEqual([snil(), snil()]);
   expect([...sconslist_iterator(slist([snil()], slist([snil()], snil())))]).toEqual([
     snil(),
     snil(),
-    snil(),
   ]);
-  expect([...sconslist_iterator(slist([snil(), snil()], snil()))]).toEqual([
-    snil(),
-    snil(),
-    snil(),
-  ]);
+  expect([...sconslist_iterator(slist([snil(), snil()], snil()))]).toEqual([snil(), snil()]);
   expect([...sconslist_iterator(scons(scons(snil(), snil()), snil()))]).toEqual([
     scons(snil(), snil()),
-    snil(),
+  ]);
+
+  expect([...sconslist_iterator(scons(satom('a'), satom('b')))]).toEqual([
+    satom('a'),
+    '.',
+    satom('b'),
+  ]);
+  expect([...sconslist_iterator(scons(satom('a'), scons(satom('b'), satom('c'))))]).toEqual([
+    satom('a'),
+    satom('b'),
+    '.',
+    satom('c'),
   ]);
 });
 

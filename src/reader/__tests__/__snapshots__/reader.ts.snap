@@ -44,20 +44,6 @@ Object {
 
 exports[`valid read tests basic cons 2`] = `
 Object {
-  "_type": "SCons",
-  "first": Object {
-    "_type": "SAtom",
-    "val": "a",
-  },
-  "rest": Object {
-    "_type": "SAtom",
-    "val": ".",
-  },
-}
-`;
-
-exports[`valid read tests basic cons 3`] = `
-Object {
   "_type": "SList",
   "elems": Array [
     Object {
@@ -77,6 +63,44 @@ Object {
 `;
 
 exports[`valid read tests basic lists 1`] = `
+Object {
+  "_type": "SNil",
+}
+`;
+
+exports[`valid read tests basic lists 2`] = `
+Object {
+  "_type": "SCons",
+  "first": Object {
+    "_type": "SAtom",
+    "val": "abc",
+  },
+  "rest": Object {
+    "_type": "SNil",
+  },
+}
+`;
+
+exports[`valid read tests basic lists 3`] = `
+Object {
+  "_type": "SList",
+  "elems": Array [
+    Object {
+      "_type": "SAtom",
+      "val": "abc",
+    },
+    Object {
+      "_type": "SNumber",
+      "val": 123,
+    },
+  ],
+  "tail": Object {
+    "_type": "SNil",
+  },
+}
+`;
+
+exports[`valid read tests basic lists 4`] = `
 Object {
   "_type": "SList",
   "elems": Array [
