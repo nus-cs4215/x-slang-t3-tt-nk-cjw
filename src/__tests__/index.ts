@@ -11,6 +11,7 @@ test('exports', () => {
       "slist",
       "sconslist_iterator",
       "equals",
+      "readOneDatum",
       "read",
       "print",
       "evaluate",

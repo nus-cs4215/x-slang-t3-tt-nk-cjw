@@ -1,0 +1,703 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`valid read tests basic atoms: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SAtom",
+          "val": "abc",
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SAtom",
+    "val": "abc",
+  },
+}
+`;
+
+exports[`valid read tests basic atoms: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SAtom",
+          "val": "abc->def",
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SAtom",
+    "val": "abc->def",
+  },
+}
+`;
+
+exports[`valid read tests basic booleans: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SBoolean",
+          "val": false,
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SBoolean",
+    "val": false,
+  },
+}
+`;
+
+exports[`valid read tests basic booleans: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SBoolean",
+          "val": true,
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SBoolean",
+    "val": true,
+  },
+}
+`;
+
+exports[`valid read tests basic lists: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SList",
+          "elems": Array [
+            Object {
+              "_type": "SAtom",
+              "val": "abc",
+            },
+            Object {
+              "_type": "SNumber",
+              "val": 123,
+            },
+            Object {
+              "_type": "SBoolean",
+              "val": true,
+            },
+          ],
+          "tail": Object {
+            "_type": "SNil",
+          },
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SList",
+    "elems": Array [
+      Object {
+        "_type": "SAtom",
+        "val": "abc",
+      },
+      Object {
+        "_type": "SNumber",
+        "val": 123,
+      },
+      Object {
+        "_type": "SBoolean",
+        "val": true,
+      },
+    ],
+    "tail": Object {
+      "_type": "SNil",
+    },
+  },
+}
+`;
+
+exports[`valid read tests basic numbers: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SNumber",
+          "val": 123,
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SNumber",
+    "val": 123,
+  },
+}
+`;
+
+exports[`valid read tests basic numbers: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SNumber",
+          "val": 123.5,
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SNumber",
+    "val": 123.5,
+  },
+}
+`;
+
+exports[`valid read tests basic parens: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SNil",
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SNil",
+  },
+}
+`;
+
+exports[`valid read tests basic parens: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SNil",
+        },
+      }
+     2`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SNil",
+  },
+}
+`;
+
+exports[`valid read tests basic parens: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SNil",
+        },
+      }
+     3`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SNil",
+  },
+}
+`;
+
+exports[`valid read tests basic quotes: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SList",
+          "elems": Array [
+            Object {
+              "_type": "SAtom",
+              "val": "quote",
+            },
+            Object {
+              "_type": "SList",
+              "elems": Array [
+                Object {
+                  "_type": "SAtom",
+                  "val": "abc",
+                },
+                Object {
+                  "_type": "SNumber",
+                  "val": 123,
+                },
+                Object {
+                  "_type": "SBoolean",
+                  "val": true,
+                },
+              ],
+              "tail": Object {
+                "_type": "SNil",
+              },
+            },
+          ],
+          "tail": Object {
+            "_type": "SNil",
+          },
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SList",
+    "elems": Array [
+      Object {
+        "_type": "SAtom",
+        "val": "quote",
+      },
+      Object {
+        "_type": "SList",
+        "elems": Array [
+          Object {
+            "_type": "SAtom",
+            "val": "abc",
+          },
+          Object {
+            "_type": "SNumber",
+            "val": 123,
+          },
+          Object {
+            "_type": "SBoolean",
+            "val": true,
+          },
+        ],
+        "tail": Object {
+          "_type": "SNil",
+        },
+      },
+    ],
+    "tail": Object {
+      "_type": "SNil",
+    },
+  },
+}
+`;
+
+exports[`valid read tests basic quotes: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SList",
+          "elems": Array [
+            Object {
+              "_type": "SAtom",
+              "val": "quote",
+            },
+            Object {
+              "_type": "SList",
+              "elems": Array [
+                Object {
+                  "_type": "SAtom",
+                  "val": "quote",
+                },
+                Object {
+                  "_type": "SList",
+                  "elems": Array [
+                    Object {
+                      "_type": "SList",
+                      "elems": Array [
+                        Object {
+                          "_type": "SAtom",
+                          "val": "quote",
+                        },
+                        Object {
+                          "_type": "SAtom",
+                          "val": "abc",
+                        },
+                      ],
+                      "tail": Object {
+                        "_type": "SNil",
+                      },
+                    },
+                    Object {
+                      "_type": "SNumber",
+                      "val": 123,
+                    },
+                    Object {
+                      "_type": "SBoolean",
+                      "val": true,
+                    },
+                  ],
+                  "tail": Object {
+                    "_type": "SNil",
+                  },
+                },
+              ],
+              "tail": Object {
+                "_type": "SNil",
+              },
+            },
+          ],
+          "tail": Object {
+            "_type": "SNil",
+          },
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SList",
+    "elems": Array [
+      Object {
+        "_type": "SAtom",
+        "val": "quote",
+      },
+      Object {
+        "_type": "SList",
+        "elems": Array [
+          Object {
+            "_type": "SAtom",
+            "val": "quote",
+          },
+          Object {
+            "_type": "SList",
+            "elems": Array [
+              Object {
+                "_type": "SList",
+                "elems": Array [
+                  Object {
+                    "_type": "SAtom",
+                    "val": "quote",
+                  },
+                  Object {
+                    "_type": "SAtom",
+                    "val": "abc",
+                  },
+                ],
+                "tail": Object {
+                  "_type": "SNil",
+                },
+              },
+              Object {
+                "_type": "SNumber",
+                "val": 123,
+              },
+              Object {
+                "_type": "SBoolean",
+                "val": true,
+              },
+            ],
+            "tail": Object {
+              "_type": "SNil",
+            },
+          },
+        ],
+        "tail": Object {
+          "_type": "SNil",
+        },
+      },
+    ],
+    "tail": Object {
+      "_type": "SNil",
+    },
+  },
+}
+`;
+
+exports[`valid read tests basic quotes: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SList",
+          "elems": Array [
+            Object {
+              "_type": "SAtom",
+              "val": "quote",
+            },
+            Object {
+              "_type": "SList",
+              "elems": Array [
+                Object {
+                  "_type": "SList",
+                  "elems": Array [
+                    Object {
+                      "_type": "SAtom",
+                      "val": "quote",
+                    },
+                    Object {
+                      "_type": "SAtom",
+                      "val": "abc",
+                    },
+                  ],
+                  "tail": Object {
+                    "_type": "SNil",
+                  },
+                },
+                Object {
+                  "_type": "SNumber",
+                  "val": 123,
+                },
+                Object {
+                  "_type": "SBoolean",
+                  "val": true,
+                },
+              ],
+              "tail": Object {
+                "_type": "SNil",
+              },
+            },
+          ],
+          "tail": Object {
+            "_type": "SNil",
+          },
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SList",
+    "elems": Array [
+      Object {
+        "_type": "SAtom",
+        "val": "quote",
+      },
+      Object {
+        "_type": "SList",
+        "elems": Array [
+          Object {
+            "_type": "SList",
+            "elems": Array [
+              Object {
+                "_type": "SAtom",
+                "val": "quote",
+              },
+              Object {
+                "_type": "SAtom",
+                "val": "abc",
+              },
+            ],
+            "tail": Object {
+              "_type": "SNil",
+            },
+          },
+          Object {
+            "_type": "SNumber",
+            "val": 123,
+          },
+          Object {
+            "_type": "SBoolean",
+            "val": true,
+          },
+        ],
+        "tail": Object {
+          "_type": "SNil",
+        },
+      },
+    ],
+    "tail": Object {
+      "_type": "SNil",
+    },
+  },
+}
+`;
+
+exports[`valid read tests basic quotes: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SList",
+          "elems": Array [
+            Object {
+              "_type": "SList",
+              "elems": Array [
+                Object {
+                  "_type": "SAtom",
+                  "val": "quote",
+                },
+                Object {
+                  "_type": "SAtom",
+                  "val": "abc",
+                },
+              ],
+              "tail": Object {
+                "_type": "SNil",
+              },
+            },
+            Object {
+              "_type": "SNumber",
+              "val": 123,
+            },
+            Object {
+              "_type": "SBoolean",
+              "val": true,
+            },
+          ],
+          "tail": Object {
+            "_type": "SNil",
+          },
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SList",
+    "elems": Array [
+      Object {
+        "_type": "SList",
+        "elems": Array [
+          Object {
+            "_type": "SAtom",
+            "val": "quote",
+          },
+          Object {
+            "_type": "SAtom",
+            "val": "abc",
+          },
+        ],
+        "tail": Object {
+          "_type": "SNil",
+        },
+      },
+      Object {
+        "_type": "SNumber",
+        "val": 123,
+      },
+      Object {
+        "_type": "SBoolean",
+        "val": true,
+      },
+    ],
+    "tail": Object {
+      "_type": "SNil",
+    },
+  },
+}
+`;
+
+exports[`valid read tests basic quotes: 
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "_type": "SList",
+          "elems": Array [
+            Object {
+              "_type": "SList",
+              "elems": Array [
+                Object {
+                  "_type": "SAtom",
+                  "val": "quote",
+                },
+                Object {
+                  "_type": "SAtom",
+                  "val": "abc",
+                },
+              ],
+              "tail": Object {
+                "_type": "SNil",
+              },
+            },
+            Object {
+              "_type": "SNumber",
+              "val": 123,
+            },
+            Object {
+              "_type": "SList",
+              "elems": Array [
+                Object {
+                  "_type": "SAtom",
+                  "val": "quote",
+                },
+                Object {
+                  "_type": "SBoolean",
+                  "val": true,
+                },
+              ],
+              "tail": Object {
+                "_type": "SNil",
+              },
+            },
+          ],
+          "tail": Object {
+            "_type": "SNil",
+          },
+        },
+      }
+     1`] = `
+Object {
+  "err": undefined,
+  "good": true,
+  "v": Object {
+    "_type": "SList",
+    "elems": Array [
+      Object {
+        "_type": "SList",
+        "elems": Array [
+          Object {
+            "_type": "SAtom",
+            "val": "quote",
+          },
+          Object {
+            "_type": "SAtom",
+            "val": "abc",
+          },
+        ],
+        "tail": Object {
+          "_type": "SNil",
+        },
+      },
+      Object {
+        "_type": "SNumber",
+        "val": 123,
+      },
+      Object {
+        "_type": "SList",
+        "elems": Array [
+          Object {
+            "_type": "SAtom",
+            "val": "quote",
+          },
+          Object {
+            "_type": "SBoolean",
+            "val": true,
+          },
+        ],
+        "tail": Object {
+          "_type": "SNil",
+        },
+      },
+    ],
+    "tail": Object {
+      "_type": "SNil",
+    },
+  },
+}
+`;
