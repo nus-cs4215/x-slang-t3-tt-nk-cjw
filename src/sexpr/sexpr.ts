@@ -40,10 +40,21 @@ export type SExpr = SAtom | SNumber | SBoolean | SNil | SCons<SExpr, SExpr> | SL
 
 export const satom = (val: string): SAtom => ({ _type: 'SAtom', val });
 export const snumber = (val: number): SNumber => ({ _type: 'SNumber', val });
-export const sboolean = (val: boolean): SBoolean => ({ _type: 'SBoolean', val });
+export const sboolean = (val: boolean): SBoolean => ({
+  _type: 'SBoolean',
+  val,
+});
 export const snil = (): SNil => ({ _type: 'SNil' });
-export const scons = <T, U>(first: T, rest: U): SCons<T, U> => ({ _type: 'SCons', first, rest });
-export const slist = <T, U>(elems: T[], tail: U): SList<T, U> => ({ _type: 'SList', elems, tail });
+export const scons = <T, U>(first: T, rest: U): SCons<T, U> => ({
+  _type: 'SCons',
+  first,
+  rest,
+});
+export const slist = <T, U>(elems: T[], tail: U): SList<T, U> => ({
+  _type: 'SList',
+  elems,
+  tail,
+});
 
 export function* sconslist_iterator(
   e: SList<SExpr, SExpr> | SCons<SExpr, SExpr>

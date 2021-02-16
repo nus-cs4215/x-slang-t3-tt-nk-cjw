@@ -5,6 +5,30 @@ export function isBadResult<T, Err>(r: Result<T, Err>): r is BadResult<Err> {
   return !r.good;
 }
 
+export function getOk<T, Err>(r: Result<T, Err>): T {
+  if (isGoodResult(r)) {
+    return r.v;
+  } else {
+    throw r.err;
+  }
+}
+
+class ExpectedErrError<T> extends Error {
+  v: T;
+  constructor(v: T, message?: string) {
+    super(message);
+    this.v = v;
+  }
+}
+
+export function getErr<T, Err>(r: Result<T, Err>): Err {
+  if (isGoodResult(r)) {
+    throw new ExpectedErrError(r.v, 'Expected error');
+  } else {
+    return r.err;
+  }
+}
+
 export interface GoodResult<T> {
   good: true;
   v: T;
