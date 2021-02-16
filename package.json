@@ -35,11 +35,12 @@
   "private": true,
   "scripts": {
     "postinstall": "husky install",
-    "ci": "yarn format:ci && yarn eslint && yarn test",
+    "ci": "yarn format:ci && yarn eslint && yarn test:ci",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:ci": "prettier --list-different \"src/**/*.ts\"",
     "prepublishOnly": "tsc",
     "test": "jest",
+    "test:ci": "jest --ci",
     "test-coverage": "jest --coverage",
     "eslint": "eslint --ext \".ts\" src",
     "build": "yarn tsc",
