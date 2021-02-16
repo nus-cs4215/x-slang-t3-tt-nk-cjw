@@ -91,25 +91,20 @@ export function par_match(lpar: LPar, rpar: RPar): boolean {
 
 function substring_to_token(s: string, loc: Location): Token {
   // Try to interpret as single dot
-  if (s.length === 1 && s[0] === '.') {
+  if (s === '.') {
     return dot('.', loc);
   }
 
   // Try to interpret as boolean
   if (s[0] === '#') {
-    if (s.length !== 2) {
+    if (s === '#t' || s === '#f') {
+      return bool(s, loc);
+    } else {
       return invalid(s, loc);
     }
-    if (s[1] === 't') {
-      return bool('#t', loc);
-    } else if (s[1] === 'f') {
-      return bool('#f', loc);
-    }
-
-    return invalid(s, loc);
   }
 
-  // try to interpret as number
+  // Try to interpret as number
   if (Number.isFinite(Number(s))) {
     return num(s, loc);
   }
