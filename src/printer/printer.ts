@@ -1,29 +1,30 @@
 import { SExpr } from '../sexpr';
 
 export function print(e: SExpr): string {
-  if (e._type === 'SNil') {
-    return '()';
-  } else if (e._type === 'SAtom') {
-    return e.val;
-  } else if (e._type === 'SNumber') {
-    return e.val.toString();
-  } else if (e._type === 'SBoolean') {
-    if (e.val) {
-      return '#t';
-    } else {
-      return '#f';
-    }
-  } else if (e._type === 'SList') {
-    const elems = e.elems.map((elem) => print(elem)).join(' ');
-    const tail = e.tail._type === 'SNil' ? '' : ' . ' + print(e.tail);
+  switch (e._type) {
+    case 'SNil':
+      return '()';
+    case 'SAtom':
+      return e.val;
+    case 'SNumber':
+      return e.val.toString();
+    case 'SBoolean':
+      if (e.val) {
+        return '#t';
+      } else {
+        return '#f';
+      }
+    case 'SCons':
+      const first = print(e.first);
+      const rest = e.rest._type === 'SNil' ? '' : ' . ' + print(e.rest);
 
-    return '(' + elems + tail + ')';
-  } else if (e._type === 'SCons') {
-    const first = print(e.first);
-    const rest = e.rest._type === 'SNil' ? '' : ' . ' + print(e.rest);
+      return '(' + first + rest + ')';
+    case 'SList':
+      const elems = e.elems.map((elem) => print(elem)).join(' ');
+      const tail = e.tail._type === 'SNil' ? '' : ' . ' + print(e.tail);
 
-    return '(' + first + rest + ')';
-  } else {
-    return '';
+      return '(' + elems + tail + ')';
+    default:
+      return '';
   }
 }
