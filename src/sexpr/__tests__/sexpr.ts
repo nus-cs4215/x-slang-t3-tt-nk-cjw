@@ -1,16 +1,7 @@
-import {
-  SExpr,
-  satom,
-  snumber,
-  sboolean,
-  snil,
-  scons,
-  slist,
-  sconslist_iterator,
-  sexprToJsonsexpr,
-  jsonsexprToSexpr,
-  equals,
-} from '../sexpr';
+import { SExpr } from '../sexpr';
+import { satom, snumber, sboolean, snil, scons, slist } from '../sexpr';
+import { sconslist_iterator, equals } from '../sexpr';
+import { sexprToJsonsexpr, jsonsexprToSexpr } from '../jsonsexpr';
 
 test('slist iteration', () => {
   expect([...sconslist_iterator(scons(snil(), snil()))]).toEqual([snil()]);
