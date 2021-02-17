@@ -1,19 +1,15 @@
-import { STypes, SExpr, car, cdr, is_list, is_nil } from '../sexpr';
+import { STypes, SExpr, val, car, cdr, is_list, is_nil } from '../sexpr';
 
 export function print(e: SExpr): string {
   switch (e._type) {
     case STypes.Nil:
       return '()';
     case STypes.Atom:
-      return e.val;
+      return val(e);
     case STypes.Number:
-      return e.val.toString();
+      return val(e).toString();
     case STypes.Boolean:
-      if (e.val) {
-        return '#t';
-      } else {
-        return '#f';
-      }
+      return val(e) ? '#t' : '#f';
     case STypes.List:
       const output: string[] = ['('];
 
