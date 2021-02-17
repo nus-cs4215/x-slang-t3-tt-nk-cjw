@@ -1,39 +1,71 @@
 import { getOk, getErr } from '../../utils';
-import { equals } from '../../sexpr';
+import { equals, sexprToJsonsexpr } from '../../sexpr';
 import { read, formatReadErr } from '../reader';
+
+function expectReadAsJson(s: string) {
+  return expect(sexprToJsonsexpr(getOk(read(s))));
+}
 
 describe('valid read tests', () => {
   test('basic parens', () => {
-    expect(getOk(read('()'))).toMatchSnapshot();
-    expect(getOk(read('[]'))).toMatchSnapshot();
-    expect(getOk(read('{}'))).toMatchSnapshot();
+    expectReadAsJson('()').toMatchInlineSnapshot(`Array []`);
+    expectReadAsJson('[]').toMatchInlineSnapshot(`Array []`);
+    expectReadAsJson('{}').toMatchInlineSnapshot(`Array []`);
   });
 
   test('basic atoms', () => {
-    expect(getOk(read('abc'))).toMatchSnapshot();
-    expect(getOk(read('abc->def'))).toMatchSnapshot();
+    expectReadAsJson('abc').toMatchInlineSnapshot(`"abc"`);
+    expectReadAsJson('abc->def').toMatchInlineSnapshot(`"abc->def"`);
   });
 
   test('basic numbers', () => {
-    expect(getOk(read('123'))).toMatchSnapshot();
-    expect(getOk(read('123.5'))).toMatchSnapshot();
+    expectReadAsJson('123').toMatchInlineSnapshot(`123`);
+    expectReadAsJson('123.5').toMatchInlineSnapshot(`123.5`);
   });
 
   test('basic booleans', () => {
-    expect(getOk(read('#t'))).toMatchSnapshot();
-    expect(getOk(read('#f'))).toMatchSnapshot();
+    expectReadAsJson('#t').toMatchInlineSnapshot(`true`);
+    expectReadAsJson('#f').toMatchInlineSnapshot(`false`);
   });
 
   test('basic lists', () => {
-    expect(getOk(read('()'))).toMatchSnapshot();
-    expect(getOk(read('(abc)'))).toMatchSnapshot();
-    expect(getOk(read('(abc 123)'))).toMatchSnapshot();
-    expect(getOk(read('(abc 123 #t)'))).toMatchSnapshot();
+    expectReadAsJson('()').toMatchInlineSnapshot(`Array []`);
+    expectReadAsJson('(abc)').toMatchInlineSnapshot(`
+      Array [
+        "abc",
+      ]
+    `);
+    expectReadAsJson('(abc 123)').toMatchInlineSnapshot(`
+      Array [
+        "abc",
+        123,
+      ]
+    `);
+    expectReadAsJson('(abc 123 #t)').toMatchInlineSnapshot(`
+      Array [
+        "abc",
+        123,
+        true,
+      ]
+    `);
   });
 
   test('basic cons', () => {
-    expect(getOk(read('(a . b)'))).toMatchSnapshot();
-    expect(getOk(read('(a b . c)'))).toMatchSnapshot();
+    expectReadAsJson('(a . b)').toMatchInlineSnapshot(`
+      Array [
+        "a",
+        ".",
+        "b",
+      ]
+    `);
+    expectReadAsJson('(a b . c)').toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        ".",
+        "c",
+      ]
+    `);
     expect(equals(getOk(read('(a . ())')), getOk(read('(a)')))).toBe(true);
   });
 
@@ -43,12 +75,66 @@ describe('valid read tests', () => {
   });
 
   test('basic quotes', () => {
-    expect(getOk(read("'()"))).toMatchSnapshot();
-    expect(getOk(read("('abc)"))).toMatchSnapshot();
-    expect(getOk(read("'(abc)"))).toMatchSnapshot();
-    expect(getOk(read("'(abc . def)"))).toMatchSnapshot();
-    expect(getOk(read("''(abc)"))).toMatchSnapshot();
-    expect(getOk(read("'('abc)"))).toMatchSnapshot();
+    expectReadAsJson("'a").toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        "a",
+      ]
+    `);
+    expectReadAsJson("'()").toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Array [],
+      ]
+    `);
+    expectReadAsJson("('abc)").toMatchInlineSnapshot(`
+      Array [
+        Array [
+          "quote",
+          "abc",
+        ],
+      ]
+    `);
+    expectReadAsJson("'(abc)").toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Array [
+          "abc",
+        ],
+      ]
+    `);
+    expectReadAsJson("'(abc . def)").toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Array [
+          "abc",
+          ".",
+          "def",
+        ],
+      ]
+    `);
+    expectReadAsJson("''(abc)").toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Array [
+          "quote",
+          Array [
+            "abc",
+          ],
+        ],
+      ]
+    `);
+    expectReadAsJson("'('abc)").toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Array [
+          Array [
+            "quote",
+            "abc",
+          ],
+        ],
+      ]
+    `);
   });
 });
 

@@ -101,3 +101,45 @@ export function equals(e1: SExpr, e2: SExpr): boolean {
 }
 
 export type JsonSExpr = JsonSExpr[] | string | number | boolean;
+
+export function sexprToJsonsexpr(e: SExpr): JsonSExpr {
+  if (e._type === 'SAtom' || e._type === 'SNumber' || e._type === 'SBoolean') {
+    return e.val;
+  } else if (e._type === 'SNil') {
+    return [];
+  } else {
+    // if (e._type === 'SList') {
+    const xs = [];
+    xs.push(sexprToJsonsexpr(car(e)));
+    e = cdr(e);
+    for (; e._type === 'SList'; e = cdr(e)) {
+      xs.push(sexprToJsonsexpr(car(e)));
+    }
+    if (e._type !== 'SNil') {
+      xs.push('.');
+      xs.push(sexprToJsonsexpr(e));
+    }
+    return xs;
+  }
+}
+
+export function jsonsexprToSexpr(j: JsonSExpr): SExpr {
+  if (typeof j === 'string') {
+    return satom(j);
+  } else if (typeof j === 'number') {
+    return snumber(j);
+  } else if (typeof j === 'boolean') {
+    return sboolean(j);
+  } else {
+    // j is a list
+    if (j.length === 0) {
+      return snil();
+    }
+    if (j.length >= 3 && j[j.length - 2] === '.') {
+      const tail = jsonsexprToSexpr(j.pop()!);
+      j.pop();
+      return slist(j.map(jsonsexprToSexpr), tail);
+    }
+  }
+  return slist(j.map(jsonsexprToSexpr), snil());
+}

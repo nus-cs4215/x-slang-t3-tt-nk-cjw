@@ -13,6 +13,8 @@ test('exports', () => {
       "cdr",
       "sconslist_iterator",
       "equals",
+      "sexprToJsonsexpr",
+      "jsonsexprToSexpr",
       "formatReadErr",
       "readOneDatum",
       "read",
