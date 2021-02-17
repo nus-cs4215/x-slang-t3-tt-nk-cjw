@@ -92,17 +92,6 @@ export function val(e: SAtom | SNumber | SBoolean): string | number | boolean {
 export const car = (p: SList): SExpr => p.x;
 export const cdr = (p: SList): SExpr => p.y;
 
-export function* sconslist_iterator(p: SList): Iterable<SExpr | '.'> & Iterator<SExpr | '.'> {
-  let e: SExpr;
-  for (e = p; e._type === STypes.List; e = cdr(e)) {
-    yield car(e);
-  }
-  if (e._type !== STypes.Nil) {
-    yield '.';
-    yield e;
-  }
-}
-
 /**************
  * PREDICATES *
  **************/

@@ -1,34 +1,7 @@
 import { SExpr } from '../sexpr';
 import { satom, snumber, sboolean, snil, scons, slist } from '../sexpr';
-import { sconslist_iterator, equals } from '../sexpr';
+import { equals } from '../sexpr';
 import { sexprToJsonsexpr, jsonsexprToSexpr } from '../jsonsexpr';
-
-test('slist iteration', () => {
-  expect([...sconslist_iterator(scons(snil(), snil()))]).toEqual([snil()]);
-  expect([...sconslist_iterator(scons(snil(), scons(snil(), snil())))]).toEqual([snil(), snil()]);
-  expect([...sconslist_iterator(slist([snil()], scons(snil(), snil())))]).toEqual([snil(), snil()]);
-  expect([...sconslist_iterator(scons(snil(), slist([snil()], snil())))]).toEqual([snil(), snil()]);
-  expect([...sconslist_iterator(slist([snil()], slist([snil()], snil())))]).toEqual([
-    snil(),
-    snil(),
-  ]);
-  expect([...sconslist_iterator(slist([snil(), snil()], snil()))]).toEqual([snil(), snil()]);
-  expect([...sconslist_iterator(scons(scons(snil(), snil()), snil()))]).toEqual([
-    scons(snil(), snil()),
-  ]);
-
-  expect([...sconslist_iterator(scons(satom('a'), satom('b')))]).toEqual([
-    satom('a'),
-    '.',
-    satom('b'),
-  ]);
-  expect([...sconslist_iterator(scons(satom('a'), scons(satom('b'), satom('c'))))]).toEqual([
-    satom('a'),
-    satom('b'),
-    '.',
-    satom('c'),
-  ]);
-});
 
 describe('test equality', () => {
   const values: (() => SExpr)[] = [
