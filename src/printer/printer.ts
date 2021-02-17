@@ -1,29 +1,38 @@
-import { SExpr } from '../sexpr';
+import { STypes, SExpr, car, cdr, is_list, is_nil } from '../sexpr';
 
 export function print(e: SExpr): string {
   switch (e._type) {
-    case 'SNil':
+    case STypes.Nil:
       return '()';
-    case 'SAtom':
+    case STypes.Atom:
       return e.val;
-    case 'SNumber':
+    case STypes.Number:
       return e.val.toString();
-    case 'SBoolean':
+    case STypes.Boolean:
       if (e.val) {
         return '#t';
       } else {
         return '#f';
       }
-    case 'SCons':
-      const first = print(e.first);
-      const rest = e.rest._type === 'SNil' ? '' : ' . ' + print(e.rest);
+    case STypes.List:
+      const output: string[] = ['('];
 
-      return '(' + first + rest + ')';
-    case 'SList':
-      const elems = e.elems.map((elem) => print(elem)).join(' ');
-      const tail = e.tail._type === 'SNil' ? '' : ' . ' + print(e.tail);
+      // handle first element
+      output.push(print(car(e)));
 
-      return '(' + elems + tail + ')';
+      // handle the rest of the elements
+      for (e = cdr(e); is_list(e); e = cdr(e)) {
+        output.push(' ', print(car(e)));
+      }
+
+      // handle improper list
+      if (!is_nil(e)) {
+        output.push(' . ', print(e));
+      }
+
+      output.push(')');
+
+      return ''.concat(...output);
     default:
       return '';
   }
