@@ -1,15 +1,9 @@
 import { Result, err, ok } from '../utils';
-import { SExpr } from '../sexpr';
+import { SExpr, is_atom, is_number, is_boolean, is_nil } from '../sexpr';
 
 export function evaluate(program: SExpr): Result<SExpr, void> {
   // Normal form
-  if (program._type === 'SNumber') {
-    return ok(program);
-  }
-  if (program._type === 'SBoolean') {
-    return ok(program);
-  }
-  if (program._type === 'SNil') {
+  if (is_atom(program) || is_number(program) || is_boolean(program) || is_nil(program)) {
     return ok(program);
   }
   return err();

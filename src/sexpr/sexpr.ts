@@ -1,20 +1,32 @@
+/*********
+ * TYPES *
+ *********/
+
+export enum STypes {
+  Atom,
+  Number,
+  Boolean,
+  Nil,
+  List,
+}
+
 export interface SAtom {
-  _type: 'SAtom';
+  _type: STypes.Atom;
   val: string;
 }
 
 export interface SNumber {
-  _type: 'SNumber';
+  _type: STypes.Number;
   val: number;
 }
 
 export interface SBoolean {
-  _type: 'SBoolean';
+  _type: STypes.Boolean;
   val: boolean;
 }
 
 export interface SNil {
-  _type: 'SNil';
+  _type: STypes.Nil;
 }
 
 enum SListVariants {
@@ -22,7 +34,7 @@ enum SListVariants {
 }
 
 interface SListBase {
-  _type: 'SList';
+  _type: STypes.List;
   _variant: SListVariants;
 }
 
@@ -37,16 +49,20 @@ export type SList = SListPair;
 
 export type SExpr = SAtom | SNumber | SBoolean | SNil | SList;
 
-export const satom = (val: string): SAtom => ({ _type: 'SAtom', val });
-export const snumber = (val: number): SNumber => ({ _type: 'SNumber', val });
+/****************
+ * CONSTRUCTORS *
+ ****************/
+
+export const satom = (val: string): SAtom => ({ _type: STypes.Atom, val });
+export const snumber = (val: number): SNumber => ({ _type: STypes.Number, val });
 export const sboolean = (val: boolean): SBoolean => ({
-  _type: 'SBoolean',
+  _type: STypes.Boolean,
   val,
 });
 
-export const snil = (): SNil => ({ _type: 'SNil' });
+export const snil = (): SNil => ({ _type: STypes.Nil });
 export const scons = (x: SExpr, y: SExpr): SList => ({
-  _type: 'SList',
+  _type: STypes.List,
   _variant: SListVariants.PAIR,
   x,
   y,
@@ -62,6 +78,10 @@ export function slist(xs: SExpr[], tail: SExpr): SExpr {
   return p;
 }
 
+/*************
+ * ACCESSORS *
+ *************/
+
 export function val(e: SAtom): string;
 export function val(e: SNumber): number;
 export function val(e: SBoolean): boolean;
@@ -74,27 +94,41 @@ export const cdr = (p: SList): SExpr => p.y;
 
 export function* sconslist_iterator(p: SList): Iterable<SExpr | '.'> & Iterator<SExpr | '.'> {
   let e: SExpr;
-  for (e = p; e._type === 'SList'; e = cdr(e)) {
+  for (e = p; e._type === STypes.List; e = cdr(e)) {
     yield car(e);
   }
-  if (e._type !== 'SNil') {
+  if (e._type !== STypes.Nil) {
     yield '.';
     yield e;
   }
 }
+
+/**************
+ * PREDICATES *
+ **************/
+
+export const is_atom = (e: SExpr): e is SAtom => e._type === STypes.Atom;
+export const is_number = (e: SExpr): e is SNumber => e._type === STypes.Number;
+export const is_boolean = (e: SExpr): e is SBoolean => e._type === STypes.Boolean;
+export const is_nil = (e: SExpr): e is SNil => e._type === STypes.Nil;
+export const is_list = (e: SExpr): e is SList => e._type === STypes.List;
+
+/*************
+ * UTILITIES *
+ *************/
 
 export function equals<E2 extends SExpr>(e1: SExpr, e2: E2): e1 is E2;
 export function equals<E1 extends SExpr>(e1: E1, e2: SExpr): e2 is E1;
 export function equals(e1: SExpr, e2: SExpr): boolean {
   while (true) {
     if (
-      (e1._type === 'SAtom' || e1._type === 'SNumber' || e1._type === 'SBoolean') &&
-      (e2._type === 'SAtom' || e2._type === 'SNumber' || e2._type === 'SBoolean')
+      (e1._type === STypes.Atom || e1._type === STypes.Number || e1._type === STypes.Boolean) &&
+      (e2._type === STypes.Atom || e2._type === STypes.Number || e2._type === STypes.Boolean)
     ) {
       return val(e1) === val(e2);
-    } else if (e1._type === 'SNil' && e2._type === 'SNil') {
+    } else if (e1._type === STypes.Nil && e2._type === STypes.Nil) {
       return true;
-    } else if (e1._type === 'SList' && e2._type === 'SList') {
+    } else if (e1._type === STypes.List && e2._type === STypes.List) {
       if (!equals(car(e1), car(e2))) {
         return false;
       }
@@ -109,19 +143,19 @@ export function equals(e1: SExpr, e2: SExpr): boolean {
 export type JsonSExpr = JsonSExpr[] | string | number | boolean;
 
 export function sexprToJsonsexpr(e: SExpr): JsonSExpr {
-  if (e._type === 'SAtom' || e._type === 'SNumber' || e._type === 'SBoolean') {
+  if (e._type === STypes.Atom || e._type === STypes.Number || e._type === STypes.Boolean) {
     return val(e);
-  } else if (e._type === 'SNil') {
+  } else if (e._type === STypes.Nil) {
     return [];
   } else {
-    // if (e._type === 'SList') {
+    // if (e._type === STypes.List) {
     const xs = [];
     xs.push(sexprToJsonsexpr(car(e)));
     e = cdr(e);
-    for (; e._type === 'SList'; e = cdr(e)) {
+    for (; e._type === STypes.List; e = cdr(e)) {
       xs.push(sexprToJsonsexpr(car(e)));
     }
-    if (e._type !== 'SNil') {
+    if (e._type !== STypes.Nil) {
       xs.push('.');
       xs.push(sexprToJsonsexpr(e));
     }
