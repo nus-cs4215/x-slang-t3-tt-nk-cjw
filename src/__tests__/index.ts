@@ -28,6 +28,8 @@ test('exports', () => {
       "readOneDatum",
       "read",
       "print",
+      "make_env",
+      "make_env_list",
       "evaluate",
       "startRepl",
     ]

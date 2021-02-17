@@ -7,11 +7,9 @@ import { jsonsexprToSexpr } from '../sexpr';
 
 type Closure = void;
 
-type EvaluateValue = Closure;
+export type EvalValue = SListStruct<Closure>;
 
-export type SEvalResult = SListStruct<EvaluateValue>;
-
-type EvaluateResult = Result<SEvalResult, void>;
+type EvaluateResult = Result<EvalValue, void>;
 
 type SpecialFormKeyword = 'quote';
 type SpecialFormType = 'quote';
@@ -98,9 +96,33 @@ function match_special_form(program: SExpr): [SpecialFormType, FormMatches] | Ma
   return MatchErr.InvalidSyntax;
 }
 
-type Environment = void;
+export interface Environment {
+  bindings: Record<string, EvalValue>;
+  parent: Environment | undefined;
+}
 
-export function evaluate(program: SExpr, env: Environment): EvaluateResult {
+export function make_env(
+  bindings: Record<string, EvalValue>,
+  parent: Environment | undefined
+): Environment {
+  return { bindings, parent };
+}
+
+export function make_env_list(...bindings: Record<string, EvalValue>[]): Environment | undefined {
+  return bindings.reduceRight((env, bindings) => make_env(bindings, env), undefined);
+}
+
+function find_env(name: string, env_: Environment | undefined): Environment | undefined {
+  let env: Environment | undefined;
+  for (env = env_; env !== undefined; env = env.parent) {
+    if (name in env.bindings) {
+      break;
+    }
+  }
+  return env;
+}
+
+export function evaluate(program: SExpr, env: Environment | undefined): EvaluateResult {
   // Normal form
   if (is_value(program)) {
     return ok(program);
@@ -108,7 +130,13 @@ export function evaluate(program: SExpr, env: Environment): EvaluateResult {
 
   // Variable references
   if (is_atom(program)) {
-    return err();
+    const name = val(program);
+    const binding_env = find_env(name, env);
+    if (binding_env === undefined) {
+      // Unbound variable error
+      return err();
+    }
+    return ok(binding_env.bindings[name]);
   }
 
   // Special forms

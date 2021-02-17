@@ -80,11 +80,7 @@ export const scons = <T>(x: SListStruct<T>, y: SListStruct<T>): SList<T> => ({
 export function slist<T>(xs: [SListStruct<T>, ...SListStruct<T>[]], tail: SListStruct<T>): SList<T>;
 export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruct<T>;
 export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruct<T> {
-  let p: SListStruct<T> = tail;
-  for (let i = xs.length - 1; i >= 0; i--) {
-    p = scons(xs[i], p);
-  }
-  return p;
+  return xs.reduceRight((p, x) => scons(x, p), tail);
 }
 
 export const sbox = <T>(val: T): SBoxed<T> => ({ _type: STypes.Boxed, val });
