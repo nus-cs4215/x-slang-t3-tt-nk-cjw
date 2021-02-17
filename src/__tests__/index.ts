@@ -9,6 +9,7 @@ test('exports', () => {
       "snil",
       "scons",
       "slist",
+      "val",
       "car",
       "cdr",
       "sconslist_iterator",
