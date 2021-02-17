@@ -1,4 +1,4 @@
-import { satom, sboolean, slist, snil, snumber } from '../../sexpr';
+import { satom, sboolean, scons, slist, snil, snumber } from '../../sexpr';
 // import { getOk } from '../../utils';
 import { print } from '../printer';
 
@@ -26,5 +26,11 @@ describe('valid print tests', () => {
     expect(print(slist([satom('abc')], snil()))).toMatchSnapshot(); // Is this possible?
     expect(print(slist([satom('abc'), snumber(123)], snil()))).toMatchSnapshot();
     expect(print(slist([satom('abc'), snumber(123), sboolean(true)], snil()))).toMatchSnapshot();
+  });
+
+  test('basic cons', () => {
+    expect(print(scons(satom('abc'), snil()))).toMatchSnapshot();
+    expect(print(scons(satom('a'), satom('b')))).toMatchSnapshot();
+    expect(print(slist([satom('a'), satom('b')], satom('c')))).toMatchSnapshot();
   });
 });

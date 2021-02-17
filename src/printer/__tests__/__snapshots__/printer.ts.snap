@@ -8,6 +8,12 @@ exports[`valid print tests basic booleans 1`] = `"#t"`;
 
 exports[`valid print tests basic booleans 2`] = `"#f"`;
 
+exports[`valid print tests basic cons 1`] = `"(abc)"`;
+
+exports[`valid print tests basic cons 2`] = `"(a . b)"`;
+
+exports[`valid print tests basic cons 3`] = `"(a b . c)"`;
+
 exports[`valid print tests basic list 1`] = `"(abc)"`;
 
 exports[`valid print tests basic list 2`] = `"(abc 123)"`;

@@ -15,8 +15,14 @@ export function print(e: SExpr): string {
     }
   } else if (e._type === 'SList') {
     const elems = e.elems.map((elem) => print(elem)).join(' ');
-    const tail = e.tail._type === 'SNil' ? '' : ' ' + print(e.tail);
+    const tail = e.tail._type === 'SNil' ? '' : ' . ' + print(e.tail);
+
     return '(' + elems + tail + ')';
+  } else if (e._type === 'SCons') {
+    const first = print(e.first);
+    const rest = e.rest._type === 'SNil' ? '' : ' . ' + print(e.rest);
+
+    return '(' + first + rest + ')';
   } else {
     return '';
   }
