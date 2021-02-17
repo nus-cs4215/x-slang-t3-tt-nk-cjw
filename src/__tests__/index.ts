@@ -17,6 +17,7 @@ test('exports', () => {
       "is_number",
       "is_boolean",
       "is_nil",
+      "is_value",
       "is_list",
       "equals",
       "sexprToJsonsexpr",

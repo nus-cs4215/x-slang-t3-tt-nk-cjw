@@ -100,6 +100,8 @@ export const is_atom = (e: SExpr): e is SAtom => e._type === STypes.Atom;
 export const is_number = (e: SExpr): e is SNumber => e._type === STypes.Number;
 export const is_boolean = (e: SExpr): e is SBoolean => e._type === STypes.Boolean;
 export const is_nil = (e: SExpr): e is SNil => e._type === STypes.Nil;
+export const is_value = (e: SExpr): e is SNumber | SBoolean | SNil =>
+  e._type === STypes.Number || e._type === STypes.Boolean || e._type === STypes.Nil;
 export const is_list = (e: SExpr): e is SList => e._type === STypes.List;
 
 /*************
