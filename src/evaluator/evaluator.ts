@@ -1,6 +1,7 @@
-import { Result, err, ok } from '../utils';
+import { Result, err, ok, isBadResult } from '../utils';
 import { SListStruct, SExpr } from '../sexpr';
-import { is_atom, is_value, is_list } from '../sexpr';
+import { is_atom, is_number, is_value, is_list, is_nil } from '../sexpr';
+import { satom, snumber, snil, slist } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { equals } from '../sexpr';
 import { jsonsexprToSexpr } from '../sexpr';
@@ -9,7 +10,7 @@ type Closure = void;
 
 export type EvalValue = SListStruct<Closure>;
 
-type EvaluateResult = Result<EvalValue, void>;
+type EvalResult = Result<EvalValue, void>;
 
 type SpecialFormKeyword = 'quote';
 type SpecialFormType = 'quote';
@@ -32,10 +33,7 @@ const special_forms: Record<SpecialFormKeyword, [Form]> = {
   ],
 };
 
-const special_forms_evaluators: Record<
-  SpecialFormType,
-  (matches: FormMatches) => EvaluateResult
-> = {
+const special_forms_evaluators: Record<SpecialFormType, (matches: FormMatches) => EvalResult> = {
   quote: ({ e }: { e: SExpr }) => ok(e),
 };
 
@@ -122,7 +120,58 @@ function find_env(name: string, env_: Environment | undefined): Environment | un
   return env;
 }
 
-export function evaluate(program: SExpr, env: Environment | undefined): EvaluateResult {
+const primitives: Record<string, (...args: EvalValue[]) => EvalResult> = {
+  '+': (...args) => {
+    let x = 0;
+    for (const arg of args) {
+      if (is_number(arg)) {
+        x += val(arg);
+      } else {
+        return err();
+      }
+    }
+    return ok(snumber(x));
+  },
+};
+
+export const the_global_environment: Environment = make_env(
+  {
+    '+': slist([satom('primitive_function'), satom('+')], snil()),
+  },
+  undefined
+);
+
+function apply(fun: EvalValue, ...args: EvalValue[]): EvalResult {
+  if (!is_list(fun)) {
+    return err();
+  }
+  const fun_type = car(fun);
+  if (!is_atom(fun_type)) {
+    // not in the right format for a function
+    return err();
+  }
+
+  if (val(fun_type) === 'primitive_function') {
+    // handle primitve function calls
+    const rest = cdr(fun);
+    if (!is_list(rest)) {
+      return err();
+    }
+    const prim_name_atom = car(rest);
+    if (!is_atom(prim_name_atom)) {
+      return err();
+    }
+    const prim_name = val(prim_name_atom);
+    if (!(prim_name in primitives)) {
+      return err();
+    }
+    return primitives[prim_name](...args);
+  }
+  // unsupported function type
+  return err();
+}
+
+export function evaluate(program: SExpr, env: Environment | undefined): EvalResult {
   // Normal form
   if (is_value(program)) {
     return ok(program);
@@ -139,12 +188,35 @@ export function evaluate(program: SExpr, env: Environment | undefined): Evaluate
     return ok(binding_env.bindings[name]);
   }
 
+  if (is_nil(program)) {
+    return err();
+  }
+
   // Special forms
   const match_result = match_special_form(program);
 
   if (match_result === MatchErr.NoMatch) {
     // It's a function call or variable
-    return err();
+    const fun_r = evaluate(car(program), env);
+    if (isBadResult(fun_r)) {
+      return fun_r;
+    }
+    const fun = fun_r.v;
+
+    let p = cdr(program);
+    const args: EvalValue[] = [];
+    while (is_list(p)) {
+      const arg_r = evaluate(car(p), env);
+      if (isBadResult(arg_r)) {
+        return arg_r;
+      }
+      args.push(arg_r.v);
+      p = cdr(p);
+    }
+    if (!is_nil(p)) {
+      return err();
+    }
+    return apply(fun, ...args);
   } else if (match_result === MatchErr.InvalidSyntax) {
     // Matched the keyword but the rest died
     return err();

@@ -54,7 +54,12 @@ export interface SBoxed<T> {
 export type SList<T> = SListPair<T>;
 export type SListStruct<T> = SExprBase<T> | SList<T>;
 
-export type SExprBase<T> = SAtom | SNumber | SBoolean | SNil | SBoxed<T>;
+export type SExprBase<T> =
+  | SAtom
+  | SNumber
+  | SBoolean
+  | SNil
+  | (T extends never ? never : SBoxed<T>);
 
 export type SExpr = SListStruct<never>;
 
@@ -113,7 +118,8 @@ export const is_nil = <T>(e: SListStruct<T>): e is SNil => e._type === STypes.Ni
 export const is_value = <T>(e: SListStruct<T>): e is SNumber | SBoolean =>
   e._type === STypes.Number || e._type === STypes.Boolean;
 export const is_list = <T>(e: SListStruct<T>): e is SList<T> => e._type === STypes.List;
-export const is_boxed = <T>(e: SListStruct<T>): e is SBoxed<T> => e._type === STypes.Boxed;
+export const is_boxed = <T>(e: SListStruct<T>): e is T extends never ? never : SBoxed<T> =>
+  e._type === STypes.Boxed;
 
 /*************
  * UTILITIES *

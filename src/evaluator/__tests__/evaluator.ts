@@ -1,6 +1,6 @@
 import { JsonSExpr, jsonsexprToSexpr, sexprToJsonsexpr } from '../../sexpr';
 import { snumber, sboolean } from '../../sexpr';
-import { Environment, evaluate, make_env_list } from '../evaluator';
+import { Environment, evaluate, make_env_list, the_global_environment } from '../evaluator';
 import { ok, getOk, getErr } from '../../utils';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment | undefined) {
@@ -79,5 +79,28 @@ describe('quote special form', () => {
     // improper list
     expectJsonReadEvalError(['quote', '.', 'a'], undefined).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['quote', 'a', '.', 'b'], undefined).toMatchInlineSnapshot(`undefined`);
+  });
+});
+
+describe('primitive function calls', () => {
+  test('valid +', () => {
+    expectJsonReadEvalPrint(['+'], the_global_environment).toMatchInlineSnapshot(`0`);
+    expectJsonReadEvalPrint(['+', 1], the_global_environment).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(['+', 1, 2], the_global_environment).toMatchInlineSnapshot(`3`);
+    expectJsonReadEvalPrint(['+', 1, 2, 3], the_global_environment).toMatchInlineSnapshot(`6`);
+  });
+
+  test('invalid +', () => {
+    expectJsonReadEvalError(['+', '.', 1], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['+', 1, '.', 2], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['+', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['+', true], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['+', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
   });
 });
