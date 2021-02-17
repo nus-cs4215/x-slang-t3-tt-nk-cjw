@@ -1,42 +1,41 @@
-export interface SBase {
-  _type: string;
-}
-
-export interface SAtom extends SBase {
+export interface SAtom {
   _type: 'SAtom';
   val: string;
 }
 
-export interface SNumber extends SBase {
+export interface SNumber {
   _type: 'SNumber';
   val: number;
 }
 
-export interface SBoolean extends SBase {
+export interface SBoolean {
   _type: 'SBoolean';
   val: boolean;
 }
 
-export interface SNil extends SBase {
+export interface SNil {
   _type: 'SNil';
 }
 
-export interface SCons<T, U> extends SBase {
-  _type: 'SCons';
-  first: T;
-  rest: U;
+enum SListVariants {
+  PAIR,
 }
 
-export type SConsList<T, U> = SCons<T, SConsList<T, U>> | SCons<T, U>;
-
-export interface SList<T, U> extends SBase {
-  // A more efficient representation of cons lists
+interface SListBase {
   _type: 'SList';
-  elems: T[];
-  tail: U;
+  _variant: SListVariants;
 }
 
-export type SExpr = SAtom | SNumber | SBoolean | SNil | SCons<SExpr, SExpr> | SList<SExpr, SExpr>;
+interface SListPair extends SListBase {
+  _variant: SListVariants.PAIR;
+
+  x: SExpr;
+  y: SExpr;
+}
+
+export type SList = SListPair;
+
+export type SExpr = SAtom | SNumber | SBoolean | SNil | SList;
 
 export const satom = (val: string): SAtom => ({ _type: 'SAtom', val });
 export const snumber = (val: number): SNumber => ({ _type: 'SNumber', val });
@@ -44,39 +43,36 @@ export const sboolean = (val: boolean): SBoolean => ({
   _type: 'SBoolean',
   val,
 });
+
 export const snil = (): SNil => ({ _type: 'SNil' });
-export const scons = <T, U>(first: T, rest: U): SCons<T, U> => ({
-  _type: 'SCons',
-  first,
-  rest,
-});
-export const slist = <T, U>(elems: T[], tail: U): SList<T, U> => ({
+export const scons = (x: SExpr, y: SExpr): SList => ({
   _type: 'SList',
-  elems,
-  tail,
+  _variant: SListVariants.PAIR,
+  x,
+  y,
 });
 
-export function* sconslist_iterator(
-  e: SList<SExpr, SExpr> | SCons<SExpr, SExpr>
-): Iterable<SExpr | '.'> & Iterator<SExpr | '.'> {
-  let rest: SExpr;
-  while (true) {
-    if (e._type === 'SList') {
-      yield* e.elems;
-      rest = e.tail;
-    } else {
-      yield e.first;
-      rest = e.rest;
-    }
-    if (rest._type === 'SList' || rest._type === 'SCons') {
-      e = rest;
-    } else {
-      break;
-    }
+export function slist(xs: [SExpr, ...SExpr[]], tail: SExpr): SList;
+export function slist(xs: SExpr[], tail: SExpr): SExpr;
+export function slist(xs: SExpr[], tail: SExpr): SExpr {
+  let p: SExpr = tail;
+  for (let i = xs.length - 1; i >= 0; i--) {
+    p = scons(xs[i], p);
   }
-  if (rest._type !== 'SNil') {
+  return p;
+}
+
+export const car = (p: SList): SExpr => p.x;
+export const cdr = (p: SList): SExpr => p.y;
+
+export function* sconslist_iterator(p: SList): Iterable<SExpr | '.'> & Iterator<SExpr | '.'> {
+  let e: SExpr;
+  for (e = p; e._type === 'SList'; e = cdr(e)) {
+    yield car(e);
+  }
+  if (e._type !== 'SNil') {
     yield '.';
-    yield rest;
+    yield e;
   }
 }
 
@@ -92,38 +88,12 @@ export function equals(e1: SExpr, e2: SExpr): boolean {
       return e1.val === e2.val;
     } else if (e1._type === 'SNil' && e2._type === 'SNil') {
       return true;
-    } else if (e1._type === 'SCons' && e2._type === 'SCons') {
-      if (!equals(e1.first, e2.first)) {
+    } else if (e1._type === 'SList' && e2._type === 'SList') {
+      if (!equals(car(e1), car(e2))) {
         return false;
       }
-      e1 = e1.rest;
-      e2 = e2.rest;
-      continue;
-    } else if (
-      (e1._type === 'SCons' || e1._type === 'SList') &&
-      (e2._type === 'SCons' || e2._type === 'SList')
-    ) {
-      const e1it = sconslist_iterator(e1);
-      const e2it = sconslist_iterator(e2);
-      while (true) {
-        const { value: val1, done: done1 } = e1it.next();
-        const { value: val2, done: done2 } = e2it.next();
-        if (done1 !== done2) {
-          return false;
-        }
-        if (done1) {
-          return true;
-        }
-        if (val1 === '.' || val2 === '.') {
-          if (val1 !== val2) {
-            return false;
-          }
-          continue;
-        }
-        if (!equals(val1, val2)) {
-          return false;
-        }
-      }
+      e1 = cdr(e1);
+      e2 = cdr(e2);
     } else {
       return false;
     }

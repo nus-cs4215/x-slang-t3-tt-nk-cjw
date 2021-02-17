@@ -30,12 +30,13 @@ Object {
 
 exports[`valid read tests basic cons 1`] = `
 Object {
-  "_type": "SCons",
-  "first": Object {
+  "_type": "SList",
+  "_variant": 0,
+  "x": Object {
     "_type": "SAtom",
     "val": "a",
   },
-  "rest": Object {
+  "y": Object {
     "_type": "SAtom",
     "val": "b",
   },
@@ -45,19 +46,22 @@ Object {
 exports[`valid read tests basic cons 2`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "a",
-    },
-    Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "a",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
       "_type": "SAtom",
       "val": "b",
     },
-  ],
-  "tail": Object {
-    "_type": "SAtom",
-    "val": "c",
+    "y": Object {
+      "_type": "SAtom",
+      "val": "c",
+    },
   },
 }
 `;
@@ -70,12 +74,13 @@ Object {
 
 exports[`valid read tests basic lists 2`] = `
 Object {
-  "_type": "SCons",
-  "first": Object {
+  "_type": "SList",
+  "_variant": 0,
+  "x": Object {
     "_type": "SAtom",
     "val": "abc",
   },
-  "rest": Object {
+  "y": Object {
     "_type": "SNil",
   },
 }
@@ -84,18 +89,21 @@ Object {
 exports[`valid read tests basic lists 3`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "abc",
-    },
-    Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "abc",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
       "_type": "SNumber",
       "val": 123,
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
+    "y": Object {
+      "_type": "SNil",
+    },
   },
 }
 `;
@@ -103,22 +111,29 @@ Object {
 exports[`valid read tests basic lists 4`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "abc",
-    },
-    Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "abc",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
       "_type": "SNumber",
       "val": 123,
     },
-    Object {
-      "_type": "SBoolean",
-      "val": true,
+    "y": Object {
+      "_type": "SList",
+      "_variant": 0,
+      "x": Object {
+        "_type": "SBoolean",
+        "val": true,
+      },
+      "y": Object {
+        "_type": "SNil",
+      },
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
   },
 }
 `;
@@ -158,41 +173,48 @@ Object {
 exports[`valid read tests basic quotes 1`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "quote",
-    },
-    Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "quote",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
       "_type": "SNil",
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
+    "y": Object {
+      "_type": "SNil",
+    },
   },
 }
 `;
 
 exports[`valid read tests basic quotes 2`] = `
 Object {
-  "_type": "SCons",
-  "first": Object {
+  "_type": "SList",
+  "_variant": 0,
+  "x": Object {
     "_type": "SList",
-    "elems": Array [
-      Object {
-        "_type": "SAtom",
-        "val": "quote",
-      },
-      Object {
+    "_variant": 0,
+    "x": Object {
+      "_type": "SAtom",
+      "val": "quote",
+    },
+    "y": Object {
+      "_type": "SList",
+      "_variant": 0,
+      "x": Object {
         "_type": "SAtom",
         "val": "abc",
       },
-    ],
-    "tail": Object {
-      "_type": "SNil",
+      "y": Object {
+        "_type": "SNil",
+      },
     },
   },
-  "rest": Object {
+  "y": Object {
     "_type": "SNil",
   },
 }
@@ -201,24 +223,28 @@ Object {
 exports[`valid read tests basic quotes 3`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "quote",
-    },
-    Object {
-      "_type": "SCons",
-      "first": Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "quote",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
+      "_type": "SList",
+      "_variant": 0,
+      "x": Object {
         "_type": "SAtom",
         "val": "abc",
       },
-      "rest": Object {
+      "y": Object {
         "_type": "SNil",
       },
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
+    "y": Object {
+      "_type": "SNil",
+    },
   },
 }
 `;
@@ -226,25 +252,29 @@ Object {
 exports[`valid read tests basic quotes 4`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "quote",
-    },
-    Object {
-      "_type": "SCons",
-      "first": Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "quote",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
+      "_type": "SList",
+      "_variant": 0,
+      "x": Object {
         "_type": "SAtom",
         "val": "abc",
       },
-      "rest": Object {
+      "y": Object {
         "_type": "SAtom",
         "val": "def",
       },
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
+    "y": Object {
+      "_type": "SNil",
+    },
   },
 }
 `;
@@ -252,36 +282,43 @@ Object {
 exports[`valid read tests basic quotes 5`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "quote",
-    },
-    Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "quote",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
       "_type": "SList",
-      "elems": Array [
-        Object {
-          "_type": "SAtom",
-          "val": "quote",
-        },
-        Object {
-          "_type": "SCons",
-          "first": Object {
+      "_variant": 0,
+      "x": Object {
+        "_type": "SAtom",
+        "val": "quote",
+      },
+      "y": Object {
+        "_type": "SList",
+        "_variant": 0,
+        "x": Object {
+          "_type": "SList",
+          "_variant": 0,
+          "x": Object {
             "_type": "SAtom",
             "val": "abc",
           },
-          "rest": Object {
+          "y": Object {
             "_type": "SNil",
           },
         },
-      ],
-      "tail": Object {
-        "_type": "SNil",
+        "y": Object {
+          "_type": "SNil",
+        },
       },
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
+    "y": Object {
+      "_type": "SNil",
+    },
   },
 }
 `;
@@ -289,36 +326,43 @@ Object {
 exports[`valid read tests basic quotes 6`] = `
 Object {
   "_type": "SList",
-  "elems": Array [
-    Object {
-      "_type": "SAtom",
-      "val": "quote",
-    },
-    Object {
-      "_type": "SCons",
-      "first": Object {
+  "_variant": 0,
+  "x": Object {
+    "_type": "SAtom",
+    "val": "quote",
+  },
+  "y": Object {
+    "_type": "SList",
+    "_variant": 0,
+    "x": Object {
+      "_type": "SList",
+      "_variant": 0,
+      "x": Object {
         "_type": "SList",
-        "elems": Array [
-          Object {
-            "_type": "SAtom",
-            "val": "quote",
-          },
-          Object {
+        "_variant": 0,
+        "x": Object {
+          "_type": "SAtom",
+          "val": "quote",
+        },
+        "y": Object {
+          "_type": "SList",
+          "_variant": 0,
+          "x": Object {
             "_type": "SAtom",
             "val": "abc",
           },
-        ],
-        "tail": Object {
-          "_type": "SNil",
+          "y": Object {
+            "_type": "SNil",
+          },
         },
       },
-      "rest": Object {
+      "y": Object {
         "_type": "SNil",
       },
     },
-  ],
-  "tail": Object {
-    "_type": "SNil",
+    "y": Object {
+      "_type": "SNil",
+    },
   },
 }
 `;
