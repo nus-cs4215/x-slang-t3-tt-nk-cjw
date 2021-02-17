@@ -8,6 +8,7 @@ export enum STypes {
   Boolean,
   Nil,
   List,
+  Boxed,
 }
 
 export interface SAtom {
@@ -38,16 +39,24 @@ interface SListBase {
   _variant: SListVariants;
 }
 
-interface SListPair extends SListBase {
+interface SListPair<T> extends SListBase {
   _variant: SListVariants.PAIR;
 
-  x: SExpr;
-  y: SExpr;
+  x: SListStruct<T>;
+  y: SListStruct<T>;
 }
 
-export type SList = SListPair;
+export interface SBoxed<T> {
+  _type: STypes.Boxed;
+  val: T;
+}
 
-export type SExpr = SAtom | SNumber | SBoolean | SNil | SList;
+export type SList<T> = SListPair<T>;
+export type SListStruct<T> = SExprBase<T> | SList<T>;
+
+export type SExprBase<T> = SAtom | SNumber | SBoolean | SNil | SBoxed<T>;
+
+export type SExpr = SListStruct<never>;
 
 /****************
  * CONSTRUCTORS *
@@ -61,22 +70,24 @@ export const sboolean = (val: boolean): SBoolean => ({
 });
 
 export const snil = (): SNil => ({ _type: STypes.Nil });
-export const scons = (x: SExpr, y: SExpr): SList => ({
+export const scons = <T>(x: SListStruct<T>, y: SListStruct<T>): SList<T> => ({
   _type: STypes.List,
   _variant: SListVariants.PAIR,
   x,
   y,
 });
 
-export function slist(xs: [SExpr, ...SExpr[]], tail: SExpr): SList;
-export function slist(xs: SExpr[], tail: SExpr): SExpr;
-export function slist(xs: SExpr[], tail: SExpr): SExpr {
-  let p: SExpr = tail;
+export function slist<T>(xs: [SListStruct<T>, ...SListStruct<T>[]], tail: SListStruct<T>): SList<T>;
+export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruct<T>;
+export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruct<T> {
+  let p: SListStruct<T> = tail;
   for (let i = xs.length - 1; i >= 0; i--) {
     p = scons(xs[i], p);
   }
   return p;
 }
+
+export const sbox = <T>(val: T): SBoxed<T> => ({ _type: STypes.Boxed, val });
 
 /*************
  * ACCESSORS *
@@ -85,24 +96,28 @@ export function slist(xs: SExpr[], tail: SExpr): SExpr {
 export function val(e: SAtom): string;
 export function val(e: SNumber): number;
 export function val(e: SBoolean): boolean;
+export function val(e: SAtom | SNumber): string | number;
+export function val(e: SAtom | SBoolean): string | boolean;
+export function val(e: SNumber | SBoolean): number | boolean;
 export function val(e: SAtom | SNumber | SBoolean): string | number | boolean;
 export function val(e: SAtom | SNumber | SBoolean): string | number | boolean {
   return e.val;
 }
-export const car = (p: SList): SExpr => p.x;
-export const cdr = (p: SList): SExpr => p.y;
+export const car = <T>(p: SList<T>): SListStruct<T> => p.x;
+export const cdr = <T>(p: SList<T>): SListStruct<T> => p.y;
 
 /**************
  * PREDICATES *
  **************/
 
-export const is_atom = (e: SExpr): e is SAtom => e._type === STypes.Atom;
-export const is_number = (e: SExpr): e is SNumber => e._type === STypes.Number;
-export const is_boolean = (e: SExpr): e is SBoolean => e._type === STypes.Boolean;
-export const is_nil = (e: SExpr): e is SNil => e._type === STypes.Nil;
-export const is_value = (e: SExpr): e is SNumber | SBoolean | SNil =>
-  e._type === STypes.Number || e._type === STypes.Boolean || e._type === STypes.Nil;
-export const is_list = (e: SExpr): e is SList => e._type === STypes.List;
+export const is_atom = <T>(e: SListStruct<T>): e is SAtom => e._type === STypes.Atom;
+export const is_number = <T>(e: SListStruct<T>): e is SNumber => e._type === STypes.Number;
+export const is_boolean = <T>(e: SListStruct<T>): e is SBoolean => e._type === STypes.Boolean;
+export const is_nil = <T>(e: SListStruct<T>): e is SNil => e._type === STypes.Nil;
+export const is_value = <T>(e: SListStruct<T>): e is SNumber | SBoolean =>
+  e._type === STypes.Number || e._type === STypes.Boolean;
+export const is_list = <T>(e: SListStruct<T>): e is SList<T> => e._type === STypes.List;
+export const is_boxed = <T>(e: SListStruct<T>): e is SBoxed<T> => e._type === STypes.Boxed;
 
 /*************
  * UTILITIES *

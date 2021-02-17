@@ -1,15 +1,17 @@
-import { SExpr } from './sexpr';
+import { SExpr, SListStruct } from './sexpr';
 import { val, car, cdr } from './sexpr';
 import { satom, snumber, sboolean, snil, slist } from './sexpr';
-import { is_atom, is_number, is_boolean, is_nil, is_list } from './sexpr';
+import { is_atom, is_number, is_boolean, is_nil, is_list, is_boxed } from './sexpr';
 
 export type JsonSExpr = JsonSExpr[] | string | number | boolean;
 
-export function sexprToJsonsexpr(e: SExpr): JsonSExpr {
+export function sexprToJsonsexpr(e: SListStruct<unknown>): JsonSExpr {
   if (is_atom(e) || is_number(e) || is_boolean(e)) {
     return val(e);
   } else if (is_nil(e)) {
     return [];
+  } else if (is_boxed(e)) {
+    return '<<boxed>>';
   } else {
     // if (e._type === STypes.List) {
     const xs = [];

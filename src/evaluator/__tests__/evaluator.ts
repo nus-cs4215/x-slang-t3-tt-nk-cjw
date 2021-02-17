@@ -10,10 +10,9 @@ function expectJsonReadEvalError(j: JsonSExpr) {
   return expect(getErr(evaluate(jsonsexprToSexpr(j))));
 }
 
-test('Normal form value equality', () => {
+test('evaluate values', () => {
   expect(evaluate(jsonsexprToSexpr(1))).toEqual(ok(jsonsexprToSexpr(1)));
   expect(evaluate(jsonsexprToSexpr(true))).toEqual(ok(jsonsexprToSexpr(true)));
-  expect(evaluate(jsonsexprToSexpr([]))).toEqual(ok(jsonsexprToSexpr([])));
 });
 
 describe('quote special form', () => {

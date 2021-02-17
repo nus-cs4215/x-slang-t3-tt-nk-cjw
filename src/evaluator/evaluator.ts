@@ -1,10 +1,17 @@
 import { Result, err, ok } from '../utils';
-import { SExpr, is_atom, is_value, is_list } from '../sexpr';
+import { SListStruct, SExpr } from '../sexpr';
+import { is_atom, is_value, is_list } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { equals } from '../sexpr';
 import { jsonsexprToSexpr } from '../sexpr';
 
-type EvaluateResult = Result<SExpr, void>;
+type Closure = void;
+
+type EvaluateValue = Closure;
+
+export type SEvalResult = SListStruct<EvaluateValue>;
+
+type EvaluateResult = Result<SEvalResult, void>;
 
 type SpecialFormKeyword = 'quote';
 type SpecialFormType = 'quote';
