@@ -4,16 +4,12 @@ import { val, car, cdr } from '../sexpr';
 import { is_atom, is_list } from '../sexpr';
 import { equals } from '../sexpr';
 import { jsonRead } from '../sexpr';
-import { EvalResult } from './types';
-import { Environment } from './environment';
+import { EvalResult, Evaluate } from './types';
 
 type SpecialFormKeyword = 'quote';
 type SpecialFormType = 'quote';
 
-export type SpecialFormEvaluator = (
-  matches: FormMatches,
-  evaluate: (program: SExpr, env: Environment | undefined) => EvalResult
-) => EvalResult;
+export type SpecialFormEvaluator = (matches: FormMatches, evaluate: Evaluate) => EvalResult;
 
 interface Form {
   form_type: SpecialFormType;

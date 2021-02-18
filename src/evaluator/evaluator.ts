@@ -1,9 +1,8 @@
 import { err, ok, isBadResult } from '../utils';
-import { SExpr } from '../sexpr';
 import { satom, snil, slist } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_atom, is_value, is_list, is_nil } from '../sexpr';
-import { EvalValue, EvalResult } from './types';
+import { EvalValue, EvalResult, Evaluate } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
 import { primitives } from './primitives';
@@ -49,7 +48,7 @@ function apply(fun: EvalValue, ...args: EvalValue[]): EvalResult {
   return err();
 }
 
-export function evaluate(program: SExpr, env: Environment | undefined): EvalResult {
+export const evaluate: Evaluate = (program, env) => {
   // Normal form
   if (is_value(program)) {
     return ok(program);
@@ -103,6 +102,4 @@ export function evaluate(program: SExpr, env: Environment | undefined): EvalResu
     }
     return apply(fun, ...args);
   }
-
-  return err();
-}
+};
