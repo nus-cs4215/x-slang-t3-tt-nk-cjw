@@ -207,6 +207,12 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   }
 }
 
+const quote_type = {
+  "'": 'quote',
+  '`': 'quasiquote',
+  ',': 'unquote',
+};
+
 export function readOneDatum(tokens: Token[], i: number = 0): PartialReadResult {
   const firsttok = tokens[i];
 
@@ -232,9 +238,13 @@ export function readOneDatum(tokens: Token[], i: number = 0): PartialReadResult 
   }
 
   // Parse quoted
-  if (firsttok.type === 'Quote') {
+  if (firsttok.type === 'QuoteLike') {
     return then(readOneDatum(tokens, i + 1), ([e, loc, i]) =>
-      ok([slist([ssymbol('quote'), e], snil()), merge_loc(firsttok.loc, loc), i])
+      ok([
+        slist([ssymbol(quote_type[firsttok.contents]), e], snil()),
+        merge_loc(firsttok.loc, loc),
+        i,
+      ])
     );
   }
 

@@ -81,10 +81,46 @@ describe('valid read tests', () => {
         "a",
       ]
     `);
+    expectReadAsJson('`a').toMatchInlineSnapshot(`
+      Array [
+        "quasiquote",
+        "a",
+      ]
+    `);
+    expectReadAsJson(',a').toMatchInlineSnapshot(`
+      Array [
+        "unquote",
+        "a",
+      ]
+    `);
     expectReadAsJson("'()").toMatchInlineSnapshot(`
       Array [
         "quote",
         Array [],
+      ]
+    `);
+    expectReadAsJson('`(+ ,(+ 1 2) ,(+ 3 4))').toMatchInlineSnapshot(`
+      Array [
+        "quasiquote",
+        Array [
+          "+",
+          Array [
+            "unquote",
+            Array [
+              "+",
+              1,
+              2,
+            ],
+          ],
+          Array [
+            "unquote",
+            Array [
+              "+",
+              3,
+              4,
+            ],
+          ],
+        ],
       ]
     `);
     expectReadAsJson("('abc)").toMatchInlineSnapshot(`
