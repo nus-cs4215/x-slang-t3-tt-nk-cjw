@@ -22,12 +22,12 @@ export function rpar(contents: string, loc: Location): RPar {
   return { type: 'RPar', contents, loc };
 }
 
-export interface Quote extends Base {
-  type: 'Quote';
+export interface QuoteLike extends Base {
+  type: 'QuoteLike';
 }
 
-export function quote(contents: string, loc: Location): Quote {
-  return { type: 'Quote', contents, loc };
+export function quote_like(contents: string, loc: Location): QuoteLike {
+  return { type: 'QuoteLike', contents, loc };
 }
 
 export interface Dot extends Base {
@@ -79,7 +79,7 @@ export function eof(loc: Location): EOF {
   return { type: 'EOF', contents: '', loc };
 }
 
-export type Token = LPar | RPar | Quote | Dot | SymbolToken | Num | Bool | Invalid | EOF;
+export type Token = LPar | RPar | QuoteLike | Dot | SymbolToken | Num | Bool | Invalid | EOF;
 
 export function par_match(lpar: LPar, rpar: RPar): boolean {
   return (
@@ -178,11 +178,13 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
         yield rpar(contents, { start, end });
         continue;
       }
-      case "'": {
+      case "'":
+      case '`':
+      case ',': {
         const contents = s[i];
         inc();
         const end = pos();
-        yield quote(contents, { start, end });
+        yield quote_like(contents, { start, end });
         continue;
       }
       case ';': {
