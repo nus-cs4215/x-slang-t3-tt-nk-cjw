@@ -1,6 +1,6 @@
 import { EvalValue } from './types';
 
-export type Bindings = Record<string, EvalValue>;
+export type Bindings = Record<string, EvalValue | undefined>;
 
 export interface Environment {
   bindings: Bindings;

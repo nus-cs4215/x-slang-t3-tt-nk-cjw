@@ -9,6 +9,8 @@ export type SpecialFormKeywordToType = {
   cond: 'cond';
   lambda: 'lambda';
   let: 'let';
+  'let*': 'let*';
+  letrec: 'letrec';
   quote: 'quote';
 };
 
@@ -52,6 +54,28 @@ export const special_forms: Record<SpecialFormKeywords, Form[]> = {
         json_plus(json_var('bodies'), []),
       ]),
       form: 'let',
+    },
+  ],
+  'let*': [
+    {
+      pattern: jsonRead([
+        'let*',
+        json_star([json_var('ids'), json_var('val_exprs')], []),
+        '.',
+        json_plus(json_var('bodies'), []),
+      ]),
+      form: 'let*',
+    },
+  ],
+  letrec: [
+    {
+      pattern: jsonRead([
+        'letrec',
+        json_star([json_var('ids'), json_var('val_exprs')], []),
+        '.',
+        json_plus(json_var('bodies'), []),
+      ]),
+      form: 'letrec',
     },
   ],
   quote: [

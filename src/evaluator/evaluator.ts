@@ -96,6 +96,53 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
+  'let*': ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+    for (let i = 0; i < val_exprs.length; i++) {
+      const bindings: Bindings = {};
+      const id = ids[i];
+      if (!is_symbol(id)) {
+        return err();
+      }
+      const val_r = evaluate(val_exprs[i], env);
+      if (isBadResult(val_r)) {
+        return val_r;
+      }
+      bindings[val(id)] = val_r.v;
+      env = make_env(bindings, env);
+    }
+    for (let i = 0; i < bodies.length - 1; i++) {
+      const r = evaluate(bodies[i], env);
+      if (isBadResult(r)) {
+        return r;
+      }
+    }
+    return evaluate(bodies[bodies.length - 1], env);
+  },
+  letrec: ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+    if (!ids.every(is_symbol)) {
+      return err();
+    }
+    const bindings: Bindings = {};
+    for (const id of ids) {
+      bindings[val(id)] = undefined;
+    }
+    env = make_env(bindings, env);
+    for (let i = 0; i < val_exprs.length; i++) {
+      const id = ids[i];
+      const val_r = evaluate(val_exprs[i], env);
+      if (isBadResult(val_r)) {
+        return val_r;
+      }
+      bindings[val(id)] = val_r.v;
+    }
+    for (let i = 0; i < bodies.length - 1; i++) {
+      const r = evaluate(bodies[i], env);
+      if (isBadResult(r)) {
+        return r;
+      }
+    }
+    return evaluate(bodies[bodies.length - 1], env);
+  },
   quote: ({ e }: { e: SExpr[] }): EvalResult => ok(e[0]),
 };
 
@@ -154,7 +201,8 @@ export const evaluate: Evaluate = (program, env) => {
       // Unbound variable error
       return err();
     }
-    return ok(binding_env.bindings[name]);
+    const v = binding_env.bindings[name];
+    return v !== undefined ? ok(v) : err();
   }
 
   if (is_nil(program)) {

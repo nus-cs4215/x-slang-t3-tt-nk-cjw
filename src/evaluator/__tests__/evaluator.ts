@@ -171,6 +171,187 @@ describe('basic let blocks', () => {
       test_env()
     ).toMatchInlineSnapshot(`0`);
   });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['let', [[1, ['+', 1, 2]]], 1], test_env());
+
+    expectJsonReadEvalError(['let', [['a', []]], 'a'], test_env());
+
+    expectJsonReadEvalError(['let', [['a', 1]], [], 'a'], test_env());
+
+    expectJsonReadEvalError(
+      [
+        'let',
+        [
+          ['a', 1],
+          ['b', 'a'],
+        ],
+        'b',
+      ],
+      test_env()
+    );
+  });
+});
+
+describe('basic let* blocks', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(
+      [
+        'let*',
+        [
+          ['a', 1],
+          ['b', 'a'],
+        ],
+        'b',
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      [
+        'let*',
+        [
+          ['a', 1],
+          ['b', 'a'],
+        ],
+        'a',
+        'b',
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(
+      [
+        'let*',
+        [
+          ['a', 1],
+          [2, 'a'],
+        ],
+        2,
+      ],
+      test_env()
+    );
+
+    expectJsonReadEvalError(
+      [
+        'let*',
+        [
+          ['a', 1],
+          ['b', []],
+        ],
+        'a',
+      ],
+      test_env()
+    );
+
+    expectJsonReadEvalError(
+      [
+        'let*',
+        [
+          ['a', 1],
+          ['b', 'a'],
+        ],
+        ['a'],
+        'a',
+      ],
+      test_env()
+    );
+  });
+});
+
+describe('basic letrec blocks', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(
+      [
+        'letrec',
+        [
+          ['a', ['lambda', [], 'b']],
+          ['b', 1],
+        ],
+        ['a'],
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      [
+        'letrec',
+        [
+          ['a', ['lambda', [], 'b']],
+          ['b', 1],
+        ],
+        ['a'],
+        'b',
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      [
+        'letrec',
+        [
+          ['a', 1],
+          ['b', 'a'],
+        ],
+        'a',
+        'b',
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(
+      [
+        'letrec',
+        [
+          ['a', 'b'],
+          ['b', 1],
+        ],
+        'a',
+      ],
+      test_env()
+    );
+
+    expectJsonReadEvalError(
+      [
+        'letrec',
+        [
+          ['a', ['lambda', [], 'b']],
+          ['b', 1],
+        ],
+        [],
+        ['a'],
+      ],
+      test_env()
+    );
+
+    expectJsonReadEvalError(
+      [
+        'letrec',
+        [
+          [1, ['lambda', [], 'b']],
+          ['b', 1],
+        ],
+        ['a'],
+      ],
+      test_env()
+    );
+
+    expectJsonReadEvalError(
+      [
+        'letrec',
+        [
+          ['a', ['lambda', [], 'b']],
+          ['b', [1]],
+        ],
+        ['a'],
+      ],
+      test_env()
+    );
+  });
 });
 
 describe('basic lambda expressions', () => {
