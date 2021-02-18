@@ -6,6 +6,7 @@ import { jsonRead } from '../sexpr';
 import { hasKey } from '../utils';
 
 export type SpecialFormKeywordToType = {
+  lambda: 'lambda';
   let: 'let';
   quote: 'quote';
 };
@@ -20,6 +21,17 @@ export interface Form {
 }
 
 export const special_forms: Record<SpecialFormKeywords, Form[]> = {
+  lambda: [
+    {
+      pattern: jsonRead([
+        'lambda',
+        json_star(json_var('params'), []),
+        '.',
+        json_plus(json_var('body'), []),
+      ]),
+      form: 'lambda',
+    },
+  ],
   let: [
     {
       pattern: jsonRead([

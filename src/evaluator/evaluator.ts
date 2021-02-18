@@ -1,8 +1,8 @@
 import { err, ok, isBadResult } from '../utils';
-import { SExpr, sbox, is_boxed } from '../sexpr';
+import { SExpr, sbox, SSymbol, is_boxed } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
-import { make_primitive } from './datatypes';
+import { EvalDataType, make_closure, make_primitive } from './datatypes';
 import { EvalValue, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
@@ -25,6 +25,23 @@ export type SpecialFormEvaluator = (
   env: Environment | undefined
 ) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
+  lambda: ({ params, body }: MatchObject, env: Environment | undefined): EvalResult => {
+    if (params === undefined) {
+      params = [];
+    }
+    if (!params.every(is_symbol)) {
+      return err();
+    }
+    return ok(
+      sbox(
+        make_closure(
+          env,
+          params.map((p: SSymbol) => val(p)),
+          body
+        )
+      )
+    );
+  },
   let: ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
     const bindings: Bindings = {};
     for (let i = 0; i < val_exprs.length; i++) {
@@ -53,7 +70,29 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
 const apply: Apply = (fun, ...args) => {
   if (is_boxed(fun)) {
     const v = fun.val;
-    return v.fun(...args);
+    if (v.variant === EvalDataType.Closure) {
+      // v was a Closure
+      const { env, params, body } = v;
+      if (args.length !== params.length) {
+        return err();
+      }
+      const bindings: Bindings = {};
+      for (let i = 0; i < params.length; i++) {
+        bindings[params[i]] = args[i];
+      }
+      const inner_env = make_env(bindings, env);
+      for (let i = 0; i < body.length - 1; i++) {
+        const r = evaluate(body[i], inner_env);
+        if (isBadResult(r)) {
+          return r;
+        }
+      }
+      return evaluate(body[body.length - 1], inner_env);
+    } else {
+      // if (v.variant === EvalDataType.Primitive) {
+      // v is a Primitive
+      return v.fun(...args);
+    }
   }
 
   if (!is_list(fun)) {
