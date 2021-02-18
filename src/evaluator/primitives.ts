@@ -1,5 +1,7 @@
 import { err, ok } from '../utils';
-import { is_number, snumber, val } from '../sexpr';
+import { snumber, val } from '../sexpr';
+import { is_number, is_list } from '../sexpr';
+import { car, cdr } from '../sexpr';
 import { EvalValue, EvalResult } from './types';
 
 export const primitives: Record<string, (...args: EvalValue[]) => EvalResult> = {
@@ -66,5 +68,26 @@ export const primitives: Record<string, (...args: EvalValue[]) => EvalResult> = 
       }
     }
     return ok(snumber(x));
+  },
+
+  car: (...args) => {
+    if (args.length !== 1) {
+      return err();
+    }
+    const [arg] = args;
+    if (!is_list(arg)) {
+      return err();
+    }
+    return ok(car(arg));
+  },
+  cdr: (...args) => {
+    if (args.length !== 1) {
+      return err();
+    }
+    const [arg] = args;
+    if (!is_list(arg)) {
+      return err();
+    }
+    return ok(cdr(arg));
   },
 };

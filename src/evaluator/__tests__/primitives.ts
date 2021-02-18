@@ -10,7 +10,7 @@ function expectJsonReadEvalError(j: JsonSExpr, env: Environment | undefined) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
-describe('primitive function calls', () => {
+describe('arithmetic primitives', () => {
   test('valid +', () => {
     expectJsonReadEvalPrint(['+'], the_global_environment).toMatchInlineSnapshot(`0`);
     expectJsonReadEvalPrint(['+', 1], the_global_environment).toMatchInlineSnapshot(`1`);
@@ -123,5 +123,53 @@ describe('primitive function calls', () => {
     expectJsonReadEvalError(['/', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
       `undefined`
     );
+  });
+});
+
+describe('list accessor primitives', () => {
+  test('valid car', () => {
+    expectJsonReadEvalPrint(
+      ['car', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`"a"`);
+  });
+
+  test('invalid car', () => {
+    expectJsonReadEvalError(['car', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['car', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['car', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['car', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['car'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['car', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid cdr', () => {
+    expectJsonReadEvalPrint(
+      ['cdr', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`Array []`);
+  });
+
+  test('invalid cdr', () => {
+    expectJsonReadEvalError(['cdr', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['cdr', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['cdr', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['cdr', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['cdr'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['cdr', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
   });
 });
