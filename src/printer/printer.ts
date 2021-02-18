@@ -10,7 +10,7 @@ export function print(e: SExpr): string {
       return val(e).toString();
     case STypes.Boolean:
       return val(e) ? '#t' : '#f';
-    case STypes.List:
+    case STypes.List: {
       const output: string[] = ['('];
 
       // handle first element
@@ -29,6 +29,7 @@ export function print(e: SExpr): string {
       output.push(')');
 
       return ''.concat(...output);
+    }
     default:
       return '';
   }

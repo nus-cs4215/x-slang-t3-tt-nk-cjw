@@ -128,7 +128,7 @@ export const is_boxed = <T>(e: SListStruct<T>): e is T extends never ? never : S
 export function equals<E2 extends SExpr>(e1: SExpr, e2: E2): e1 is E2;
 export function equals<E1 extends SExpr>(e1: E1, e2: SExpr): e2 is E1;
 export function equals(e1: SExpr, e2: SExpr): boolean {
-  while (true) {
+  for (;;) {
     if (
       (e1._type === STypes.Atom || e1._type === STypes.Number || e1._type === STypes.Boolean) &&
       (e2._type === STypes.Atom || e2._type === STypes.Number || e2._type === STypes.Boolean)

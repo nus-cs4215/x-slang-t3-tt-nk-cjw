@@ -41,7 +41,7 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   const data3: SExpr[] = [];
 
   // Stage 1, no . seen yet
-  while (true) {
+  for (;;) {
     const curtok = tokens[i];
 
     // Ending at stage 1, no . in this list
@@ -82,9 +82,8 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
     const res = readOneDatum(tokens, i);
     if (isGoodResult(res)) {
       let datum: SExpr;
-      let _loc: Location | undefined = undefined;
-      _loc; // unused
-      [datum, _loc, i] = res.v;
+      let _: Location;
+      [datum, _, i] = res.v;
       data1.push(datum);
     } else {
       return res;
@@ -92,7 +91,7 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   }
 
   // Stage 2, one . seen
-  while (true) {
+  for (;;) {
     const curtok = tokens[i];
 
     // Ending at stage 2, one . in this list
@@ -153,9 +152,8 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
     const res = readOneDatum(tokens, i);
     if (isGoodResult(res)) {
       let datum: SExpr;
-      let _loc: Location | undefined = undefined;
-      _loc; // unused
-      [datum, _loc, i] = res.v;
+      let _: Location;
+      [datum, _, i] = res.v;
       data2.push(datum);
     } else {
       return res;
@@ -163,7 +161,7 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   }
 
   // Stage 3, two . seen
-  while (true) {
+  for (;;) {
     const curtok = tokens[i];
 
     // Ending at stage 3, two . in this list
@@ -200,9 +198,8 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
     const res = readOneDatum(tokens, i);
     if (isGoodResult(res)) {
       let datum: SExpr;
-      let _loc: Location | undefined = undefined;
-      _loc; // unused
-      [datum, _loc, i] = res.v;
+      let _: Location;
+      [datum, _, i] = res.v;
       data3.push(datum);
     } else {
       return res;

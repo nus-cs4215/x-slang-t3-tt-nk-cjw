@@ -3,8 +3,7 @@ export function formatTable(t: string[][]): string {
     return '';
   }
 
-  const widths = t[0].map((c, i) => {
-    c; // unused
+  const widths = t[0].map((_, i) => {
     return Math.max(...t.map((r) => r[i].length));
   });
 
