@@ -93,4 +93,46 @@ describe('basic function calls', () => {
       the_global_environment
     ).toMatchInlineSnapshot(`25`);
   });
+
+  test("probably shouldn't be valid but uh...", () => {
+    expectJsonReadEvalPrint(
+      [['quote', ['primitive_function', '+']], 1, 2],
+      the_global_environment
+    ).toMatchInlineSnapshot(`3`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError([], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([1, 2], the_global_environment).toMatchInlineSnapshot(`undefined`);
+
+    expectJsonReadEvalError(['+', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['+', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([[]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([[1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+
+    // Fancy stuff that dig into internals...
+    expectJsonReadEvalError([['quote', []], 1, 2], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError([['quote', [1]], 1, 2], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(
+      [['quote', ['invalid function type']], 1, 2],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      [['quote', ['primitive_function']], 1, 2],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      [['quote', ['primitive_function', 1]], 1, 2],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      [['quote', ['primitive_function', 'nonexistent primitive function name']], 1, 2],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
 });

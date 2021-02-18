@@ -1,5 +1,5 @@
 import { ok } from '../utils';
-import { SExpr } from '../sexpr';
+import { SExpr, SList } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_atom, is_list } from '../sexpr';
 import { equals } from '../sexpr';
@@ -70,10 +70,7 @@ export type MatchResult =
   | { match_type: MatchType.InvalidSyntax; evaluator: undefined; matches: undefined }
   | { match_type: MatchType.NoMatch; evaluator: undefined; matches: undefined };
 
-export function match_special_form(program: SExpr): MatchResult {
-  if (!is_list(program)) {
-    return { match_type: MatchType.NoMatch, evaluator: undefined, matches: undefined };
-  }
+export function match_special_form(program: SList<never>): MatchResult {
   const head = car(program);
   if (!is_atom(head)) {
     return { match_type: MatchType.NoMatch, evaluator: undefined, matches: undefined };

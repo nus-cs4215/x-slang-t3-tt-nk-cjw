@@ -27,30 +27,11 @@ describe('arithmetic primitives', () => {
       `undefined`
     );
     expectJsonReadEvalError(['+', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['+', 0, true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
     expectJsonReadEvalError(['+', true], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['+', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
-  });
-
-  test('valid -', () => {
-    expectJsonReadEvalPrint(['-', 1], the_global_environment).toMatchInlineSnapshot(`1`);
-    expectJsonReadEvalPrint(['-', 1, 2], the_global_environment).toMatchInlineSnapshot(`-1`);
-    expectJsonReadEvalPrint(['-', 1, 2, 3], the_global_environment).toMatchInlineSnapshot(`-4`);
-    expectJsonReadEvalPrint(['-', 1, 2, 3, 4], the_global_environment).toMatchInlineSnapshot(`-8`);
-  });
-
-  test('invalid -', () => {
-    expectJsonReadEvalError(['-'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['-', '.', 1], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
-    expectJsonReadEvalError(['-', 1, '.', 2], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
-    expectJsonReadEvalError(['-', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['-', true], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['-', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
       `undefined`
     );
   });
@@ -71,6 +52,9 @@ describe('arithmetic primitives', () => {
       `undefined`
     );
     expectJsonReadEvalError(['*', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['*', 0, true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
     expectJsonReadEvalError(['*', true], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['*', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
       `undefined`
@@ -93,6 +77,9 @@ describe('arithmetic primitives', () => {
       `undefined`
     );
     expectJsonReadEvalError(['-', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['-', 0, true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
     expectJsonReadEvalError(['-', true], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['-', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
       `undefined`
@@ -119,6 +106,9 @@ describe('arithmetic primitives', () => {
       `undefined`
     );
     expectJsonReadEvalError(['/', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['/', 0, true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
     expectJsonReadEvalError(['/', true], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['/', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
       `undefined`
