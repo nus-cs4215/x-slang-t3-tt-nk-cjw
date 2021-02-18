@@ -1,62 +1,131 @@
-import { ok } from '../utils';
-import { SExpr, SList } from '../sexpr';
+import { SExpr, SList, SListStruct, JsonSExpr } from '../sexpr';
+import { is_boxed } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_atom, is_list } from '../sexpr';
 import { equals } from '../sexpr';
 import { jsonRead } from '../sexpr';
-import { EvalResult, Evaluate } from './types';
 
-type SpecialFormKeyword = 'quote';
-type SpecialFormType = 'quote';
-
-export type SpecialFormEvaluator = (matches: FormMatches, evaluate: Evaluate) => EvalResult;
-
-interface Form {
-  form_type: SpecialFormType;
-  pattern: SExpr;
-  variables: Set<string>; // Names of the atoms in the pattern to match against
-  evaluator: SpecialFormEvaluator;
+export enum PatternLeafType {
+  Variable,
+  ZeroOrMore,
+  OneOrMore,
 }
 
-type FormMatches = Record<string, SExpr>;
+export type PatternLeaf =
+  | { variant: PatternLeafType.Variable; name: string }
+  | { variant: PatternLeafType.ZeroOrMore; pattern: Pattern; tail_pattern: Pattern }
+  | { variant: PatternLeafType.OneOrMore; pattern: Pattern; tail_pattern: Pattern };
 
-const special_forms: Record<SpecialFormKeyword, [Form]> = {
+export type Pattern = SListStruct<PatternLeaf>;
+export type JsonPattern = JsonSExpr<PatternLeaf>;
+
+export function json_var(name: string): JsonPattern {
+  return { boxed: { variant: PatternLeafType.Variable, name } };
+}
+
+export function json_star(pattern: JsonPattern, tail_pattern: JsonPattern): JsonPattern {
+  return {
+    boxed: {
+      variant: PatternLeafType.ZeroOrMore,
+      pattern: jsonRead(pattern),
+      tail_pattern: jsonRead(tail_pattern),
+    },
+  };
+}
+
+export function json_plus(pattern: JsonPattern, tail_pattern: JsonPattern): JsonPattern {
+  return {
+    boxed: {
+      variant: PatternLeafType.OneOrMore,
+      pattern: jsonRead(pattern),
+      tail_pattern: jsonRead(tail_pattern),
+    },
+  };
+}
+
+export type SpecialForms = 'let' | 'quote';
+
+export interface Form {
+  pattern: Pattern;
+  form: SpecialForms;
+}
+
+export type FormMatches = Record<string, SExpr[]>;
+
+export const special_forms: Record<string, Form[]> = {
+  let: [
+    {
+      pattern: jsonRead([
+        'let',
+        json_star([json_var('id'), json_var('val-expr')], []),
+        '.',
+        json_plus(json_var('body'), []),
+      ]),
+      form: 'let',
+    },
+  ],
   quote: [
     {
-      form_type: 'quote',
-      pattern: jsonRead(['quote', 'e']),
-      variables: new Set(['e']),
-      evaluator: ({ e }: { e: SExpr }) => ok(e),
+      pattern: jsonRead(['quote', json_var('e')]),
+      form: 'quote',
     },
   ],
 };
 
-function match(
-  program: SExpr,
-  pattern: SExpr,
-  variables: Set<string>,
-  matches: FormMatches
-): boolean {
-  if (is_atom(pattern) && variables.has(val(pattern))) {
-    // We matched a variable in the form
-    matches[val(pattern)] = program;
-    return true;
+function add_match(matches: FormMatches, varname: string, match: SExpr) {
+  if (!(varname in matches)) {
+    matches[varname] = [];
+  }
+  matches[varname].push(match);
+}
+
+export function match(program: SExpr, pattern: Pattern, matches: FormMatches): boolean {
+  if (is_boxed(pattern)) {
+    // handle pattern leaf
+    const pattern_leaf = pattern.val;
+    if (pattern_leaf.variant === PatternLeafType.Variable) {
+      // match variable
+      add_match(matches, pattern_leaf.name, program);
+      return true;
+    } else if (pattern_leaf.variant === PatternLeafType.ZeroOrMore) {
+      // match inner pattern zero or more times, then the tail
+      let p = program;
+      while (is_list(p) && match(car(p), pattern_leaf.pattern, matches)) {
+        p = cdr(p);
+      }
+      // p no longer matches with the pattern, try to match with tail.
+      return match(p, pattern_leaf.tail_pattern, matches);
+    } else {
+      // if (pattern_leaf.variant === PatternLeafType.OneOrMore) {
+      // match inner pattern one or more times, then the tail
+      let p = program;
+      if (!(is_list(p) && match(car(p), pattern_leaf.pattern, matches))) {
+        return false;
+      }
+      p = cdr(p);
+      while (is_list(p) && match(car(p), pattern_leaf.pattern, matches)) {
+        p = cdr(p);
+      }
+      // p no longer matches with the pattern, try to match with tail.
+      return match(p, pattern_leaf.tail_pattern, matches);
+    }
   }
 
-  // We need to structurally match program against the pattern
+  // not a pattern leaf, so it's just your regular ol sexpr stuff.
+  // we need to structurally match program against the pattern
+
+  // if it's not a list, no recursion is needed, so we delegate to equals
   if (!is_list(pattern)) {
     return equals(program, pattern);
   }
 
-  // pattern is a list, recurse on both sides
+  // pattern is list, recurse on both sides
+
+  // if program isn't a list in the first place we definitely don't match
   if (!is_list(program)) {
     return false;
   }
-
-  return (
-    match(car(program), car(pattern), variables, matches) &&
-    match(cdr(program), cdr(pattern), variables, matches)
-  );
+  return match(car(program), car(pattern), matches) && match(cdr(program), cdr(pattern), matches);
 }
 
 export enum MatchType {
@@ -66,27 +135,29 @@ export enum MatchType {
 }
 
 export type MatchResult =
-  | { match_type: MatchType.Match; evaluator: SpecialFormEvaluator; matches: FormMatches }
-  | { match_type: MatchType.InvalidSyntax; evaluator: undefined; matches: undefined }
-  | { match_type: MatchType.NoMatch; evaluator: undefined; matches: undefined };
+  | { match_type: MatchType.Match; form: SpecialForms; matches: FormMatches }
+  | { match_type: MatchType.InvalidSyntax; form: undefined; matches: undefined }
+  | { match_type: MatchType.NoMatch; form: undefined; matches: undefined };
 
 export function match_special_form(program: SList<never>): MatchResult {
   const head = car(program);
   if (!is_atom(head)) {
-    return { match_type: MatchType.NoMatch, evaluator: undefined, matches: undefined };
+    return { match_type: MatchType.NoMatch, form: undefined, matches: undefined };
   }
   const keyword = val(head);
 
-  if (!(keyword in special_forms)) {
-    return { match_type: MatchType.NoMatch, evaluator: undefined, matches: undefined };
+  const forms = special_forms[keyword];
+
+  if (forms === undefined) {
+    return { match_type: MatchType.NoMatch, form: undefined, matches: undefined };
   }
 
-  for (const form of special_forms[keyword]) {
+  for (const form of forms) {
     const matches: FormMatches = {};
-    if (match(program, form.pattern, form.variables, matches)) {
-      return { match_type: MatchType.Match, evaluator: form.evaluator, matches };
+    if (match(program, form.pattern, matches)) {
+      return { match_type: MatchType.Match, form: form.form, matches };
     }
   }
 
-  return { match_type: MatchType.InvalidSyntax, evaluator: undefined, matches: undefined };
+  return { match_type: MatchType.InvalidSyntax, form: undefined, matches: undefined };
 }

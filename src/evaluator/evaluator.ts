@@ -1,13 +1,13 @@
 import { err, ok, isBadResult } from '../utils';
-import { satom, snil, slist } from '../sexpr';
+import { satom, snil, slist, SExpr } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_atom, is_value, is_list, is_nil } from '../sexpr';
-import { EvalValue, EvalResult, Evaluate } from './types';
+import { EvalValue, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
 import { primitives } from './primitives';
 
-import { match_special_form, MatchType } from './special-form';
+import { match_special_form, MatchType, SpecialForms, FormMatches } from './special-form';
 
 const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, _]) => {
   obj[name] = slist([satom('primitive_function'), satom(name)], snil());
@@ -18,7 +18,13 @@ export { Environment, make_env, make_env_list };
 
 export const the_global_environment: Environment = make_env_list(primitives_bindings);
 
-function apply(fun: EvalValue, ...args: EvalValue[]): EvalResult {
+export type SpecialFormEvaluator = (matches: FormMatches) => EvalResult;
+const special_form_evaluators: Record<SpecialForms, SpecialFormEvaluator> = {
+  let: () => err(),
+  quote: ({ e }: { e: SExpr[] }): EvalResult => ok(e[0]),
+};
+
+const apply: Apply = (fun, ...args) => {
   if (!is_list(fun)) {
     return err();
   }
@@ -46,7 +52,7 @@ function apply(fun: EvalValue, ...args: EvalValue[]): EvalResult {
   }
   // unsupported function type
   return err();
-}
+};
 
 export const evaluate: Evaluate = (program, env) => {
   // Normal form
@@ -74,7 +80,7 @@ export const evaluate: Evaluate = (program, env) => {
 
   if (match_result.match_type === MatchType.Match) {
     // It matched a special form
-    return match_result.evaluator(match_result.matches, evaluate);
+    return special_form_evaluators[match_result.form](match_result.matches);
   } else if (match_result.match_type === MatchType.InvalidSyntax) {
     // Matched the keyword but the rest died
     return err();

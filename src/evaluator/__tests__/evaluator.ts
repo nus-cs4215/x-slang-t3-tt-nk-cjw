@@ -3,11 +3,11 @@ import { snumber, sboolean } from '../../sexpr';
 import { Environment, evaluate, make_env_list, the_global_environment } from '../evaluator';
 import { ok, getOk, getErr } from '../../utils';
 
-function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment | undefined) {
+function expectJsonReadEvalPrint(j: JsonSExpr<never>, env: Environment | undefined) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
 }
 
-function expectJsonReadEvalError(j: JsonSExpr, env: Environment | undefined) {
+function expectJsonReadEvalError(j: JsonSExpr<never>, env: Environment | undefined) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
