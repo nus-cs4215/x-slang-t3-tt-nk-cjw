@@ -240,3 +240,42 @@ describe('basic lambda expressions', () => {
     expectJsonReadEvalError([['lambda', ['f'], ['f', 1], 'f'], 1], test_env());
   });
 });
+
+describe('basic cond expressions', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['cond', [true, 1]], test_env()).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(['cond', [true, 1], [true, 2]], test_env()).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(['cond', [false, 1], [true, 2]], test_env()).toMatchInlineSnapshot(`2`);
+
+    expectJsonReadEvalPrint(['cond', [true, 1, 2], [true, 3]], test_env()).toMatchInlineSnapshot(
+      `2`
+    );
+
+    expectJsonReadEvalPrint(['cond', [false], [true], [true, 1]], test_env()).toMatchInlineSnapshot(
+      `true`
+    );
+
+    expectJsonReadEvalPrint(
+      ['cond', [false], [false], [true, 1]],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['cond', [[], 1]], test_env()).toMatchInlineSnapshot(`undefined`);
+
+    expectJsonReadEvalError(['cond', [true, '.', 1]], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+
+    expectJsonReadEvalError(['cond', [true, []]], test_env()).toMatchInlineSnapshot(`undefined`);
+
+    expectJsonReadEvalError(['cond', [true, [], 1]], test_env()).toMatchInlineSnapshot(`undefined`);
+
+    expectJsonReadEvalError(['cond'], test_env()).toMatchInlineSnapshot(`undefined`);
+
+    expectJsonReadEvalError(['cond', [false]], test_env()).toMatchInlineSnapshot(`undefined`);
+  });
+});

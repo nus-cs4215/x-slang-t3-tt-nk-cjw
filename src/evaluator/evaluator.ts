@@ -1,5 +1,5 @@
 import { err, ok, isBadResult } from '../utils';
-import { SExpr, sbox, SSymbol, is_boxed } from '../sexpr';
+import { SExpr, sbox, SSymbol, is_boxed, is_boolean } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalDataType, make_closure, make_primitive } from './datatypes';
@@ -25,6 +25,38 @@ export type SpecialFormEvaluator = (
   env: Environment | undefined
 ) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
+  cond: ({ test_exprs, then_bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+    for (let i = 0; i < test_exprs.length; i++) {
+      const r: EvalResult = evaluate(test_exprs[i], env);
+      if (isBadResult(r)) {
+        return r;
+      }
+      const v = r.v;
+      if (is_boolean(v) && val(v) === false) {
+        continue;
+      }
+      // Fulfilled the condition
+      let t = then_bodies[i];
+      if (is_nil(t)) {
+        // No body
+        return r;
+      }
+
+      let r2;
+      while (is_list(t) && !is_nil(cdr(t))) {
+        r2 = evaluate(car(t), env);
+        if (isBadResult(r2)) {
+          return r2;
+        }
+        t = cdr(t);
+      }
+      if (!is_list(t)) {
+        return err();
+      }
+      return evaluate(car(t), env);
+    }
+    return err();
+  },
   lambda: ({ params, body }: MatchObject, env: Environment | undefined): EvalResult => {
     if (params === undefined) {
       params = [];
