@@ -13,7 +13,6 @@ test('exports', () => {
       "val",
       "car",
       "cdr",
-      "sconslist_iterator",
       "is_atom",
       "is_number",
       "is_boolean",
