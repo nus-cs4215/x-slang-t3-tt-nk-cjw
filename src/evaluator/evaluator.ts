@@ -1,145 +1,23 @@
-import { Result, err, ok, isBadResult } from '../utils';
-import { SListStruct, SExpr } from '../sexpr';
-import { is_atom, is_number, is_value, is_list, is_nil } from '../sexpr';
-import { satom, snumber, snil, slist } from '../sexpr';
+import { err, ok, isBadResult } from '../utils';
+import { SExpr } from '../sexpr';
+import { satom, snil, slist } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
-import { equals } from '../sexpr';
-import { jsonsexprToSexpr } from '../sexpr';
+import { is_atom, is_value, is_list, is_nil } from '../sexpr';
+import { EvalValue, EvalResult } from './types';
+import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
-type Closure = void;
+import { primitives } from './primitives';
 
-export type EvalValue = SListStruct<Closure>;
+import { match_special_form, MatchType } from './special-form';
 
-type EvalResult = Result<EvalValue, void>;
+const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, _]) => {
+  obj[name] = slist([satom('primitive_function'), satom(name)], snil());
+  return obj;
+}, {});
 
-type SpecialFormKeyword = 'quote';
-type SpecialFormType = 'quote';
+export { Environment, make_env, make_env_list };
 
-interface Form {
-  form_type: SpecialFormType;
-  pattern: SExpr;
-  variables: Set<string>; // Names of the atoms in the pattern to match against
-}
-
-type FormMatches = Record<string, SExpr>;
-
-const special_forms: Record<SpecialFormKeyword, [Form]> = {
-  quote: [
-    {
-      form_type: 'quote',
-      pattern: jsonsexprToSexpr(['quote', 'e']),
-      variables: new Set(['e']),
-    },
-  ],
-};
-
-const special_forms_evaluators: Record<SpecialFormType, (matches: FormMatches) => EvalResult> = {
-  quote: ({ e }: { e: SExpr }) => ok(e),
-};
-
-function match(
-  program: SExpr,
-  pattern: SExpr,
-  variables: Set<string>,
-  matches: FormMatches
-): boolean {
-  if (is_atom(pattern) && variables.has(val(pattern))) {
-    // We matched a variable in the form
-    matches[val(pattern)] = program;
-    return true;
-  }
-
-  // We need to structurally match program against the pattern
-  if (!is_list(pattern)) {
-    return equals(program, pattern);
-  }
-
-  // pattern is a list, recurse on both sides
-  if (!is_list(program)) {
-    return false;
-  }
-
-  return (
-    match(car(program), car(pattern), variables, matches) &&
-    match(cdr(program), cdr(pattern), variables, matches)
-  );
-}
-
-enum MatchErr {
-  InvalidSyntax,
-  NoMatch,
-}
-
-function match_special_form(program: SExpr): [SpecialFormType, FormMatches] | MatchErr {
-  if (!is_list(program)) {
-    return MatchErr.NoMatch;
-  }
-  const head = car(program);
-  if (!is_atom(head)) {
-    return MatchErr.NoMatch;
-  }
-  const keyword = val(head);
-
-  if (!(keyword in special_forms)) {
-    return MatchErr.NoMatch;
-  }
-
-  for (const form of special_forms[keyword]) {
-    const matches: FormMatches = {};
-    if (match(program, form.pattern, form.variables, matches)) {
-      return [form.form_type as SpecialFormType, matches];
-    }
-  }
-
-  return MatchErr.InvalidSyntax;
-}
-
-export interface Environment {
-  bindings: Record<string, EvalValue>;
-  parent: Environment | undefined;
-}
-
-export function make_env(
-  bindings: Record<string, EvalValue>,
-  parent: Environment | undefined
-): Environment {
-  return { bindings, parent };
-}
-
-export function make_env_list(...bindings: Record<string, EvalValue>[]): Environment | undefined {
-  return bindings.reduceRight((env, bindings) => make_env(bindings, env), undefined);
-}
-
-function find_env(name: string, env_: Environment | undefined): Environment | undefined {
-  let env: Environment | undefined;
-  for (env = env_; env !== undefined; env = env.parent) {
-    if (name in env.bindings) {
-      break;
-    }
-  }
-  return env;
-}
-
-const primitives: Record<string, (...args: EvalValue[]) => EvalResult> = {
-  '+': (...args) => {
-    let x = 0;
-    for (const arg of args) {
-      if (is_number(arg)) {
-        x += val(arg);
-      } else {
-        return err();
-      }
-    }
-    return ok(snumber(x));
-  },
-};
-
-export const the_global_environment: Environment = make_env(
-  {
-    '+': slist([satom('primitive_function'), satom('+')], snil()),
-  },
-  undefined
-);
+export const the_global_environment: Environment = make_env_list(primitives_bindings);
 
 function apply(fun: EvalValue, ...args: EvalValue[]): EvalResult {
   if (!is_list(fun)) {
@@ -195,7 +73,14 @@ export function evaluate(program: SExpr, env: Environment | undefined): EvalResu
   // Special forms
   const match_result = match_special_form(program);
 
-  if (match_result === MatchErr.NoMatch) {
+  if (match_result.match_type === MatchType.Match) {
+    // It matched a special form
+    return match_result.evaluator(match_result.matches, evaluate);
+  } else if (match_result.match_type === MatchType.InvalidSyntax) {
+    // Matched the keyword but the rest died
+    return err();
+  } else {
+    // if (match_result.match_type === MatchType.NoMatch)
     // It's a function call or variable
     const fun_r = evaluate(car(program), env);
     if (isBadResult(fun_r)) {
@@ -217,13 +102,6 @@ export function evaluate(program: SExpr, env: Environment | undefined): EvalResu
       return err();
     }
     return apply(fun, ...args);
-  } else if (match_result === MatchErr.InvalidSyntax) {
-    // Matched the keyword but the rest died
-    return err();
-  } else {
-    // It matched a special form
-    const [form_type, matches] = match_result;
-    return special_forms_evaluators[form_type](matches);
   }
 
   return err();
