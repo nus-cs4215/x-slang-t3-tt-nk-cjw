@@ -18,9 +18,33 @@ export { Environment, make_env, make_env_list };
 
 export const the_global_environment: Environment = make_env_list(primitives_bindings);
 
-export type SpecialFormEvaluator = (matches: FormMatches) => EvalResult;
+export type SpecialFormEvaluator = (
+  matches: FormMatches,
+  env: Environment | undefined
+) => EvalResult;
 const special_form_evaluators: Record<SpecialForms, SpecialFormEvaluator> = {
-  let: () => err(),
+  let: ({ ids, val_exprs, bodies }: FormMatches, env: Environment | undefined): EvalResult => {
+    const bindings: Bindings = {};
+    for (let i = 0; i < val_exprs.length; i++) {
+      const id = ids[i];
+      if (!is_atom(id)) {
+        return err();
+      }
+      const val_r = evaluate(val_exprs[i], env);
+      if (isBadResult(val_r)) {
+        return val_r;
+      }
+      bindings[val(id)] = val_r.v;
+    }
+    env = make_env(bindings, env);
+    for (let i = 0; i < bodies.length - 1; i++) {
+      const r = evaluate(bodies[i], env);
+      if (isBadResult(r)) {
+        return r;
+      }
+    }
+    return evaluate(bodies[bodies.length - 1], env);
+  },
   quote: ({ e }: { e: SExpr[] }): EvalResult => ok(e[0]),
 };
 
@@ -80,7 +104,7 @@ export const evaluate: Evaluate = (program, env) => {
 
   if (match_result.match_type === MatchType.Match) {
     // It matched a special form
-    return special_form_evaluators[match_result.form](match_result.matches);
+    return special_form_evaluators[match_result.form](match_result.matches, env);
   } else if (match_result.match_type === MatchType.InvalidSyntax) {
     // Matched the keyword but the rest died
     return err();

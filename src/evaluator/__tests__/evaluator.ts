@@ -136,3 +136,46 @@ describe('basic function calls', () => {
     ).toMatchInlineSnapshot(`undefined`);
   });
 });
+
+describe('basic let blocks', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(
+      ['let', [['a', ['+', 1, 2]]], 'a'],
+      the_global_environment
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      ['let', [['a', ['+', 1, 2]]], ['+', 'a', 1], 'a'],
+      the_global_environment
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      [
+        'let',
+        [
+          ['a', ['+', 1, 2]],
+          ['b', 3],
+        ],
+        ['+', 'a', 'b'],
+      ],
+      the_global_environment
+    ).toMatchInlineSnapshot(`6`);
+
+    expectJsonReadEvalPrint(
+      [
+        'let',
+        [
+          ['a', ['+', 1, 2]],
+          ['b', 3],
+        ],
+        'b',
+      ],
+      the_global_environment
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      ['let', [['a', ['+', 1, 2]]], ['let', [['a', 0]], 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`0`);
+  });
+});

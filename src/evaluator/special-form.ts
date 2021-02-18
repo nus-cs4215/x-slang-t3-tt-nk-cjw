@@ -57,9 +57,9 @@ export const special_forms: Record<string, Form[]> = {
     {
       pattern: jsonRead([
         'let',
-        json_star([json_var('id'), json_var('val-expr')], []),
+        json_star([json_var('ids'), json_var('val_exprs')], []),
         '.',
-        json_plus(json_var('body'), []),
+        json_plus(json_var('bodies'), []),
       ]),
       form: 'let',
     },
