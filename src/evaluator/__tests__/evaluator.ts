@@ -460,3 +460,35 @@ describe('basic cond expressions', () => {
     expectJsonReadEvalError(['cond', [false]], test_env()).toMatchInlineSnapshot(`undefined`);
   });
 });
+
+describe('basic begin expressions', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['begin', 1], test_env()).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(['begin', 1, 2], test_env()).toMatchInlineSnapshot(`2`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['begin', [1]], test_env());
+    expectJsonReadEvalError(['begin', [1], 2], test_env());
+    expectJsonReadEvalError(['begin', 1, [2]], test_env());
+    expectJsonReadEvalError(['begin', [1], 2, 3], test_env());
+    expectJsonReadEvalError(['begin', 1, [2], 3], test_env());
+    expectJsonReadEvalError(['begin', 1, 2, [3]], test_env());
+  });
+});
+
+describe('basic begin0 expressions', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['begin0', 1], test_env()).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(['begin0', 1, 2], test_env()).toMatchInlineSnapshot(`1`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['begin0', [1]], test_env());
+    expectJsonReadEvalError(['begin0', [1], 2], test_env());
+    expectJsonReadEvalError(['begin0', 1, [2]], test_env());
+    expectJsonReadEvalError(['begin0', [1], 2, 3], test_env());
+    expectJsonReadEvalError(['begin0', 1, [2], 3], test_env());
+    expectJsonReadEvalError(['begin0', 1, 2, [3]], test_env());
+  });
+});
