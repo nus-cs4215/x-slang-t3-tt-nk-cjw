@@ -172,3 +172,71 @@ describe('basic let blocks', () => {
     ).toMatchInlineSnapshot(`0`);
   });
 });
+
+describe('basic lambda expressions', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['lambda', ['x'], ['+', 1]], test_env());
+
+    expectJsonReadEvalPrint(['lambda', [], 1], test_env());
+
+    expectJsonReadEvalPrint([['lambda', [], 1]], test_env()).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      [['lambda', ['x'], ['+', 'x', 1]], 1],
+      test_env()
+    ).toMatchInlineSnapshot(`2`);
+
+    expectJsonReadEvalPrint(
+      [['lambda', ['x', 'y'], ['+', 'x', 'y']], 1, 2],
+      test_env()
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      [['lambda', ['x', 'y'], 'x', 'y', ['+', 'x', 'y']], 1, 2],
+      test_env()
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      [
+        ['lambda', ['plus-one'], ['plus-one', 0]],
+        ['lambda', ['x'], ['+', 'x', 1]],
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      [
+        ['lambda', ['plus-one', 'thrice'], [['thrice', 'plus-one'], 0]],
+        ['lambda', ['x'], ['+', 'x', 1]],
+        ['lambda', ['f'], ['lambda', ['x'], ['f', ['f', ['f', 'x']]]]],
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      [
+        ['lambda', ['plus-one', 'thrice'], [['thrice', ['thrice', 'plus-one']], 0]],
+        ['lambda', ['x'], ['+', 'x', 1]],
+        ['lambda', ['f'], ['lambda', ['x'], ['f', ['f', ['f', 'x']]]]],
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`9`);
+
+    expectJsonReadEvalPrint(
+      [
+        ['lambda', ['plus-one', 'thrice'], [[['thrice', 'thrice'], 'plus-one'], 0]],
+        ['lambda', ['x'], ['+', 'x', 1]],
+        ['lambda', ['f'], ['lambda', ['x'], ['f', ['f', ['f', 'x']]]]],
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`27`);
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['lambda', 'x', ['+', 1]], test_env());
+    expectJsonReadEvalError(['lambda', [1], ['+', 1]], test_env());
+    expectJsonReadEvalError([['lambda', ['x'], ['+', 'x', 'x']], 1, 2], test_env());
+    expectJsonReadEvalError([['lambda', ['f'], ['f', 1]], 1], test_env());
+    expectJsonReadEvalError([['lambda', ['f'], ['f', 1], 'f'], 1], test_env());
+  });
+});
