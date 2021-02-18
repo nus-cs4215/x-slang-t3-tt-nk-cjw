@@ -1,7 +1,7 @@
 import { SExpr } from '../sexpr';
 import { satom, snumber, sboolean, snil, scons, slist } from '../sexpr';
 import { equals } from '../sexpr';
-import { sexprToJsonsexpr, jsonsexprToSexpr } from '../jsonsexpr';
+import { jsonPrint, jsonRead } from '../jsonsexpr';
 
 describe('test equality', () => {
   const values: (() => SExpr)[] = [
@@ -197,7 +197,7 @@ describe('SExpr -> JsonSExpr -> SExpr identity', () => {
   const n = snil();
 
   test.each([[a], [b], [z], [s], [t], [f], [n]] as SExpr[][])('values', (e: SExpr) => {
-    expect({ e, test: equals(jsonsexprToSexpr(sexprToJsonsexpr(e)), e) }).toEqual({
+    expect({ e, test: equals(jsonRead(jsonPrint(e)), e) }).toEqual({
       e,
       test: true,
     });
@@ -211,7 +211,7 @@ describe('SExpr -> JsonSExpr -> SExpr identity', () => {
     [slist([a, b], slist([z, s], t))],
     [slist([a, slist([b, z, s], t)], f)],
   ] as SExpr[][])('lists', (e: SExpr) => {
-    expect({ e, test: equals(jsonsexprToSexpr(sexprToJsonsexpr(e)), e) }).toEqual({
+    expect({ e, test: equals(jsonRead(jsonPrint(e)), e) }).toEqual({
       e,
       test: true,
     });

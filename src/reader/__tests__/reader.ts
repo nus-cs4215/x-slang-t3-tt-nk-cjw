@@ -1,9 +1,9 @@
 import { getOk, getErr } from '../../utils';
-import { equals, sexprToJsonsexpr } from '../../sexpr';
+import { equals, jsonPrint } from '../../sexpr';
 import { read, formatReadErr } from '../reader';
 
 function expectReadAsJson(s: string) {
-  return expect(sexprToJsonsexpr(getOk(read(s))));
+  return expect(jsonPrint(getOk(read(s))));
 }
 
 describe('valid read tests', () => {

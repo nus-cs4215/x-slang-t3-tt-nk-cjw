@@ -3,7 +3,7 @@ import { SExpr } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_atom, is_list } from '../sexpr';
 import { equals } from '../sexpr';
-import { jsonsexprToSexpr } from '../sexpr';
+import { jsonRead } from '../sexpr';
 import { EvalResult } from './types';
 import { Environment } from './environment';
 
@@ -28,7 +28,7 @@ const special_forms: Record<SpecialFormKeyword, [Form]> = {
   quote: [
     {
       form_type: 'quote',
-      pattern: jsonsexprToSexpr(['quote', 'e']),
+      pattern: jsonRead(['quote', 'e']),
       variables: new Set(['e']),
       evaluator: ({ e }: { e: SExpr }) => ok(e),
     },

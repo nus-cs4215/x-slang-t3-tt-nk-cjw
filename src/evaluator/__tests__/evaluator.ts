@@ -1,14 +1,14 @@
-import { JsonSExpr, jsonsexprToSexpr, sexprToJsonsexpr } from '../../sexpr';
+import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
 import { snumber, sboolean } from '../../sexpr';
 import { Environment, evaluate, make_env_list, the_global_environment } from '../../evaluator';
 import { ok, getOk, getErr } from '../../utils';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment | undefined) {
-  return expect(sexprToJsonsexpr(getOk(evaluate(jsonsexprToSexpr(j), env))));
+  return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
 }
 
 function expectJsonReadEvalError(j: JsonSExpr, env: Environment | undefined) {
-  return expect(getErr(evaluate(jsonsexprToSexpr(j), env)));
+  return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
 test('evaluate values', () => {
