@@ -6,6 +6,7 @@ import { jsonRead } from '../sexpr';
 import { hasKey } from '../utils';
 
 export type SpecialFormKeywordToType = {
+  cond: 'cond';
   lambda: 'lambda';
   let: 'let';
   quote: 'quote';
@@ -21,6 +22,16 @@ export interface Form {
 }
 
 export const special_forms: Record<SpecialFormKeywords, Form[]> = {
+  cond: [
+    {
+      pattern: jsonRead([
+        'cond',
+        '.',
+        json_plus([json_var('test_exprs'), '.', json_var('then_bodies')], []),
+      ]),
+      form: 'cond',
+    },
+  ],
   lambda: [
     {
       pattern: jsonRead([
