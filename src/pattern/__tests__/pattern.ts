@@ -1,48 +1,36 @@
 import { JsonSExpr, jsonRead, SExpr, jsonPrint } from '../../sexpr';
-import { json_plus, json_star, json_var, match, PatternLeaf } from '../special-form';
+import { json_plus, json_star, json_var, match, PatternLeaf } from '../pattern';
 
 function expectJsonGoodPatternMatch(program: JsonSExpr<never>, pattern: JsonSExpr<PatternLeaf>) {
-  const matches = {};
-  const match_success = match(jsonRead(program), jsonRead(pattern), matches);
-  expect({ program, pattern, match_success }).toEqual({ program, pattern, match_success: true });
-  if (match_success) {
-    const json_matches = {};
-    Object.entries(matches).forEach(
-      ([k, v]: [string, SExpr[]]) => (json_matches[k] = v.map(jsonPrint))
-    );
-    return expect({ match_success, matches: json_matches });
-  } else {
-    return expect({ match_success, matches: undefined });
-  }
+  const matches = match(jsonRead(program), jsonRead(pattern));
+  expect({ program, pattern, matches }).not.toEqual({ program, pattern, undefined });
+  const json_matches = {};
+  Object.entries(matches!).forEach(
+    ([k, v]: [string, SExpr[]]) => (json_matches[k] = v.map(jsonPrint))
+  );
+  return expect(json_matches);
 }
 
 function expectJsonBadPatternMatch(program: JsonSExpr<never>, pattern: JsonSExpr<PatternLeaf>) {
-  const matches = {};
-  const match_success = match(jsonRead(program), jsonRead(pattern), matches);
-  expect({ program, pattern, match_success }).toEqual({ program, pattern, match_success: false });
+  const matches = match(jsonRead(program), jsonRead(pattern));
+  expect({ program, pattern, matches }).toEqual({ program, pattern, undefined });
 }
 
 describe('Basic pattern matching', () => {
   test('variables and lists, successful match', () => {
     expectJsonGoodPatternMatch(['quote', 'a'], ['quote', json_var('e')]).toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "e": Array [
-            "a",
-          ],
-        },
+        "e": Array [
+          "a",
+        ],
       }
     `);
 
     expectJsonGoodPatternMatch(['quote', 'b'], ['quote', json_var('e')]).toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "e": Array [
-            "b",
-          ],
-        },
+        "e": Array [
+          "b",
+        ],
       }
     `);
 
@@ -51,15 +39,12 @@ describe('Basic pattern matching', () => {
       ['double-quote', json_var('e1'), json_var('e2')]
     ).toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "e1": Array [
-            "a",
-          ],
-          "e2": Array [
-            "b",
-          ],
-        },
+        "e1": Array [
+          "a",
+        ],
+        "e2": Array [
+          "b",
+        ],
       }
     `);
   });
@@ -70,61 +55,46 @@ describe('Basic pattern matching', () => {
   });
 
   test('repeats, variables and lists, successful match', () => {
-    expectJsonGoodPatternMatch(['list'], ['list', '.', json_star(json_var('xs'), [])])
-      .toMatchInlineSnapshot(`
-      Object {
-        "match_success": true,
-        "matches": Object {},
-      }
-    `);
+    expectJsonGoodPatternMatch(
+      ['list'],
+      ['list', '.', json_star(json_var('xs'), [])]
+    ).toMatchInlineSnapshot(`Object {}`);
 
     expectJsonGoodPatternMatch(['list', 1], ['list', '.', json_star(json_var('xs'), [])])
       .toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "xs": Array [
-            1,
-          ],
-        },
+        "xs": Array [
+          1,
+        ],
       }
     `);
 
     expectJsonGoodPatternMatch(['list', 1, 2], ['list', '.', json_star(json_var('xs'), [])])
       .toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "xs": Array [
-            1,
-            2,
-          ],
-        },
+        "xs": Array [
+          1,
+          2,
+        ],
       }
     `);
 
     expectJsonGoodPatternMatch(['list', 1], ['list', '.', json_plus(json_var('xs'), [])])
       .toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "xs": Array [
-            1,
-          ],
-        },
+        "xs": Array [
+          1,
+        ],
       }
     `);
 
     expectJsonGoodPatternMatch(['list', 1, 2], ['list', '.', json_plus(json_var('xs'), [])])
       .toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "xs": Array [
-            1,
-            2,
-          ],
-        },
+        "xs": Array [
+          1,
+          2,
+        ],
       }
     `);
   });
@@ -137,15 +107,12 @@ describe('Basic pattern matching', () => {
     expectJsonGoodPatternMatch([['a', 'b']], json_plus([json_var('id'), json_var('val-expr')], []))
       .toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "id": Array [
-            "a",
-          ],
-          "val-expr": Array [
-            "b",
-          ],
-        },
+        "id": Array [
+          "a",
+        ],
+        "val-expr": Array [
+          "b",
+        ],
       }
     `);
 
@@ -157,17 +124,14 @@ describe('Basic pattern matching', () => {
       json_plus([json_var('id'), json_var('val-expr')], [])
     ).toMatchInlineSnapshot(`
       Object {
-        "match_success": true,
-        "matches": Object {
-          "id": Array [
-            "a",
-            "c",
-          ],
-          "val-expr": Array [
-            "b",
-            "d",
-          ],
-        },
+        "id": Array [
+          "a",
+          "c",
+        ],
+        "val-expr": Array [
+          "b",
+          "d",
+        ],
       }
     `);
   });

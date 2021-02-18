@@ -7,7 +7,8 @@ import { Bindings, Environment, make_env, make_env_list, find_env } from './envi
 
 import { primitives } from './primitives';
 
-import { match_special_form, MatchType, SpecialForms, FormMatches } from './special-form';
+import { match_special_form, MatchType, SpecialForms } from './special-form';
+import { MatchObject } from '../pattern';
 
 const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, _]) => {
   obj[name] = slist([satom('primitive_function'), satom(name)], snil());
@@ -19,11 +20,11 @@ export { Environment, make_env, make_env_list };
 export const the_global_environment: Environment = make_env_list(primitives_bindings);
 
 export type SpecialFormEvaluator = (
-  matches: FormMatches,
+  matches: MatchObject,
   env: Environment | undefined
 ) => EvalResult;
 const special_form_evaluators: Record<SpecialForms, SpecialFormEvaluator> = {
-  let: ({ ids, val_exprs, bodies }: FormMatches, env: Environment | undefined): EvalResult => {
+  let: ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
     const bindings: Bindings = {};
     for (let i = 0; i < val_exprs.length; i++) {
       const id = ids[i];
