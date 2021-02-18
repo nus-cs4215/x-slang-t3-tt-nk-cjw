@@ -5,7 +5,9 @@ import { is_symbol } from '../sexpr';
 import { jsonRead } from '../sexpr';
 import { hasKey } from '../utils';
 
-export type SpecialFormKeywordToType = {
+type SpecialFormKeywordToType = {
+  begin: 'begin';
+  begin0: 'begin0';
   cond: 'cond';
   lambda: 'lambda';
   let: 'let';
@@ -24,6 +26,18 @@ export interface Form {
 }
 
 export const special_forms: Record<SpecialFormKeywords, Form[]> = {
+  begin: [
+    {
+      pattern: jsonRead(['begin', '.', json_plus(json_var('body'), [])]),
+      form: 'begin',
+    },
+  ],
+  begin0: [
+    {
+      pattern: jsonRead(['begin0', '.', json_plus(json_var('body'), [])]),
+      form: 'begin0',
+    },
+  ],
   cond: [
     {
       pattern: jsonRead([

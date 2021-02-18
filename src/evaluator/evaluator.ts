@@ -25,6 +25,27 @@ export type SpecialFormEvaluator = (
   env: Environment | undefined
 ) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
+  begin: ({ body }: MatchObject, env: Environment | undefined): EvalResult => {
+    let r: EvalResult;
+    for (const expr of body) {
+      r = evaluate(expr, env);
+      if (isBadResult(r)) {
+        return r;
+      }
+    }
+    return r!;
+  },
+  begin0: ({ body }: MatchObject, env: Environment | undefined): EvalResult => {
+    const it = body[Symbol.iterator]();
+    const r = evaluate(it.next().value, env);
+    for (const expr of it) {
+      const rr = evaluate(expr, env);
+      if (isBadResult(rr)) {
+        return rr;
+      }
+    }
+    return r;
+  },
   cond: ({ test_exprs, then_bodies }: MatchObject, env: Environment | undefined): EvalResult => {
     for (let i = 0; i < test_exprs.length; i++) {
       const r: EvalResult = evaluate(test_exprs[i], env);
