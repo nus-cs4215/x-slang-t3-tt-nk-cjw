@@ -5,6 +5,7 @@
     "node": true
   },
   "extends": [
+    "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "prettier",
@@ -40,6 +41,12 @@
     "@typescript-eslint/restrict-plus-operands": "off",
     "@typescript-eslint/restrict-template-expressions": "off",
     "@typescript-eslint/unbound-method": "off",
-    "prefer-rest-params": "off"
+    "prefer-rest-params": "off",
+    "eqeqeq": "error",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "vars": "all", "args": "all", "varsIgnorePattern": "_$", "argsIgnorePattern": "_$", "ignoreRestSiblings": false }],
+    "no-unused-expressions": "off",
+    "@typescript-eslint/no-unused-expressions": "error",
+    "no-useless-return": "error"
   }
 }
