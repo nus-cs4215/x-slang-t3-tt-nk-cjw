@@ -1,6 +1,12 @@
 import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
 import { snumber, sboolean } from '../../sexpr';
-import { Environment, evaluate, make_env_list, the_global_environment } from '../evaluator';
+import {
+  Environment,
+  evaluate,
+  make_env,
+  make_env_list,
+  the_global_environment,
+} from '../evaluator';
 import { ok, getOk, getErr } from '../../utils';
 
 function expectJsonReadEvalPrint(j: JsonSExpr<never>, env: Environment | undefined) {
@@ -10,6 +16,8 @@ function expectJsonReadEvalPrint(j: JsonSExpr<never>, env: Environment | undefin
 function expectJsonReadEvalError(j: JsonSExpr<never>, env: Environment | undefined) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
+
+const test_env = () => make_env({}, the_global_environment);
 
 test('evaluate values', () => {
   expect(evaluate(snumber(1), undefined)).toEqual(ok(snumber(1)));
@@ -84,62 +92,54 @@ describe('quote special form', () => {
 
 describe('basic function calls', () => {
   test('valid', () => {
-    expectJsonReadEvalPrint(['+', 1, 2], the_global_environment).toMatchInlineSnapshot(`3`);
-    expectJsonReadEvalPrint(['+', 1, 2, ['+', 3, 4]], the_global_environment).toMatchInlineSnapshot(
-      `10`
+    expectJsonReadEvalPrint(['+', 1, 2], test_env()).toMatchInlineSnapshot(`3`);
+    expectJsonReadEvalPrint(['+', 1, 2, ['+', 3, 4]], test_env()).toMatchInlineSnapshot(`10`);
+    expectJsonReadEvalPrint(['*', ['+', 2, 3], ['+', 2, 3]], test_env()).toMatchInlineSnapshot(
+      `25`
     );
-    expectJsonReadEvalPrint(
-      ['*', ['+', 2, 3], ['+', 2, 3]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`25`);
   });
 
   test('invalid', () => {
-    expectJsonReadEvalError([], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError([1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError([1, 2], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([], test_env()).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([1], test_env()).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([1, 2], test_env()).toMatchInlineSnapshot(`undefined`);
 
-    expectJsonReadEvalError(['+', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['+', [1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError([[]], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError([[1]], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['+', []], test_env()).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['+', [1]], test_env()).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([[]], test_env()).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([[1]], test_env()).toMatchInlineSnapshot(`undefined`);
 
     // Fancy stuff that dig into internals...
-    expectJsonReadEvalError([['quote', []], 1, 2], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
-    expectJsonReadEvalError([['quote', [1]], 1, 2], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
+    expectJsonReadEvalError([['quote', []], 1, 2], test_env()).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError([['quote', [1]], 1, 2], test_env()).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(
       [['quote', ['invalid function type']], 1, 2],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(
       [['quote', ['primitive_function']], 1, 2],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(
       [['quote', ['primitive_function', 1]], 1, 2],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(
       [['quote', ['primitive_function', 'nonexistent primitive function name']], 1, 2],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`undefined`);
   });
 });
 
 describe('basic let blocks', () => {
   test('valid', () => {
-    expectJsonReadEvalPrint(
-      ['let', [['a', ['+', 1, 2]]], 'a'],
-      the_global_environment
-    ).toMatchInlineSnapshot(`3`);
+    expectJsonReadEvalPrint(['let', [['a', ['+', 1, 2]]], 'a'], test_env()).toMatchInlineSnapshot(
+      `3`
+    );
 
     expectJsonReadEvalPrint(
       ['let', [['a', ['+', 1, 2]]], ['+', 'a', 1], 'a'],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`3`);
 
     expectJsonReadEvalPrint(
@@ -151,7 +151,7 @@ describe('basic let blocks', () => {
         ],
         ['+', 'a', 'b'],
       ],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`6`);
 
     expectJsonReadEvalPrint(
@@ -163,12 +163,12 @@ describe('basic let blocks', () => {
         ],
         'b',
       ],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`3`);
 
     expectJsonReadEvalPrint(
       ['let', [['a', ['+', 1, 2]]], ['let', [['a', 0]], 'a']],
-      the_global_environment
+      test_env()
     ).toMatchInlineSnapshot(`0`);
   });
 });
