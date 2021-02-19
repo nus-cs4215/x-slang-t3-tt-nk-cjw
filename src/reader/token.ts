@@ -38,12 +38,12 @@ export function dot(contents: string, loc: Location): Dot {
   return { type: 'Dot', contents, loc };
 }
 
-export interface Atom extends Base {
-  type: 'Atom';
+export interface SymbolToken extends Base {
+  type: 'Symbol';
 }
 
-export function atom(contents: string, loc: Location): Atom {
-  return { type: 'Atom', contents, loc };
+export function symbol_token(contents: string, loc: Location): SymbolToken {
+  return { type: 'Symbol', contents, loc };
 }
 
 export interface Num extends Base {
@@ -79,7 +79,7 @@ export function eof(loc: Location): EOF {
   return { type: 'EOF', contents: '', loc };
 }
 
-export type Token = LPar | RPar | Quote | Dot | Atom | Num | Bool | Invalid | EOF;
+export type Token = LPar | RPar | Quote | Dot | SymbolToken | Num | Bool | Invalid | EOF;
 
 export function par_match(lpar: LPar, rpar: RPar): boolean {
   return (
@@ -109,8 +109,8 @@ function substring_to_token(s: string, loc: Location): Token {
     return num(s, loc);
   }
 
-  // I guess it's an atom, :P
-  return atom(s, loc);
+  // I guess it's a symbol, :P
+  return symbol_token(s, loc);
 }
 
 const ws_regex = /\s/;

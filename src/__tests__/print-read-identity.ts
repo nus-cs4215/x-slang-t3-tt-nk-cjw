@@ -1,13 +1,13 @@
 import { read } from '../reader';
 import { print } from '../printer';
 import { SExpr } from '../sexpr';
-import { satom, snumber, sboolean, snil, scons, slist } from '../sexpr';
+import { ssymbol, snumber, sboolean, snil, scons, slist } from '../sexpr';
 import { equals } from '../sexpr';
 import { getOk } from '../utils';
 
 describe('print -> read identity', () => {
-  const a = satom('a');
-  const b = satom('b');
+  const a = ssymbol('a');
+  const b = ssymbol('b');
   const z = snumber(0);
   const s = snumber(6);
   const t = sboolean(true);

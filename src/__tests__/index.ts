@@ -4,7 +4,7 @@ test('exports', () => {
   expect(Object.keys(index)).toMatchInlineSnapshot(`
     Array [
       "STypes",
-      "satom",
+      "ssymbol",
       "snumber",
       "sboolean",
       "snil",
@@ -14,7 +14,7 @@ test('exports', () => {
       "val",
       "car",
       "cdr",
-      "is_atom",
+      "is_symbol",
       "is_number",
       "is_boolean",
       "is_nil",

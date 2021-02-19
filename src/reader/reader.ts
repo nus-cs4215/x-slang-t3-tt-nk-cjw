@@ -1,5 +1,5 @@
 import { Result, isGoodResult, ok, err, then } from '../utils';
-import { SExpr, satom, snumber, sboolean, snil, scons, slist } from '../sexpr';
+import { SExpr, ssymbol, snumber, sboolean, snil, scons, slist } from '../sexpr';
 import * as Tok from './token';
 import { Token, tokenize, par_match } from './token';
 import { Location, merge_loc, format_loc, highlight_loc } from '../utils/location';
@@ -19,10 +19,10 @@ ${highlight_loc(err.loc, s, '  ')}
 `;
 }
 
-function token_to_sexpr(tok: Tok.Atom | Tok.Num | Tok.Bool): [SExpr, Location] {
+function token_to_sexpr(tok: Tok.SymbolToken | Tok.Num | Tok.Bool): [SExpr, Location] {
   switch (tok.type) {
-    case 'Atom': {
-      return [satom(tok.contents), tok.loc];
+    case 'Symbol': {
+      return [ssymbol(tok.contents), tok.loc];
     }
     case 'Num': {
       return [snumber(Number.parseFloat(tok.contents)), tok.loc];
@@ -234,7 +234,7 @@ export function readOneDatum(tokens: Token[], i: number = 0): PartialReadResult 
   // Parse quoted
   if (firsttok.type === 'Quote') {
     return then(readOneDatum(tokens, i + 1), ([e, loc, i]) =>
-      ok([slist([satom('quote'), e], snil()), merge_loc(firsttok.loc, loc), i])
+      ok([slist([ssymbol('quote'), e], snil()), merge_loc(firsttok.loc, loc), i])
     );
   }
 
