@@ -62,6 +62,14 @@ export function bool(contents: string, loc: Location): Bool {
   return { type: 'Bool', contents, loc };
 }
 
+export interface SExprComment extends Base {
+  type: 'SExprComment';
+}
+
+export function sexprcomment(contents: string, loc: Location): SExprComment {
+  return { type: 'SExprComment', contents, loc };
+}
+
 export interface Invalid extends Base {
   type: 'Invalid';
 }
@@ -79,7 +87,17 @@ export function eof(loc: Location): EOF {
   return { type: 'EOF', contents: '', loc };
 }
 
-export type Token = LPar | RPar | QuoteLike | Dot | SymbolToken | Num | Bool | Invalid | EOF;
+export type Token =
+  | LPar
+  | RPar
+  | QuoteLike
+  | Dot
+  | SymbolToken
+  | Num
+  | Bool
+  | SExprComment
+  | Invalid
+  | EOF;
 
 export function par_match(lpar: LPar, rpar: RPar): boolean {
   return (
@@ -93,15 +111,6 @@ function substring_to_token(s: string, loc: Location): Token {
   // Try to interpret as single dot
   if (s === '.') {
     return dot('.', loc);
-  }
-
-  // Try to interpret as boolean
-  if (s[0] === '#') {
-    if (s === '#t' || s === '#f') {
-      return bool(s, loc);
-    } else {
-      return invalid(s, loc);
-    }
   }
 
   // Try to interpret as number
@@ -197,6 +206,31 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
             return;
           }
         }
+        continue;
+      }
+      case '#': {
+        // special dispatch
+
+        const j = i;
+        // one character dispatches
+        inc();
+        inc();
+        const contents = s.slice(j, i);
+        const end = pos();
+        switch (contents[1]) {
+          case 't':
+          case 'f': {
+            yield bool(contents, { start, end });
+            continue;
+          }
+          case ';': {
+            yield sexprcomment(contents, { start, end });
+            continue;
+          }
+        }
+
+        // dispatch not supported, output invalid
+        yield invalid(contents, { start, end });
         continue;
       }
     }
