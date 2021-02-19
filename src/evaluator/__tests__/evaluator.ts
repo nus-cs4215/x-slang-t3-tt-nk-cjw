@@ -492,3 +492,83 @@ describe('basic begin0 expressions', () => {
     expectJsonReadEvalError(['begin0', 1, 2, [3]], test_env());
   });
 });
+
+describe('basic define constant', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['begin', ['define', 'a', 1]], test_env()).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(['begin', ['define', 'a', 1], 'a'], test_env()).toMatchInlineSnapshot(
+      `1`
+    );
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['begin', ['define', 'a']], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', 1]], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', 1, 1]], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', 'a', []]], test_env());
+
+    expectJsonReadEvalError(['begin', 'nonexistent', ['define', 'nonexistent', 1]], test_env());
+  });
+});
+
+describe('basic define function', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['begin', ['define', ['f'], 1]], test_env()).toHaveProperty('boxed');
+    expectJsonReadEvalPrint(['begin', ['define', ['f'], 1], 'f'], test_env()).toHaveProperty(
+      'boxed'
+    );
+
+    expectJsonReadEvalPrint(
+      ['begin', ['define', ['f'], 1], ['f']],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      ['begin', ['define', ['f'], 1, 2], ['f']],
+      test_env()
+    ).toMatchInlineSnapshot(`2`);
+
+    expectJsonReadEvalPrint(['begin', ['define', ['f', 'x'], 'x']], test_env()).toHaveProperty(
+      'boxed'
+    );
+
+    expectJsonReadEvalPrint(['begin', ['define', ['f', 'x'], 'x'], 'f'], test_env()).toHaveProperty(
+      'boxed'
+    );
+
+    expectJsonReadEvalPrint(
+      ['begin', ['define', ['f', 'x'], 'x'], ['f', 1]],
+      test_env()
+    ).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      ['begin', ['define', ['f', 'x', 'y'], ['+', 'x', 'y']], ['f', 1, 2]],
+      test_env()
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      ['begin', ['define', ['f', 'x'], ['define', 'x1', ['+', 'x', 1]], 'x1'], ['f', 1]],
+      test_env()
+    ).toMatchInlineSnapshot(`2`);
+
+    expectJsonReadEvalPrint(['begin', ['define', ['f'], []], 'f'], test_env()).toHaveProperty(
+      'boxed'
+    );
+  });
+
+  test('invalid', () => {
+    expectJsonReadEvalError(['begin', ['define', [], 1]], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', [1], 1]], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', ['f', 1], 1]], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', ['f']]], test_env());
+
+    expectJsonReadEvalError(['begin', ['define', ['f'], []], ['f']], test_env());
+  });
+});

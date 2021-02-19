@@ -25,6 +25,40 @@ export type SpecialFormEvaluator = (
   env: Environment | undefined
 ) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
+  define_const: ({ id, expr }: MatchObject, env: Environment | undefined): EvalResult => {
+    if (!is_symbol(id[0])) {
+      return err();
+    }
+    const r = evaluate(expr[0], env);
+    if (isBadResult(r)) {
+      return r;
+    }
+    env!.bindings[val(id[0])] = r.v;
+    return r;
+  },
+  define_func: (
+    { fun_name, params, body }: MatchObject,
+    env: Environment | undefined
+  ): EvalResult => {
+    if (!is_symbol(fun_name[0])) {
+      return err();
+    }
+    if (params === undefined) {
+      params = [];
+    }
+    if (!params.every(is_symbol)) {
+      return err();
+    }
+    const fun = sbox(
+      make_closure(
+        env,
+        params.map((p: SSymbol) => val(p)),
+        body
+      )
+    );
+    env!.bindings[val(fun_name[0])] = fun;
+    return ok(fun);
+  },
   begin: ({ body }: MatchObject, env: Environment | undefined): EvalResult => {
     let r: EvalResult;
     for (const expr of body) {
