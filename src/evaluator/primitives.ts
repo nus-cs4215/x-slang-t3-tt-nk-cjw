@@ -80,6 +80,7 @@ export const primitives: Record<string, (...args: EvalValue[]) => EvalResult> = 
     }
     return ok(car(arg));
   },
+
   cdr: (...args) => {
     if (args.length !== 1) {
       return err();

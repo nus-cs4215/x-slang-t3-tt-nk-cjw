@@ -94,13 +94,6 @@ describe('basic function calls', () => {
     ).toMatchInlineSnapshot(`25`);
   });
 
-  test("probably shouldn't be valid but uh...", () => {
-    expectJsonReadEvalPrint(
-      [['quote', ['primitive_function', '+']], 1, 2],
-      the_global_environment
-    ).toMatchInlineSnapshot(`3`);
-  });
-
   test('invalid', () => {
     expectJsonReadEvalError([], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError([1], the_global_environment).toMatchInlineSnapshot(`undefined`);
