@@ -3,7 +3,11 @@ import { val, car, cdr } from './sexpr';
 import { ssymbol, snumber, sboolean, snil, slist } from './sexpr';
 import { is_symbol, is_number, is_boolean, is_nil, is_list, is_boxed } from './sexpr';
 
-export type JsonSExpr<T> = JsonSExpr<T>[] | string | number | boolean | { boxed: T };
+type JsonBoxed<T> = T extends never ? never : { boxed: T };
+
+const jbox = <T>(boxed: T): JsonBoxed<T> => ({ boxed } as JsonBoxed<T>);
+
+export type JsonSExpr<T> = JsonSExpr<T>[] | string | number | boolean | JsonBoxed<T>;
 
 export function jsonPrint<T>(e: SListStruct<T>): JsonSExpr<T> {
   if (is_symbol(e) || is_number(e) || is_boolean(e)) {
@@ -11,7 +15,7 @@ export function jsonPrint<T>(e: SListStruct<T>): JsonSExpr<T> {
   } else if (is_nil(e)) {
     return [];
   } else if (is_boxed(e)) {
-    return { boxed: e.val };
+    return jbox(e.val);
   } else {
     // if (e._type === STypes.List) {
     const xs = [];
@@ -46,7 +50,7 @@ export function jsonRead<T>(j: JsonSExpr<T>): SListStruct<T> {
     }
   } else {
     // j is object, so it's the boxed type
-    return sbox(j.boxed) as any; // couldn't figure out how to typecheck this
+    return sbox(j.boxed);
   }
   return slist(j.map(jsonRead), snil());
 }

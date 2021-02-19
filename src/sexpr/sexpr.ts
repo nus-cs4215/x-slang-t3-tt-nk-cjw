@@ -46,20 +46,17 @@ interface SListPair<T> extends SListBase {
   y: SListStruct<T>;
 }
 
-export interface SBoxed<T> {
+interface SBoxedF<T> {
   _type: STypes.Boxed;
   val: T;
 }
 
+export type SBoxed<T> = T extends never ? never : SBoxedF<T>;
+
 export type SList<T> = SListPair<T>;
 export type SListStruct<T> = SExprBase<T> | SList<T>;
 
-export type SExprBase<T> =
-  | SSymbol
-  | SNumber
-  | SBoolean
-  | SNil
-  | (T extends never ? never : SBoxed<T>);
+export type SExprBase<T> = SSymbol | SNumber | SBoolean | SNil | SBoxed<T>;
 
 export type SExpr = SListStruct<never>;
 
@@ -88,7 +85,8 @@ export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruc
   return xs.reduceRight((p, x) => scons(x, p), tail);
 }
 
-export const sbox = <T>(val: T): SBoxed<T> => ({ _type: STypes.Boxed, val });
+export const sbox = <T>(val: T): SBoxed<T> =>
+  ({ _type: STypes.Boxed, val } as T extends never ? never : { _type: STypes.Boxed; val: T });
 
 /*************
  * ACCESSORS *
@@ -126,8 +124,7 @@ export const is_nil = <T>(e: SListStruct<T>): e is SNil => e._type === STypes.Ni
 export const is_value = <T>(e: SListStruct<T>): e is SNumber | SBoolean =>
   e._type === STypes.Number || e._type === STypes.Boolean;
 export const is_list = <T>(e: SListStruct<T>): e is SList<T> => e._type === STypes.List;
-export const is_boxed = <T>(e: SListStruct<T>): e is T extends never ? never : SBoxed<T> =>
-  e._type === STypes.Boxed;
+export const is_boxed = <T>(e: SListStruct<T>): e is SBoxed<T> => e._type === STypes.Boxed;
 
 /*************
  * UTILITIES *
