@@ -6,6 +6,7 @@ import { jsonRead } from '../sexpr';
 import { hasKey } from '../utils';
 
 type SpecialFormKeywordToType = {
+  define: 'define_const' | 'define_func';
   begin: 'begin';
   begin0: 'begin0';
   cond: 'cond';
@@ -26,6 +27,21 @@ export interface Form {
 }
 
 export const special_forms: Record<SpecialFormKeywords, Form[]> = {
+  define: [
+    {
+      pattern: jsonRead([
+        'define',
+        [json_var('fun_name'), '.', json_star(json_var('params'), [])],
+        '.',
+        json_plus(json_var('body'), []),
+      ]),
+      form: 'define_func',
+    },
+    {
+      pattern: jsonRead(['define', json_var('id'), json_var('expr')]),
+      form: 'define_const',
+    },
+  ],
   begin: [
     {
       pattern: jsonRead(['begin', '.', json_plus(json_var('body'), [])]),
