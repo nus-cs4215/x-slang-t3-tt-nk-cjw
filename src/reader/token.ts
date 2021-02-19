@@ -260,7 +260,4 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
     const end = pos();
     yield substring_to_token(contents, { start, end });
   }
-
-  const curpos = pos();
-  yield eof({ start: curpos, end: curpos });
 }
