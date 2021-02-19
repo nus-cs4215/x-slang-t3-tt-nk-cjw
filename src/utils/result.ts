@@ -48,6 +48,14 @@ export function then<T, U, Err>(r: Result<T, Err>, cb: (v: T) => Result<U, Err>)
   }
 }
 
+export function cases<T, Err, U>(r: Result<T, Err>, good: (v: T) => U, bad: (err: Err) => U): U {
+  if (isGoodResult(r)) {
+    return good(r.v);
+  } else {
+    return bad(r.err);
+  }
+}
+
 export type Result<T, Err> = GoodResult<T> | BadResult<Err>;
 
 export function ok<T>(v: T): GoodResult<T> {
