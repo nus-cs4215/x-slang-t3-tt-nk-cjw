@@ -172,6 +172,76 @@ describe('valid read tests', () => {
       ]
     `);
   });
+
+  test('basic line comments', () => {
+    expectReadAsJson(`
+      ; (
+      ( ; a
+      b
+      ; )
+      )
+    `).toMatchInlineSnapshot(`
+      Array [
+        "b",
+      ]
+    `);
+  });
+
+  test('basic s expression comments', () => {
+    expectReadAsJson('#; a b').toMatchInlineSnapshot(`"b"`);
+
+    expectReadAsJson('(#; a b c d)').toMatchInlineSnapshot(`
+      Array [
+        "b",
+        "c",
+        "d",
+      ]
+    `);
+
+    expectReadAsJson('(a #; b c d)').toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "c",
+        "d",
+      ]
+    `);
+
+    expectReadAsJson('(a b #; c d)').toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "d",
+      ]
+    `);
+
+    expectReadAsJson('(a b c #; d)').toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+      ]
+    `);
+
+    expectReadAsJson('(a b c . #; d e)').toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        ".",
+        "e",
+      ]
+    `);
+
+    expectReadAsJson('(a b c . #; d e . f)').toMatchInlineSnapshot(`
+      Array [
+        "e",
+        "a",
+        "b",
+        "c",
+        "f",
+      ]
+    `);
+  });
 });
 
 function expectFormattedReadErr(s: string) {
@@ -309,6 +379,88 @@ describe('invalid read tests', () => {
       "Read error at 1:3 to 1:10: Unexpected dot, too many data between dots of infix list
         1 | (a . b c . d)
           |    ^~~~~~~
+
+      "
+    `);
+  });
+
+  test('bad s expression comment', () => {
+    expectFormattedReadErr('#; ) b').toMatchInlineSnapshot(`
+      "Read error at 1:3 to 1:4: Unexpected parenthesis
+        1 | #; ) b
+          |    ^
+
+      "
+    `);
+
+    expectFormattedReadErr('(a b #;)').toMatchInlineSnapshot(`
+      "Read error at 1:7 to 1:8: Unexpected parenthesis
+        1 | (a b #;)
+          |        ^
+
+      "
+    `);
+
+    expectFormattedReadErr('(a #; . b)').toMatchInlineSnapshot(`
+      "Read error at 1:6 to 1:7: Unexpected dot
+        1 | (a #; . b)
+          |       ^
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . #; b)').toMatchInlineSnapshot(`
+      "Read error at 1:9 to 1:10: Unexpected parenthesis, missing RHS of cons literal
+        1 | (a . #; b)
+          |          ^
+
+      "
+    `);
+
+    expectFormattedReadErr('(#; a . b)').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:7: Unexpected dot, missing LHS of cons literal or infix list
+        1 | (#; a . b)
+          | ^~~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b #;)').toMatchInlineSnapshot(`
+      "Read error at 1:9 to 1:10: Unexpected parenthesis
+        1 | (a . b #;)
+          |          ^
+
+      "
+    `);
+
+    expectFormattedReadErr('(#; a . b . c)').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:7: Unexpected dot, missing LHS of cons literal or infix list
+        1 | (#; a . b . c)
+          | ^~~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . #; b . c)').toMatchInlineSnapshot(`
+      "Read error at 1:3 to 1:11: Unexpected dot, missing data between dots of infix list
+        1 | (a . #; b . c)
+          |    ^~~~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b . #; c)').toMatchInlineSnapshot(`
+      "Read error at 1:7 to 1:14: Unexpected parenthesis, missing RHS of infix list
+        1 | (a . b . #; c)
+          |        ^~~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b . c #;)').toMatchInlineSnapshot(`
+      "Read error at 1:13 to 1:14: Unexpected parenthesis
+        1 | (a . b . c #;)
+          |              ^
 
       "
     `);

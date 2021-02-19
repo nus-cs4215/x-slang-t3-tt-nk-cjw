@@ -44,6 +44,16 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   for (;;) {
     const curtok = tokens[i];
 
+    if (curtok.type === 'SExprComment') {
+      const r = then(readOneDatum(tokens, i + 1), ([e_, loc_, i]) => ok(i));
+      if (isGoodResult(r)) {
+        i = r.v;
+        continue;
+      } else {
+        return r;
+      }
+    }
+
     // Ending at stage 1, no . in this list
     if (curtok.type === 'RPar') {
       i++;
@@ -93,6 +103,16 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   // Stage 2, one . seen
   for (;;) {
     const curtok = tokens[i];
+
+    if (curtok.type === 'SExprComment') {
+      const r = then(readOneDatum(tokens, i + 1), ([e_, loc_, i]) => ok(i));
+      if (isGoodResult(r)) {
+        i = r.v;
+        continue;
+      } else {
+        return r;
+      }
+    }
 
     // Ending at stage 2, one . in this list
     if (curtok.type === 'RPar') {
@@ -163,6 +183,16 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
   // Stage 3, two . seen
   for (;;) {
     const curtok = tokens[i];
+
+    if (curtok.type === 'SExprComment') {
+      const r = then(readOneDatum(tokens, i + 1), ([e_, loc_, i]) => ok(i));
+      if (isGoodResult(r)) {
+        i = r.v;
+        continue;
+      } else {
+        return r;
+      }
+    }
 
     // Ending at stage 3, two . in this list
     if (curtok.type === 'RPar') {
@@ -246,6 +276,11 @@ export function readOneDatum(tokens: Token[], i: number = 0): PartialReadResult 
         i,
       ])
     );
+  }
+
+  // Handle S-expression comment
+  if (firsttok.type === 'SExprComment') {
+    return then(readOneDatum(tokens, i + 1), ([e_, loc_, i]) => readOneDatum(tokens, i));
   }
 
   // Everything else is just itself
