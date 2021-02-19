@@ -6,19 +6,33 @@ import { EvalDataType, make_closure, make_primitive } from './datatypes';
 import { EvalValue, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
-import { primitives } from './primitives';
+import { primitive_consts, primitive_funcs } from './primitives';
 
 import { match_special_form, MatchType, SpecialFormType } from './special-form';
 import { MatchObject } from '../pattern';
 
-const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, fun]) => {
-  obj[name] = sbox(make_primitive(fun));
-  return obj;
-}, {});
+const primitive_funcs_bindings: Bindings = Object.entries(primitive_funcs).reduce(
+  (obj, [name, fun]) => {
+    obj[name] = sbox(make_primitive(fun));
+    return obj;
+  },
+  {}
+);
+
+const primitive_consts_bindings: Bindings = Object.entries(primitive_consts).reduce(
+  (obj, [name, c]) => {
+    obj[name] = c;
+    return obj;
+  },
+  {}
+);
 
 export { Environment, make_env, make_env_list };
 
-export const the_global_environment: Environment = make_env_list(primitives_bindings);
+export const the_global_environment: Environment = make_env_list(
+  primitive_funcs_bindings,
+  primitive_consts_bindings
+);
 
 export type SpecialFormEvaluator = (
   matches: MatchObject,
