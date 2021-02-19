@@ -3,15 +3,23 @@ import { SList } from '../sexpr';
 import { val, car } from '../sexpr';
 import { is_symbol } from '../sexpr';
 import { jsonRead } from '../sexpr';
+import { hasKey } from '../utils';
 
-export type SpecialForms = 'let' | 'quote';
+export type SpecialFormKeywordToType = {
+  let: 'let';
+  quote: 'quote';
+};
+
+export type SpecialFormKeywords = keyof SpecialFormKeywordToType;
+
+export type SpecialFormType = SpecialFormKeywordToType[SpecialFormKeywords];
 
 export interface Form {
   pattern: Pattern;
-  form: SpecialForms;
+  form: SpecialFormType;
 }
 
-export const special_forms: Record<string, Form[]> = {
+export const special_forms: Record<SpecialFormKeywords, Form[]> = {
   let: [
     {
       pattern: jsonRead([
@@ -38,7 +46,7 @@ export enum MatchType {
 }
 
 export type MatchResult =
-  | { match_type: MatchType.Match; form: SpecialForms; matches: MatchObject }
+  | { match_type: MatchType.Match; form: SpecialFormType; matches: MatchObject }
   | { match_type: MatchType.InvalidSyntax; form: undefined; matches: undefined }
   | { match_type: MatchType.NoMatch; form: undefined; matches: undefined };
 
@@ -49,17 +57,15 @@ export function match_special_form(program: SList<never>): MatchResult {
   }
   const keyword = val(head);
 
-  const forms = special_forms[keyword];
-
-  if (forms === undefined) {
-    return { match_type: MatchType.NoMatch, form: undefined, matches: undefined };
-  }
-
-  for (const form of forms) {
-    const matches: MatchObject | undefined = match(program, form.pattern);
-    if (matches !== undefined) {
-      return { match_type: MatchType.Match, form: form.form, matches };
+  if (hasKey(special_forms, keyword)) {
+    for (const form of special_forms[keyword]) {
+      const matches: MatchObject | undefined = match(program, form.pattern);
+      if (matches !== undefined) {
+        return { match_type: MatchType.Match, form: form.form, matches };
+      }
     }
+  } else {
+    return { match_type: MatchType.NoMatch, form: undefined, matches: undefined };
   }
 
   return { match_type: MatchType.InvalidSyntax, form: undefined, matches: undefined };
