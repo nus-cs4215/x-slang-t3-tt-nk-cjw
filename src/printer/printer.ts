@@ -1,6 +1,6 @@
-import { STypes, SExpr, val, car, cdr, is_list, is_nil } from '../sexpr';
+import { STypes, SListStruct, val, car, cdr, is_list, is_nil } from '../sexpr';
 
-export function print(e: SExpr): string {
+export function print<T>(e: SListStruct<T>): string {
   switch (e._type) {
     case STypes.Nil:
       return '()';
@@ -30,7 +30,7 @@ export function print(e: SExpr): string {
 
       return ''.concat(...output);
     }
-    default:
-      return '';
+    case STypes.Boxed:
+      return '#boxed';
   }
 }

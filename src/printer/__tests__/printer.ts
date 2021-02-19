@@ -1,4 +1,4 @@
-import { ssymbol, sboolean, scons, slist, snil, snumber } from '../../sexpr';
+import { ssymbol, sboolean, scons, slist, snil, snumber, sbox } from '../../sexpr';
 import { print } from '../printer';
 
 describe('valid print tests', () => {
@@ -37,5 +37,11 @@ describe('valid print tests', () => {
     expect(print(slist([ssymbol('a'), ssymbol('b')], ssymbol('c')))).toMatchInlineSnapshot(
       `"(a b . c)"`
     );
+  });
+
+  test('basic boxed', () => {
+    expect(print(sbox(null))).toMatchInlineSnapshot(`"#boxed"`);
+    expect(print(sbox('anything i want'))).toMatchInlineSnapshot(`"#boxed"`);
+    expect(print(sbox(['anything', 'i', 1]))).toMatchInlineSnapshot(`"#boxed"`);
   });
 });
