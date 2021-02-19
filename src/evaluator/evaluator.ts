@@ -1,7 +1,8 @@
 import { err, ok, isBadResult } from '../utils';
-import { ssymbol, snil, slist, SExpr } from '../sexpr';
+import { SExpr, sbox, is_boxed } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
+import { make_primitive } from './datatypes';
 import { EvalValue, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
@@ -10,8 +11,8 @@ import { primitives } from './primitives';
 import { match_special_form, MatchType, SpecialForms } from './special-form';
 import { MatchObject } from '../pattern';
 
-const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, _]) => {
-  obj[name] = slist([ssymbol('primitive_function'), ssymbol(name)], snil());
+const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, fun]) => {
+  obj[name] = sbox(make_primitive(fun));
   return obj;
 }, {});
 
@@ -50,6 +51,11 @@ const special_form_evaluators: Record<SpecialForms, SpecialFormEvaluator> = {
 };
 
 const apply: Apply = (fun, ...args) => {
+  if (is_boxed(fun)) {
+    const v = fun.val;
+    return v.fun(...args);
+  }
+
   if (!is_list(fun)) {
     return err();
   }
@@ -59,22 +65,6 @@ const apply: Apply = (fun, ...args) => {
     return err();
   }
 
-  if (val(fun_type) === 'primitive_function') {
-    // handle primitve function calls
-    const rest = cdr(fun);
-    if (!is_list(rest)) {
-      return err();
-    }
-    const prim_name_symbol = car(rest);
-    if (!is_symbol(prim_name_symbol)) {
-      return err();
-    }
-    const prim_name = val(prim_name_symbol);
-    if (!(prim_name in primitives)) {
-      return err();
-    }
-    return primitives[prim_name](...args);
-  }
   // unsupported function type
   return err();
 };
