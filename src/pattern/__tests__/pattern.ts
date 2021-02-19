@@ -4,7 +4,7 @@ import { json_plus, json_star, json_var, match, PatternLeaf } from '../pattern';
 function expectJsonGoodPatternMatch(program: JsonSExpr<never>, pattern: JsonSExpr<PatternLeaf>) {
   const matches = match(jsonRead(program), jsonRead(pattern));
   expect({ program, pattern, matches }).not.toEqual({ program, pattern, undefined });
-  const json_matches = {};
+  const json_matches = {} as Record<string, JsonSExpr<never>[]>;
   Object.entries(matches!).forEach(
     ([k, v]: [string, SExpr[]]) => (json_matches[k] = v.map(jsonPrint))
   );
