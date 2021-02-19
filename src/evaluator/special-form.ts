@@ -1,7 +1,7 @@
 import { MatchObject, json_plus, json_star, json_var, match, Pattern } from '../pattern';
 import { SList } from '../sexpr';
 import { val, car } from '../sexpr';
-import { is_atom } from '../sexpr';
+import { is_symbol } from '../sexpr';
 import { jsonRead } from '../sexpr';
 
 export type SpecialForms = 'let' | 'quote';
@@ -44,7 +44,7 @@ export type MatchResult =
 
 export function match_special_form(program: SList<never>): MatchResult {
   const head = car(program);
-  if (!is_atom(head)) {
+  if (!is_symbol(head)) {
     return { match_type: MatchType.NoMatch, form: undefined, matches: undefined };
   }
   const keyword = val(head);

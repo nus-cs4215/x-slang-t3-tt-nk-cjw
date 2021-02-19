@@ -1,7 +1,7 @@
 import { err, ok, isBadResult } from '../utils';
-import { satom, snil, slist, SExpr } from '../sexpr';
+import { ssymbol, snil, slist, SExpr } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
-import { is_atom, is_value, is_list, is_nil } from '../sexpr';
+import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalValue, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
@@ -11,7 +11,7 @@ import { match_special_form, MatchType, SpecialForms } from './special-form';
 import { MatchObject } from '../pattern';
 
 const primitives_bindings: Bindings = Object.entries(primitives).reduce((obj, [name, _]) => {
-  obj[name] = slist([satom('primitive_function'), satom(name)], snil());
+  obj[name] = slist([ssymbol('primitive_function'), ssymbol(name)], snil());
   return obj;
 }, {});
 
@@ -28,7 +28,7 @@ const special_form_evaluators: Record<SpecialForms, SpecialFormEvaluator> = {
     const bindings: Bindings = {};
     for (let i = 0; i < val_exprs.length; i++) {
       const id = ids[i];
-      if (!is_atom(id)) {
+      if (!is_symbol(id)) {
         return err();
       }
       const val_r = evaluate(val_exprs[i], env);
@@ -54,7 +54,7 @@ const apply: Apply = (fun, ...args) => {
     return err();
   }
   const fun_type = car(fun);
-  if (!is_atom(fun_type)) {
+  if (!is_symbol(fun_type)) {
     // not in the right format for a function
     return err();
   }
@@ -65,11 +65,11 @@ const apply: Apply = (fun, ...args) => {
     if (!is_list(rest)) {
       return err();
     }
-    const prim_name_atom = car(rest);
-    if (!is_atom(prim_name_atom)) {
+    const prim_name_symbol = car(rest);
+    if (!is_symbol(prim_name_symbol)) {
       return err();
     }
-    const prim_name = val(prim_name_atom);
+    const prim_name = val(prim_name_symbol);
     if (!(prim_name in primitives)) {
       return err();
     }
@@ -86,7 +86,7 @@ export const evaluate: Evaluate = (program, env) => {
   }
 
   // Variable references
-  if (is_atom(program)) {
+  if (is_symbol(program)) {
     const name = val(program);
     const binding_env = find_env(name, env);
     if (binding_env === undefined) {

@@ -4,7 +4,7 @@ export function print(e: SExpr): string {
   switch (e._type) {
     case STypes.Nil:
       return '()';
-    case STypes.Atom:
+    case STypes.Symbol:
       return val(e);
     case STypes.Number:
       return val(e).toString();

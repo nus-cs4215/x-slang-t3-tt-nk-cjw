@@ -13,7 +13,7 @@ describe('valid read tests', () => {
     expectReadAsJson('{}').toMatchInlineSnapshot(`Array []`);
   });
 
-  test('basic atoms', () => {
+  test('basic symbols', () => {
     expectReadAsJson('abc').toMatchInlineSnapshot(`"abc"`);
     expectReadAsJson('abc->def').toMatchInlineSnapshot(`"abc->def"`);
   });
@@ -198,7 +198,7 @@ describe('invalid read tests', () => {
     `);
   });
 
-  test('bad atoms', () => {
+  test('bad symbols', () => {
     expectFormattedReadErr('.').toMatchInlineSnapshot(`
       "Read error at 1:0 to 1:1: Unexpected dot
         1 | .

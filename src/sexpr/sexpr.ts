@@ -3,7 +3,7 @@
  *********/
 
 export enum STypes {
-  Atom,
+  Symbol,
   Number,
   Boolean,
   Nil,
@@ -11,8 +11,8 @@ export enum STypes {
   Boxed,
 }
 
-export interface SAtom {
-  _type: STypes.Atom;
+export interface SSymbol {
+  _type: STypes.Symbol;
   val: string;
 }
 
@@ -55,7 +55,7 @@ export type SList<T> = SListPair<T>;
 export type SListStruct<T> = SExprBase<T> | SList<T>;
 
 export type SExprBase<T> =
-  | SAtom
+  | SSymbol
   | SNumber
   | SBoolean
   | SNil
@@ -67,7 +67,7 @@ export type SExpr = SListStruct<never>;
  * CONSTRUCTORS *
  ****************/
 
-export const satom = (val: string): SAtom => ({ _type: STypes.Atom, val });
+export const ssymbol = (val: string): SSymbol => ({ _type: STypes.Symbol, val });
 export const snumber = (val: number): SNumber => ({ _type: STypes.Number, val });
 export const sboolean = (val: boolean): SBoolean => ({
   _type: STypes.Boolean,
@@ -94,22 +94,22 @@ export const sbox = <T>(val: T): SBoxed<T> => ({ _type: STypes.Boxed, val });
  * ACCESSORS *
  *************/
 
-export function val(e: SAtom): string;
+export function val(e: SSymbol): string;
 export function val(e: SNumber): number;
 export function val(e: SBoolean): boolean;
-export function val(e: SAtom | SNumber): string | number;
-export function val(e: SAtom | SBoolean): string | boolean;
+export function val(e: SSymbol | SNumber): string | number;
+export function val(e: SSymbol | SBoolean): string | boolean;
 export function val(e: SNumber | SBoolean): number | boolean;
-export function val(e: SAtom | SNumber | SBoolean): string | number | boolean;
+export function val(e: SSymbol | SNumber | SBoolean): string | number | boolean;
 export function val<T>(e: SBoxed<T>): T;
-export function val<T>(e: SAtom | SBoxed<T>): string | T;
+export function val<T>(e: SSymbol | SBoxed<T>): string | T;
 export function val<T>(e: SNumber | SBoxed<T>): number | T;
 export function val<T>(e: SBoolean | SBoxed<T>): boolean | T;
-export function val<T>(e: SAtom | SNumber | SBoxed<T>): string | number | T;
-export function val<T>(e: SAtom | SBoolean | SBoxed<T>): string | boolean | T;
+export function val<T>(e: SSymbol | SNumber | SBoxed<T>): string | number | T;
+export function val<T>(e: SSymbol | SBoolean | SBoxed<T>): string | boolean | T;
 export function val<T>(e: SNumber | SBoolean | SBoxed<T>): number | boolean | T;
-export function val<T>(e: SAtom | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T;
-export function val<T>(e: SAtom | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T {
+export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T;
+export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T {
   return e.val;
 }
 export const car = <T>(p: SList<T>): SListStruct<T> => p.x;
@@ -119,7 +119,7 @@ export const cdr = <T>(p: SList<T>): SListStruct<T> => p.y;
  * PREDICATES *
  **************/
 
-export const is_atom = <T>(e: SListStruct<T>): e is SAtom => e._type === STypes.Atom;
+export const is_symbol = <T>(e: SListStruct<T>): e is SSymbol => e._type === STypes.Symbol;
 export const is_number = <T>(e: SListStruct<T>): e is SNumber => e._type === STypes.Number;
 export const is_boolean = <T>(e: SListStruct<T>): e is SBoolean => e._type === STypes.Boolean;
 export const is_nil = <T>(e: SListStruct<T>): e is SNil => e._type === STypes.Nil;
@@ -138,8 +138,8 @@ export function equals<E1 extends SListStruct<unknown>>(e1: E1, e2: SListStruct<
 export function equals(e1: SListStruct<unknown>, e2: SListStruct<unknown>): boolean {
   for (;;) {
     if (
-      (e1._type === STypes.Atom || e1._type === STypes.Number || e1._type === STypes.Boolean) &&
-      (e2._type === STypes.Atom || e2._type === STypes.Number || e2._type === STypes.Boolean)
+      (e1._type === STypes.Symbol || e1._type === STypes.Number || e1._type === STypes.Boolean) &&
+      (e2._type === STypes.Symbol || e2._type === STypes.Number || e2._type === STypes.Boolean)
     ) {
       return val(e1) === val(e2);
     } else if (e1._type === STypes.Nil && e2._type === STypes.Nil) {

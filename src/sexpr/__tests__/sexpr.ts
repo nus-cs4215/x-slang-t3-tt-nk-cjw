@@ -1,12 +1,12 @@
 import { SExpr } from '../sexpr';
-import { satom, snumber, sboolean, snil, scons, slist } from '../sexpr';
+import { ssymbol, snumber, sboolean, snil, scons, slist } from '../sexpr';
 import { equals } from '../sexpr';
 import { jsonPrint, jsonRead } from '../jsonsexpr';
 
 describe('test equality', () => {
   const values: (() => SExpr)[] = [
-    () => satom('abc'),
-    () => satom('a.'),
+    () => ssymbol('abc'),
+    () => ssymbol('a.'),
     () => snumber(1),
     () => snumber(999999999999999999999),
     () => sboolean(true),
@@ -188,8 +188,8 @@ describe('test equality', () => {
 });
 
 describe('SExpr -> JsonSExpr -> SExpr identity', () => {
-  const a = satom('a');
-  const b = satom('b');
+  const a = ssymbol('a');
+  const b = ssymbol('b');
   const z = snumber(0);
   const s = snumber(6);
   const t = sboolean(true);

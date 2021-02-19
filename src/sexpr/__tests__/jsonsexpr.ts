@@ -1,4 +1,4 @@
-import { satom, snil, scons, slist } from '../sexpr';
+import { ssymbol, snil, scons, slist } from '../sexpr';
 import { jsonPrint } from '../jsonsexpr';
 
 test('correct json representation of complex lists', () => {
@@ -44,14 +44,14 @@ test('correct json representation of complex lists', () => {
       ],
     ]
   `);
-  expect(jsonPrint(scons(satom('a'), satom('b')))).toMatchInlineSnapshot(`
+  expect(jsonPrint(scons(ssymbol('a'), ssymbol('b')))).toMatchInlineSnapshot(`
     Array [
       "a",
       ".",
       "b",
     ]
   `);
-  expect(jsonPrint(scons(satom('a'), scons(satom('b'), satom('c'))))).toMatchInlineSnapshot(`
+  expect(jsonPrint(scons(ssymbol('a'), scons(ssymbol('b'), ssymbol('c'))))).toMatchInlineSnapshot(`
     Array [
       "a",
       "b",

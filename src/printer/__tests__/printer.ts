@@ -1,10 +1,10 @@
-import { satom, sboolean, scons, slist, snil, snumber } from '../../sexpr';
+import { ssymbol, sboolean, scons, slist, snil, snumber } from '../../sexpr';
 import { print } from '../printer';
 
 describe('valid print tests', () => {
-  test('basic atoms', () => {
-    expect(print(satom('abc'))).toMatchInlineSnapshot(`"abc"`);
-    expect(print(satom('abc->def'))).toMatchInlineSnapshot(`"abc->def"`);
+  test('basic symbols', () => {
+    expect(print(ssymbol('abc'))).toMatchInlineSnapshot(`"abc"`);
+    expect(print(ssymbol('abc->def'))).toMatchInlineSnapshot(`"abc->def"`);
   });
 
   test('basic numbers', () => {
@@ -22,16 +22,20 @@ describe('valid print tests', () => {
   });
 
   test('basic list', () => {
-    expect(print(slist([satom('abc')], snil()))).toMatchInlineSnapshot(`"(abc)"`);
-    expect(print(slist([satom('abc'), snumber(123)], snil()))).toMatchInlineSnapshot(`"(abc 123)"`);
+    expect(print(slist([ssymbol('abc')], snil()))).toMatchInlineSnapshot(`"(abc)"`);
+    expect(print(slist([ssymbol('abc'), snumber(123)], snil()))).toMatchInlineSnapshot(
+      `"(abc 123)"`
+    );
     expect(
-      print(slist([satom('abc'), snumber(123), sboolean(true)], snil()))
+      print(slist([ssymbol('abc'), snumber(123), sboolean(true)], snil()))
     ).toMatchInlineSnapshot(`"(abc 123 #t)"`);
   });
 
   test('basic cons', () => {
-    expect(print(scons(satom('abc'), snil()))).toMatchInlineSnapshot(`"(abc)"`);
-    expect(print(scons(satom('a'), satom('b')))).toMatchInlineSnapshot(`"(a . b)"`);
-    expect(print(slist([satom('a'), satom('b')], satom('c')))).toMatchInlineSnapshot(`"(a b . c)"`);
+    expect(print(scons(ssymbol('abc'), snil()))).toMatchInlineSnapshot(`"(abc)"`);
+    expect(print(scons(ssymbol('a'), ssymbol('b')))).toMatchInlineSnapshot(`"(a . b)"`);
+    expect(print(slist([ssymbol('a'), ssymbol('b')], ssymbol('c')))).toMatchInlineSnapshot(
+      `"(a b . c)"`
+    );
   });
 });
