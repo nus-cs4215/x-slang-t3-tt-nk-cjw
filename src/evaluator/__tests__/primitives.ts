@@ -62,7 +62,7 @@ describe('arithmetic primitives', () => {
   });
 
   test('valid -', () => {
-    expectJsonReadEvalPrint(['-', 1], the_global_environment).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(['-', 1], the_global_environment).toMatchInlineSnapshot(`-1`);
     expectJsonReadEvalPrint(['-', 1, 2], the_global_environment).toMatchInlineSnapshot(`-1`);
     expectJsonReadEvalPrint(['-', 1, 2, 3], the_global_environment).toMatchInlineSnapshot(`-4`);
     expectJsonReadEvalPrint(['-', 1, 2, 3, 4], the_global_environment).toMatchInlineSnapshot(`-8`);
