@@ -15,10 +15,10 @@ describe('print -> read identity', () => {
   const n = snil();
 
   test.each([[a], [b], [z], [s], [t], [f], [n]] as SExpr[][])('values', (e: SExpr) => {
-    expect({ e, test: equals(getOk(read(print(e))), e) }).toEqual({
-      e,
-      test: true,
-    });
+    const ee = getOk(read(print(e)));
+    if (!equals(e, ee)) {
+      expect(ee).toBe(e);
+    }
   });
 
   test.each([
@@ -29,9 +29,9 @@ describe('print -> read identity', () => {
     [slist([a, b], slist([z, s], t))],
     [slist([a, slist([b, z, s], t)], f)],
   ] as SExpr[][])('lists', (e: SExpr) => {
-    expect({ e, test: equals(getOk(read(print(e))), e) }).toEqual({
-      e,
-      test: true,
-    });
+    const ee = getOk(read(print(e)));
+    if (!equals(e, ee)) {
+      expect(ee).toBe(e);
+    }
   });
 });

@@ -20,7 +20,11 @@ describe('test equality', () => {
       const rhs = values[i]();
       const test1 = equals(lhs, rhs);
       const test2 = equals(rhs, lhs);
-      expect({ lhs, rhs, test1, test2 }).toEqual({ lhs, rhs, test1: true, test2: true });
+      if (!test1 || !test2) {
+        expect({ i, lhs, rhs }).toBe({
+          _: 'test failed, see parameters',
+        });
+      }
     }
   });
   test('value inequality', () => {
@@ -30,7 +34,11 @@ describe('test equality', () => {
         const rhs = values[j]();
         const test1 = equals(lhs, rhs);
         const test2 = equals(rhs, lhs);
-        expect({ lhs, rhs, test1, test2 }).toEqual({ lhs, rhs, test1: false, test2: false });
+        if (test1 || test2) {
+          expect({ i, lhs, rhs }).toBe({
+            _: 'test failed, see parameters',
+          });
+        }
       }
     }
   });
@@ -61,7 +69,11 @@ describe('test equality', () => {
             const rhs = one_value_list_structures[i][k](values[vi]());
             const test1 = equals(lhs, rhs);
             const test2 = equals(rhs, lhs);
-            expect({ lhs, rhs, test1, test2 }).toEqual({ lhs, rhs, test1: true, test2: true });
+            if (!test1 || !test2) {
+              expect({ vi, i, j, k, lhs, rhs }).toBe({
+                _: 'test failed, see parameters',
+              });
+            }
           }
         }
       }
@@ -77,7 +89,11 @@ describe('test equality', () => {
               const rhs = one_value_list_structures[ii][jj](values[vi]());
               const test1 = equals(lhs, rhs);
               const test2 = equals(rhs, lhs);
-              expect({ lhs, rhs, test1, test2 }).toEqual({ lhs, rhs, test1: false, test2: false });
+              if (test1 || test2) {
+                expect({ vi, i, j, ii, jj, lhs, rhs }).toBe({
+                  _: 'test failed, see parameters',
+                });
+              }
             }
           }
         }
@@ -94,7 +110,11 @@ describe('test equality', () => {
               const rhs = one_value_list_structures[i][k](values[vii]());
               const test1 = equals(lhs, rhs);
               const test2 = equals(rhs, lhs);
-              expect({ lhs, rhs, test1, test2 }).toEqual({ lhs, rhs, test1: false, test2: false });
+              if (test1 || test2) {
+                expect({ vi, vii, i, j, k, lhs, rhs }).toBe({
+                  _: 'test failed, see parameters',
+                });
+              }
             }
           }
         }
@@ -128,7 +148,11 @@ describe('test equality', () => {
               const rhs = two_value_list_structures[i][k](values[vi](), values[vj]());
               const test1 = equals(lhs, rhs);
               const test2 = equals(rhs, lhs);
-              expect({ lhs, rhs, test1, test2 }).toEqual({ lhs, rhs, test1: true, test2: true });
+              if (!test1 || !test2) {
+                expect({ vi, vj, i, j, k, lhs, rhs }).toBe({
+                  _: 'test failed, see parameters',
+                });
+              }
             }
           }
         }
@@ -146,12 +170,11 @@ describe('test equality', () => {
                 const rhs = two_value_list_structures[ii][jj](values[vi](), values[vj]());
                 const test1 = equals(lhs, rhs);
                 const test2 = equals(rhs, lhs);
-                expect({ lhs, rhs, test1, test2 }).toEqual({
-                  lhs,
-                  rhs,
-                  test1: false,
-                  test2: false,
-                });
+                if (test1 || test2) {
+                  expect({ vi, vj, i, j, ii, jj, lhs, rhs }).toBe({
+                    _: 'test failed, see parameters',
+                  });
+                }
               }
             }
           }
@@ -171,12 +194,11 @@ describe('test equality', () => {
                   const rhs = two_value_list_structures[i][k](values[vii](), values[vjj]());
                   const test1 = equals(lhs, rhs);
                   const test2 = equals(rhs, lhs);
-                  expect({ lhs, rhs, test1, test2 }).toEqual({
-                    lhs,
-                    rhs,
-                    test1: false,
-                    test2: false,
-                  });
+                  if (test1 || test2) {
+                    expect({ vi, vj, vii, vjj, i, j, k, lhs, rhs }).toBe({
+                      _: 'test failed, see parameters',
+                    });
+                  }
                 }
               }
             }
@@ -197,10 +219,10 @@ describe('SExpr -> JsonSExpr -> SExpr identity', () => {
   const n = snil();
 
   test.each([[a], [b], [z], [s], [t], [f], [n]] as SExpr[][])('values', (e: SExpr) => {
-    expect({ e, test: equals(jsonRead(jsonPrint(e)), e) }).toEqual({
-      e,
-      test: true,
-    });
+    const ee = jsonRead(jsonPrint(e));
+    if (!equals(e, ee)) {
+      expect(ee).toBe(e);
+    }
   });
 
   test.each([
@@ -211,9 +233,9 @@ describe('SExpr -> JsonSExpr -> SExpr identity', () => {
     [slist([a, b], slist([z, s], t))],
     [slist([a, slist([b, z, s], t)], f)],
   ] as SExpr[][])('lists', (e: SExpr) => {
-    expect({ e, test: equals(jsonRead(jsonPrint(e)), e) }).toEqual({
-      e,
-      test: true,
-    });
+    const ee = jsonRead(jsonPrint(e));
+    if (!equals(e, ee)) {
+      expect(ee).toBe(e);
+    }
   });
 });
