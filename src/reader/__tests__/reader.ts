@@ -185,6 +185,20 @@ describe('valid read tests', () => {
         "b",
       ]
     `);
+
+    expectReadAsJson('abc ; blah').toMatchInlineSnapshot(`"abc"`);
+
+    expectReadAsJson(`
+      ; blah
+      (a b c)
+      ; blah
+    `).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+      ]
+    `);
   });
 
   test('basic s expression comments', () => {
@@ -274,6 +288,22 @@ describe('invalid read tests', () => {
       "
     `);
 
+    expectFormattedReadErr('(a . b]').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:7: Mismatched parentheses
+        1 | (a . b]
+          | ^~~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b . c]').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:11: Mismatched parentheses
+        1 | (a . b . c]
+          | ^~~~~~~~~~~
+
+      "
+    `);
+
     expectFormattedReadErr('([ abc def )]').toMatchInlineSnapshot(`
       "Read error at 1:1 to 1:12: Mismatched parentheses
         1 | ([ abc def )]
@@ -309,6 +339,16 @@ describe('invalid read tests', () => {
       "Read error at 1:0 to 1:1: Unexpected dot
         1 | .
           | ^
+
+      "
+    `);
+  });
+
+  test('bad tokens', () => {
+    expectFormattedReadErr('#a').toMatchInlineSnapshot(`
+      "Read error at 1:0 to 1:2: Invalid token
+        1 | #a
+          | ^~
 
       "
     `);
@@ -379,6 +419,38 @@ describe('invalid read tests', () => {
       "Read error at 1:3 to 1:10: Unexpected dot, too many data between dots of infix list
         1 | (a . b c . d)
           |    ^~~~~~~
+
+      "
+    `);
+
+    expectFormattedReadErr('(#a . b . c)').toMatchInlineSnapshot(`
+      "Read error at 1:1 to 1:3: Invalid token
+        1 | (#a . b . c)
+          |  ^~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . #b . c)').toMatchInlineSnapshot(`
+      "Read error at 1:5 to 1:7: Invalid token
+        1 | (a . #b . c)
+          |      ^~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b . #c)').toMatchInlineSnapshot(`
+      "Read error at 1:9 to 1:11: Invalid token
+        1 | (a . b . #c)
+          |          ^~
+
+      "
+    `);
+
+    expectFormattedReadErr('(a . b . c . d)').toMatchInlineSnapshot(`
+      "Read error at 1:11 to 1:12: Too many dots in infix list
+        1 | (a . b . c . d)
+          |            ^
 
       "
     `);
