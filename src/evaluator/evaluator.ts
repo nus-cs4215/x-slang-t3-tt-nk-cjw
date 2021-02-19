@@ -16,7 +16,7 @@ const primitive_funcs_bindings: Bindings = Object.entries(primitive_funcs).reduc
     obj[name] = sbox(make_primitive(fun));
     return obj;
   },
-  {}
+  {} as Record<string, EvalValue>
 );
 
 const primitive_consts_bindings: Bindings = Object.entries(primitive_consts).reduce(
@@ -24,7 +24,7 @@ const primitive_consts_bindings: Bindings = Object.entries(primitive_consts).red
     obj[name] = c;
     return obj;
   },
-  {}
+  {} as Record<string, EvalValue>
 );
 
 export { Environment, make_env, make_env_list };

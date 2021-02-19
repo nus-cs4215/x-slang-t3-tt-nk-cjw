@@ -6,35 +6,43 @@ export interface Base {
   loc: Location;
 }
 
+export type LParContents = '(' | '[' | '{';
 export interface LPar extends Base {
   type: 'LPar';
+  contents: LParContents;
 }
 
-export function lpar(contents: string, loc: Location): LPar {
+export function lpar(contents: LParContents, loc: Location): LPar {
   return { type: 'LPar', contents, loc };
 }
 
+export type RParContents = ')' | ']' | '}';
 export interface RPar extends Base {
   type: 'RPar';
+  contents: RParContents;
 }
 
-export function rpar(contents: string, loc: Location): RPar {
+export function rpar(contents: RParContents, loc: Location): RPar {
   return { type: 'RPar', contents, loc };
 }
 
+export type QuoteLikeContents = "'" | '`' | ',';
 export interface QuoteLike extends Base {
   type: 'QuoteLike';
+  contents: QuoteLikeContents;
 }
 
-export function quote_like(contents: string, loc: Location): QuoteLike {
+export function quote_like(contents: QuoteLikeContents, loc: Location): QuoteLike {
   return { type: 'QuoteLike', contents, loc };
 }
 
+export type DotContents = '.';
 export interface Dot extends Base {
   type: 'Dot';
+  contents: DotContents;
 }
 
-export function dot(contents: string, loc: Location): Dot {
+export function dot(contents: DotContents, loc: Location): Dot {
   return { type: 'Dot', contents, loc };
 }
 
@@ -54,19 +62,23 @@ export function num(contents: string, loc: Location): Num {
   return { type: 'Num', contents, loc };
 }
 
+export type BoolContents = '#t' | '#f';
 export interface Bool extends Base {
   type: 'Bool';
+  contents: BoolContents;
 }
 
-export function bool(contents: string, loc: Location): Bool {
+export function bool(contents: BoolContents, loc: Location): Bool {
   return { type: 'Bool', contents, loc };
 }
 
+export type SExprCommentContents = '#;';
 export interface SExprComment extends Base {
   type: 'SExprComment';
+  contents: SExprCommentContents;
 }
 
-export function sexprcomment(contents: string, loc: Location): SExprComment {
+export function sexprcomment(contents: SExprCommentContents, loc: Location): SExprComment {
   return { type: 'SExprComment', contents, loc };
 }
 
@@ -180,32 +192,30 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
 
     const start = pos();
     // Read delimiter character
-    switch (s[i]) {
+    const delimiter_contents = s[i];
+    switch (delimiter_contents) {
       case '(':
       case '[':
       case '{': {
-        const contents = s[i];
         inc();
         const end = pos();
-        yield lpar(contents, { start, end });
+        yield lpar(delimiter_contents, { start, end });
         continue;
       }
       case ')':
       case ']':
       case '}': {
-        const contents = s[i];
         inc();
         const end = pos();
-        yield rpar(contents, { start, end });
+        yield rpar(delimiter_contents, { start, end });
         continue;
       }
       case "'":
       case '`':
       case ',': {
-        const contents = s[i];
         inc();
         const end = pos();
-        yield quote_like(contents, { start, end });
+        yield quote_like(delimiter_contents, { start, end });
         continue;
       }
       case ';': {
@@ -227,22 +237,22 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
         // one character dispatches
         inc();
         inc();
-        const contents = s.slice(j, i);
+        const one_char_dispatch_contents = s.slice(j, i);
         const end = pos();
-        switch (contents[1]) {
-          case 't':
-          case 'f': {
-            yield bool(contents, { start, end });
+        switch (one_char_dispatch_contents) {
+          case '#t':
+          case '#f': {
+            yield bool(one_char_dispatch_contents, { start, end });
             continue;
           }
-          case ';': {
-            yield sexprcomment(contents, { start, end });
+          case '#;': {
+            yield sexprcomment(one_char_dispatch_contents, { start, end });
             continue;
           }
         }
 
         // dispatch not supported, output invalid
-        yield invalid(contents, { start, end });
+        yield invalid(one_char_dispatch_contents, { start, end });
         continue;
       }
     }

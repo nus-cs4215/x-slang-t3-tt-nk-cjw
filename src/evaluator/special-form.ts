@@ -21,6 +21,8 @@ export type SpecialFormKeywords = keyof SpecialFormKeywordToType;
 
 export type SpecialFormType = SpecialFormKeywordToType[SpecialFormKeywords];
 
+export type SpecialForms = SpecialFormKeywords;
+
 export interface Form {
   pattern: Pattern;
   form: SpecialFormType;
