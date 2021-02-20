@@ -171,8 +171,61 @@ export const oneListArgTests = [
 test('type predicates', () => {
   expectOpTable(
     ['symbol?', 'number?', 'boolean?', 'null?', 'cons?', 'function?', 'nan?', 'infinite?'],
-    []
-  ).toMatchInlineSnapshot(`""`);
+    [
+      ...zeroArgTests,
+      ...mixedTypesArgTests,
+      ...oneListArgTests,
+
+      // test for 'function?'
+      '(op eq?)',
+      '(op function?)',
+      '(op (lambda (x) (f (f (f x)))))',
+    ]
+  ).toMatchInlineSnapshot(`
+    "
+    test                            | symbol? | number? | boolean? | null? | cons? | function? | nan? | infinite?
+    -------------------------------------------------------------------------------------------------------------
+    (op)                            | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 0)                          | #f      | #t      | #f       | #f    | #f    | #f        | #f   | #f
+    (op +inf.0)                     | #f      | #t      | #f       | #f    | #f    | #f        | #f   | #t
+    (op -inf.0)                     | #f      | #t      | #f       | #f    | #f    | #f        | #f   | #t
+    (op +nan.0)                     | #f      | #t      | #f       | #f    | #f    | #f        | #t   | #f
+    (op #f)                         | #f      | #f      | #t       | #f    | #f    | #f        | ERR  | ERR
+    (op #t)                         | #f      | #f      | #t       | #f    | #f    | #f        | ERR  | ERR
+    (op 'a)                         | #t      | #f      | #f       | #f    | #f    | #f        | ERR  | ERR
+    (op 0 0)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 1 0)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 3 5)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #f #f)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #t #f)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #f #t)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #t #t)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 'a 'a)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 'a 'b)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #f 0)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 'a 0)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 0 'a)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 1 #t)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 1 1 1 1)                    | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 1 2 3 4)                    | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #f #f #f)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #f #f #f #f)                | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #t #t #t)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op #t #f #t)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 'a 'a 'a)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 'a 'b 'b)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 'a 'b 'c)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 1 2 #t 1 'a)                | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op '())                        | #f      | #f      | #f       | #t    | #f    | #f        | ERR  | ERR
+    (op '(1))                       | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
+    (op '(1 2))                     | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
+    (op '(1 2 3 4 5))               | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
+    (op '(1 #t))                    | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
+    (op eq?)                        | #f      | #f      | #f       | #f    | #f    | #t        | ERR  | ERR
+    (op function?)                  | #f      | #f      | #f       | #f    | #f    | #t        | ERR  | ERR
+    (op (lambda (x) (f (f (f x))))) | #f      | #f      | #f       | #f    | #f    | #t        | ERR  | ERR
+    "
+  `);
 });
 
 test('unary arithmetic ops', () => {
