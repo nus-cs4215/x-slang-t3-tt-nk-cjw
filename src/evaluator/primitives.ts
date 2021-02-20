@@ -530,7 +530,7 @@ export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResul
       return err();
     }
     const [arg] = args;
-    return !is_number(arg) ? err() : ok(sboolean(!Number.isFinite(val(arg))));
+    return !is_number(arg) ? err() : ok(sboolean(!Number.isFinite(val(arg)) && !Number.isNaN(val(arg))));
   },
 
   and: (...args) => {
