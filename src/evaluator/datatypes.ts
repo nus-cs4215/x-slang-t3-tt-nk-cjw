@@ -31,3 +31,11 @@ export const make_primitive = (fun: (...args: EvalValue[]) => EvalResult): Primi
   variant: EvalDataType.Primitive,
   fun,
 });
+
+export function instanceOfEvalData(object: any): object is EvalData {
+  // (<any>EvalDataType) is adapted from https://blog.oio.de/2014/02/28/typescript-accessing-enum-values-via-a-string/
+  return Object.keys(EvalDataType).reduce(
+    (prev, curr) => object.variant === (<any>EvalDataType)[curr] || prev,
+    false
+  );
+}
