@@ -3,6 +3,7 @@ import { equals, sboolean, scons, slist, snil, SNumber, snumber, val } from '../
 import { is_symbol, is_number, is_boolean, is_nil, is_list, is_boxed } from '../sexpr';
 import { car, cdr } from '../sexpr';
 import { EvalValue, EvalResult } from './types';
+import { instanceOfEvalData } from './datatypes';
 
 export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResult> = {
   'eq?': (...args) => {
@@ -108,12 +109,13 @@ export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResul
     const [arg] = args;
     return ok(sboolean(is_list(arg)));
   },
-  'data?': (...args) => {
+
+  'function?': (...args) => {
     if (args.length !== 1) {
       return err();
     }
     const [arg] = args;
-    return ok(sboolean(is_boxed(arg)));
+    return ok(sboolean(is_boxed(arg) && instanceOfEvalData(arg.val)));
   },
 
   'zero?': (...args) => {
@@ -530,7 +532,9 @@ export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResul
       return err();
     }
     const [arg] = args;
-    return !is_number(arg) ? err() : ok(sboolean(!Number.isFinite(val(arg)) && !Number.isNaN(val(arg))));
+    return !is_number(arg)
+      ? err()
+      : ok(sboolean(!Number.isFinite(val(arg)) && !Number.isNaN(val(arg))));
   },
 
   and: (...args) => {

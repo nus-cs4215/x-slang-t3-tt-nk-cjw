@@ -170,7 +170,7 @@ export const oneListArgTests = [
 
 test('type predicates', () => {
   expectOpTable(
-    ['symbol?', 'number?', 'boolean?', 'null?', 'cons?', 'data?', 'nan?', 'infinite?'],
+    ['symbol?', 'number?', 'boolean?', 'null?', 'cons?', 'function?', 'nan?', 'infinite?'],
     []
   ).toMatchInlineSnapshot(`""`);
 });
