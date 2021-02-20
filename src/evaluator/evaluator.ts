@@ -1,5 +1,5 @@
 import { err, ok, isBadResult } from '../utils';
-import { SExpr, sbox, SSymbol, is_boxed, is_boolean } from '../sexpr';
+import { SExpr, sbox, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalDataType, make_closure, make_primitive } from './datatypes';
@@ -213,7 +213,37 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     return evaluate(bodies[bodies.length - 1], env);
   },
   quote: ({ e }: { e: SExpr[] }): EvalResult => ok(e[0]),
+  quasiquote: ({ e }: { e: SExpr[] }, env: Environment | undefined): EvalResult =>
+    expand_quasiquote(e[0], env),
+  unquote: (): EvalResult => err(),
 };
+
+function expand_quasiquote(e: SExpr, env: Environment | undefined): EvalResult {
+  if (is_list(e)) {
+    const a = car(e);
+    const d = cdr(e);
+    if (is_symbol(a) && val(a) === 'unquote') {
+      if (!is_list(d)) {
+        return err();
+      }
+      if (!is_nil(cdr(d))) {
+        return err();
+      }
+      return evaluate(car(d), env);
+    }
+    const ar = expand_quasiquote(a, env);
+    if (isBadResult(ar)) {
+      return ar;
+    }
+    const dr = expand_quasiquote(d, env);
+    if (isBadResult(dr)) {
+      return dr;
+    }
+    return ok(scons(ar.v, dr.v));
+  } else {
+    return ok(e);
+  }
+}
 
 const apply: Apply = (fun, ...args) => {
   if (is_boxed(fun)) {

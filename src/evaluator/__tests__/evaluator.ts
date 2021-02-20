@@ -90,6 +90,117 @@ describe('quote special form', () => {
   });
 });
 
+describe('quasiquote special form', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['quasiquote', 'a'], undefined).toMatchInlineSnapshot(`"a"`);
+    expectJsonReadEvalPrint(['quasiquote', 'b'], undefined).toMatchInlineSnapshot(`"b"`);
+    expectJsonReadEvalPrint(['quasiquote', 0], undefined).toMatchInlineSnapshot(`0`);
+    expectJsonReadEvalPrint(['quasiquote', 10], undefined).toMatchInlineSnapshot(`10`);
+    expectJsonReadEvalPrint(['quasiquote', []], undefined).toMatchInlineSnapshot(`Array []`);
+    expectJsonReadEvalPrint(['quasiquote', ['hey', 'there']], undefined).toMatchInlineSnapshot(`
+          Array [
+            "hey",
+            "there",
+          ]
+      `);
+    expectJsonReadEvalPrint(['quasiquote', ['hey', 'there', '.', 'delilah']], undefined)
+      .toMatchInlineSnapshot(`
+          Array [
+            "hey",
+            "there",
+            ".",
+            "delilah",
+          ]
+      `);
+
+    expectJsonReadEvalPrint(['quasiquote', ['unquote', 1]], test_env()).toMatchInlineSnapshot(`1`);
+
+    expectJsonReadEvalPrint(
+      ['quasiquote', ['unquote', ['+', 1, 2]]],
+      test_env()
+    ).toMatchInlineSnapshot(`3`);
+
+    expectJsonReadEvalPrint(
+      ['quasiquote', ['abc', ['unquote', ['+', 1, 2]], ['unquote', ['+', 2, 3]]]],
+      test_env()
+    ).toMatchInlineSnapshot(`
+      Array [
+        "abc",
+        3,
+        5,
+      ]
+    `);
+
+    // nested quasiquotes ;')
+    expectJsonReadEvalPrint(
+      [
+        'quasiquote',
+        [
+          'abc',
+          ['unquote', ['list', ['+', 1, 2], ['quasiquote', ['def', ['unquote', ['+', 2, 3]]]]]],
+        ],
+      ],
+      test_env()
+    ).toMatchInlineSnapshot(`
+      Array [
+        "abc",
+        Array [
+          3,
+          Array [
+            "def",
+            5,
+          ],
+        ],
+      ]
+    `);
+  });
+
+  test('invalid', () => {
+    // too few args
+    expectJsonReadEvalError(['quasiquote'], test_env()).toMatchInlineSnapshot(`undefined`);
+    // too many args
+    expectJsonReadEvalError(['quasiquote', 'hey', 'there'], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+    // improper list
+    expectJsonReadEvalError(['quasiquote', '.', 'a'], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['quasiquote', 'a', '.', 'b'], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+
+    // error in unquote
+    expectJsonReadEvalError(
+      ['quasiquote', ['unquote', 'hey', 'there']],
+      test_env()
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['quasiquote', ['unquote']], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(
+      ['quasiquote', ['unquote', '.', 'a']],
+      test_env()
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['quasiquote', ['unquote', 'a', '.', 'b']],
+      test_env()
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['quasiquote', ['unquote', []]], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['quasiquote', ['abc', ['unquote']]], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['quasiquote', [['unquote'], 'abc']], test_env()).toMatchInlineSnapshot(
+      `undefined`
+    );
+
+    // unquote without quasiquote
+    expectJsonReadEvalError(['unquote', 1], test_env()).toMatchInlineSnapshot(`undefined`);
+  });
+});
+
 describe('basic function calls', () => {
   test('valid', () => {
     expectJsonReadEvalPrint(['+', 1, 2], test_env()).toMatchInlineSnapshot(`3`);
