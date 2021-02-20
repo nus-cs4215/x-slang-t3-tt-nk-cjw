@@ -422,49 +422,258 @@ test('numeric comparsion ops', () => {
 });
 
 test('trigonometric ops', () => {
+  // ,
   expectOpTable(
-    ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh'],
-    [...mixedTypesArgTests]
+    ['sin', 'cos', 'tan'],
+    [
+      ...zeroArgTests,
+      '(op (* (/ -2 1) pi))',
+      '(op (* (/ -1 1) pi))',
+      '(op (* (/ -1 2) pi))',
+      '(op (* (/ -1 3) pi))',
+      '(op (* (/ -1 4) pi))',
+      '(op (* (/ -1 6) pi))',
+      '(op 0)',
+      '(op (* (/ 1 6) pi))',
+      '(op (* (/ 1 4) pi))',
+      '(op (* (/ 1 3) pi))',
+      '(op (* (/ 1 2) pi))',
+      '(op (* (/ 1 1) pi))',
+      '(op (* (/ 2 1) pi))',
+      ...mixedTypesArgTests,
+    ]
   ).toMatchInlineSnapshot(`
     "
-    test             | sin    | cos    | tan    | asin   | acos               | atan                | sinh   | cosh   | tanh
-    --------------------------------------------------------------------------------------------------------------------------
-    (op 0)           | 0      | 1      | 0      | 0      | 1.5707963267948966 | 0                   | 0      | 1      | 0
-    (op +inf.0)      | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0             | 1.5707963267948966  | +inf.0 | +inf.0 | 1
-    (op -inf.0)      | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0             | -1.5707963267948966 | -inf.0 | +inf.0 | -1
-    (op +nan.0)      | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0             | +nan.0              | +nan.0 | +nan.0 | +nan.0
-    (op #f)          | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #t)          | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a)          | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 0 0)         | ERR    | ERR    | ERR    | ERR    | ERR                | 0                   | ERR    | ERR    | ERR
-    (op 1 0)         | ERR    | ERR    | ERR    | ERR    | ERR                | 1.5707963267948966  | ERR    | ERR    | ERR
-    (op 3 5)         | ERR    | ERR    | ERR    | ERR    | ERR                | 0.5404195002705842  | ERR    | ERR    | ERR
-    (op #f #f)       | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #t #f)       | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #f #t)       | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #t #t)       | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a 'a)       | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a 'b)       | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #f 0)        | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a 0)        | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 0 'a)        | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 1 #t)        | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 1 1 1 1)     | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 1 2 3 4)     | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #f #f #f)    | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #f #f #f #f) | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #t #t #t)    | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op #t #f #t)    | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a 'a 'a)    | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a 'b 'b)    | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 'a 'b 'c)    | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
-    (op 1 2 #t 1 'a) | ERR    | ERR    | ERR    | ERR    | ERR                | ERR                 | ERR    | ERR    | ERR
+    test                 | sin                     | cos                   | tan
+    ------------------------------------------------------------------------------------------------
+    (op)                 | ERR                     | ERR                   | ERR
+    (op (* (/ -2 1) pi)) | 2.4492935982947064e-16  | 1                     | 2.4492935982947064e-16
+    (op (* (/ -1 1) pi)) | -1.2246467991473532e-16 | -1                    | 1.2246467991473532e-16
+    (op (* (/ -1 2) pi)) | -1                      | 6.123233995736766e-17 | -16331239353195370
+    (op (* (/ -1 3) pi)) | -0.8660254037844386     | 0.5000000000000001    | -1.7320508075688767
+    (op (* (/ -1 4) pi)) | -0.7071067811865475     | 0.7071067811865476    | -0.9999999999999999
+    (op (* (/ -1 6) pi)) | -0.49999999999999994    | 0.8660254037844387    | -0.5773502691896257
+    (op 0)               | 0                       | 1                     | 0
+    (op (* (/ 1 6) pi))  | 0.49999999999999994     | 0.8660254037844387    | 0.5773502691896257
+    (op (* (/ 1 4) pi))  | 0.7071067811865475      | 0.7071067811865476    | 0.9999999999999999
+    (op (* (/ 1 3) pi))  | 0.8660254037844386      | 0.5000000000000001    | 1.7320508075688767
+    (op (* (/ 1 2) pi))  | 1                       | 6.123233995736766e-17 | 16331239353195370
+    (op (* (/ 1 1) pi))  | 1.2246467991473532e-16  | -1                    | -1.2246467991473532e-16
+    (op (* (/ 2 1) pi))  | -2.4492935982947064e-16 | 1                     | -2.4492935982947064e-16
+    (op 0)               | 0                       | 1                     | 0
+    (op +inf.0)          | +nan.0                  | +nan.0                | +nan.0
+    (op -inf.0)          | +nan.0                  | +nan.0                | +nan.0
+    (op +nan.0)          | +nan.0                  | +nan.0                | +nan.0
+    (op #f)              | ERR                     | ERR                   | ERR
+    (op #t)              | ERR                     | ERR                   | ERR
+    (op 'a)              | ERR                     | ERR                   | ERR
+    (op 0 0)             | ERR                     | ERR                   | ERR
+    (op 1 0)             | ERR                     | ERR                   | ERR
+    (op 3 5)             | ERR                     | ERR                   | ERR
+    (op #f #f)           | ERR                     | ERR                   | ERR
+    (op #t #f)           | ERR                     | ERR                   | ERR
+    (op #f #t)           | ERR                     | ERR                   | ERR
+    (op #t #t)           | ERR                     | ERR                   | ERR
+    (op 'a 'a)           | ERR                     | ERR                   | ERR
+    (op 'a 'b)           | ERR                     | ERR                   | ERR
+    (op #f 0)            | ERR                     | ERR                   | ERR
+    (op 'a 0)            | ERR                     | ERR                   | ERR
+    (op 0 'a)            | ERR                     | ERR                   | ERR
+    (op 1 #t)            | ERR                     | ERR                   | ERR
+    (op 1 1 1 1)         | ERR                     | ERR                   | ERR
+    (op 1 2 3 4)         | ERR                     | ERR                   | ERR
+    (op #f #f #f)        | ERR                     | ERR                   | ERR
+    (op #f #f #f #f)     | ERR                     | ERR                   | ERR
+    (op #t #t #t)        | ERR                     | ERR                   | ERR
+    (op #t #f #t)        | ERR                     | ERR                   | ERR
+    (op 'a 'a 'a)        | ERR                     | ERR                   | ERR
+    (op 'a 'b 'b)        | ERR                     | ERR                   | ERR
+    (op 'a 'b 'c)        | ERR                     | ERR                   | ERR
+    (op 1 2 #t 1 'a)     | ERR                     | ERR                   | ERR
+    "
+  `);
+
+  expectOpTable(
+    ['asin', 'acos', 'atan'],
+    [
+      ...zeroArgTests,
+      '(/ (op -2) pi)',
+      '(/ (op -1) pi)',
+      '(/ (op -0.8660254037844387) pi)',
+      '(/ (op -0.7071067811865476) pi)',
+      '(/ (op -0.5000000000000001) pi)',
+      '(/ (op 0) pi)',
+      '(/ (op 0.5000000000000001) pi)',
+      '(/ (op 0.7071067811865476) pi)',
+      '(/ (op 1) pi)',
+      '(/ (op 2) pi)',
+      ...mixedTypesArgTests,
+    ]
+  ).toMatchInlineSnapshot(`
+    "
+    test                            | asin                 | acos               | atan
+    --------------------------------------------------------------------------------------------------
+    (op)                            | ERR                  | ERR                | ERR
+    (/ (op -2) pi)                  | +nan.0               | +nan.0             | -0.35241638234956674
+    (/ (op -1) pi)                  | -0.5                 | 1                  | -0.25
+    (/ (op -0.8660254037844387) pi) | -0.33333333333333337 | 0.8333333333333334 | -0.22718552582850507
+    (/ (op -0.7071067811865476) pi) | -0.25000000000000006 | 0.75               | -0.19591327601530364
+    (/ (op -0.5000000000000001) pi) | -0.1666666666666667  | 0.6666666666666667 | -0.14758361765043332
+    (/ (op 0) pi)                   | 0                    | 0.5                | 0
+    (/ (op 0.5000000000000001) pi)  | 0.1666666666666667   | 0.3333333333333333 | 0.14758361765043332
+    (/ (op 0.7071067811865476) pi)  | 0.25000000000000006  | 0.25               | 0.19591327601530364
+    (/ (op 1) pi)                   | 0.5                  | 0                  | 0.25
+    (/ (op 2) pi)                   | +nan.0               | +nan.0             | 0.35241638234956674
+    (op 0)                          | 0                    | 1.5707963267948966 | 0
+    (op +inf.0)                     | +nan.0               | +nan.0             | 1.5707963267948966
+    (op -inf.0)                     | +nan.0               | +nan.0             | -1.5707963267948966
+    (op +nan.0)                     | +nan.0               | +nan.0             | +nan.0
+    (op #f)                         | ERR                  | ERR                | ERR
+    (op #t)                         | ERR                  | ERR                | ERR
+    (op 'a)                         | ERR                  | ERR                | ERR
+    (op 0 0)                        | ERR                  | ERR                | 0
+    (op 1 0)                        | ERR                  | ERR                | 1.5707963267948966
+    (op 3 5)                        | ERR                  | ERR                | 0.5404195002705842
+    (op #f #f)                      | ERR                  | ERR                | ERR
+    (op #t #f)                      | ERR                  | ERR                | ERR
+    (op #f #t)                      | ERR                  | ERR                | ERR
+    (op #t #t)                      | ERR                  | ERR                | ERR
+    (op 'a 'a)                      | ERR                  | ERR                | ERR
+    (op 'a 'b)                      | ERR                  | ERR                | ERR
+    (op #f 0)                       | ERR                  | ERR                | ERR
+    (op 'a 0)                       | ERR                  | ERR                | ERR
+    (op 0 'a)                       | ERR                  | ERR                | ERR
+    (op 1 #t)                       | ERR                  | ERR                | ERR
+    (op 1 1 1 1)                    | ERR                  | ERR                | ERR
+    (op 1 2 3 4)                    | ERR                  | ERR                | ERR
+    (op #f #f #f)                   | ERR                  | ERR                | ERR
+    (op #f #f #f #f)                | ERR                  | ERR                | ERR
+    (op #t #t #t)                   | ERR                  | ERR                | ERR
+    (op #t #f #t)                   | ERR                  | ERR                | ERR
+    (op 'a 'a 'a)                   | ERR                  | ERR                | ERR
+    (op 'a 'b 'b)                   | ERR                  | ERR                | ERR
+    (op 'a 'b 'c)                   | ERR                  | ERR                | ERR
+    (op 1 2 #t 1 'a)                | ERR                  | ERR                | ERR
+    "
+  `);
+
+  expectOpTable(
+    ['sinh', 'cosh', 'tanh'],
+    [
+      ...zeroArgTests,
+      '(op 0)',
+      '(op 1)',
+      '(* 0.5 (- (exp 1) (exp -1)))',
+      '(* 0.5 (+ (exp 1) (exp -1)))',
+      '(/ (- (exp 1) (exp -1)) (+ (exp 1) (exp -1)))',
+      ...mixedTypesArgTests,
+    ]
+  ).toMatchInlineSnapshot(`
+    "
+    test                                          | sinh               | cosh               | tanh
+    ------------------------------------------------------------------------------------------------------------
+    (op)                                          | ERR                | ERR                | ERR
+    (op 0)                                        | 0                  | 1                  | 0
+    (op 1)                                        | 1.1752011936438014 | 1.5430806348152437 | 0.7615941559557649
+    (* 0.5 (- (exp 1) (exp -1)))                  | 1.1752011936438014 | 1.1752011936438014 | 1.1752011936438014
+    (* 0.5 (+ (exp 1) (exp -1)))                  | 1.5430806348152437 | 1.5430806348152437 | 1.5430806348152437
+    (/ (- (exp 1) (exp -1)) (+ (exp 1) (exp -1))) | 0.7615941559557649 | 0.7615941559557649 | 0.7615941559557649
+    (op 0)                                        | 0                  | 1                  | 0
+    (op +inf.0)                                   | +inf.0             | +inf.0             | 1
+    (op -inf.0)                                   | -inf.0             | +inf.0             | -1
+    (op +nan.0)                                   | +nan.0             | +nan.0             | +nan.0
+    (op #f)                                       | ERR                | ERR                | ERR
+    (op #t)                                       | ERR                | ERR                | ERR
+    (op 'a)                                       | ERR                | ERR                | ERR
+    (op 0 0)                                      | ERR                | ERR                | ERR
+    (op 1 0)                                      | ERR                | ERR                | ERR
+    (op 3 5)                                      | ERR                | ERR                | ERR
+    (op #f #f)                                    | ERR                | ERR                | ERR
+    (op #t #f)                                    | ERR                | ERR                | ERR
+    (op #f #t)                                    | ERR                | ERR                | ERR
+    (op #t #t)                                    | ERR                | ERR                | ERR
+    (op 'a 'a)                                    | ERR                | ERR                | ERR
+    (op 'a 'b)                                    | ERR                | ERR                | ERR
+    (op #f 0)                                     | ERR                | ERR                | ERR
+    (op 'a 0)                                     | ERR                | ERR                | ERR
+    (op 0 'a)                                     | ERR                | ERR                | ERR
+    (op 1 #t)                                     | ERR                | ERR                | ERR
+    (op 1 1 1 1)                                  | ERR                | ERR                | ERR
+    (op 1 2 3 4)                                  | ERR                | ERR                | ERR
+    (op #f #f #f)                                 | ERR                | ERR                | ERR
+    (op #f #f #f #f)                              | ERR                | ERR                | ERR
+    (op #t #t #t)                                 | ERR                | ERR                | ERR
+    (op #t #f #t)                                 | ERR                | ERR                | ERR
+    (op 'a 'a 'a)                                 | ERR                | ERR                | ERR
+    (op 'a 'b 'b)                                 | ERR                | ERR                | ERR
+    (op 'a 'b 'c)                                 | ERR                | ERR                | ERR
+    (op 1 2 #t 1 'a)                              | ERR                | ERR                | ERR
     "
   `);
 });
 
 test('2 arg atan', () => {
-  expectOpTable(['atan'], []).toMatchInlineSnapshot(`""`);
+  expectOpTable(
+    ['atan'],
+    [
+      ...zeroArgTests,
+      '(/ (op 0 0) pi)',
+      '(/ (op 0 1) pi)',
+      '(/ (op 1 1) pi)',
+      '(/ (op 1 0) pi)',
+      '(/ (op 1 -1) pi)',
+      '(/ (op 0 -1) pi)',
+      '(/ (op -1 -1) pi)',
+      '(/ (op -1 0) pi)',
+      '(/ (op -1 1) pi)',
+      ...mixedTypesArgTests,
+    ]
+  ).toMatchInlineSnapshot(`
+    "
+    test              | atan
+    ---------------------------------------
+    (op)              | ERR
+    (/ (op 0 0) pi)   | 0
+    (/ (op 0 1) pi)   | 0
+    (/ (op 1 1) pi)   | 0.25
+    (/ (op 1 0) pi)   | 0.5
+    (/ (op 1 -1) pi)  | 0.75
+    (/ (op 0 -1) pi)  | 1
+    (/ (op -1 -1) pi) | -0.75
+    (/ (op -1 0) pi)  | -0.5
+    (/ (op -1 1) pi)  | -0.25
+    (op 0)            | 0
+    (op +inf.0)       | 1.5707963267948966
+    (op -inf.0)       | -1.5707963267948966
+    (op +nan.0)       | +nan.0
+    (op #f)           | ERR
+    (op #t)           | ERR
+    (op 'a)           | ERR
+    (op 0 0)          | 0
+    (op 1 0)          | 1.5707963267948966
+    (op 3 5)          | 0.5404195002705842
+    (op #f #f)        | ERR
+    (op #t #f)        | ERR
+    (op #f #t)        | ERR
+    (op #t #t)        | ERR
+    (op 'a 'a)        | ERR
+    (op 'a 'b)        | ERR
+    (op #f 0)         | ERR
+    (op 'a 0)         | ERR
+    (op 0 'a)         | ERR
+    (op 1 #t)         | ERR
+    (op 1 1 1 1)      | ERR
+    (op 1 2 3 4)      | ERR
+    (op #f #f #f)     | ERR
+    (op #f #f #f #f)  | ERR
+    (op #t #t #t)     | ERR
+    (op #t #f #t)     | ERR
+    (op 'a 'a 'a)     | ERR
+    (op 'a 'b 'b)     | ERR
+    (op 'a 'b 'c)     | ERR
+    (op 1 2 #t 1 'a)  | ERR
+    "
+  `);
 });
 
 test('boolean ops', () => {
