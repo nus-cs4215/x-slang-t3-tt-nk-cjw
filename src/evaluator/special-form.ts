@@ -15,6 +15,8 @@ type SpecialFormKeywordToType = {
   'let*': 'let*';
   letrec: 'letrec';
   quote: 'quote';
+  quasiquote: 'quasiquote';
+  unquote: 'unquote';
 };
 
 export type SpecialFormKeywords = keyof SpecialFormKeywordToType;
@@ -114,6 +116,18 @@ export const special_forms: Record<SpecialFormKeywords, Form[]> = {
     {
       pattern: jsonRead(['quote', json_var('e')]),
       form: 'quote',
+    },
+  ],
+  quasiquote: [
+    {
+      pattern: jsonRead(['quasiquote', json_var('e')]),
+      form: 'quasiquote',
+    },
+  ],
+  unquote: [
+    {
+      pattern: jsonRead(['unquote', json_var('e')]),
+      form: 'unquote',
     },
   ],
 };
