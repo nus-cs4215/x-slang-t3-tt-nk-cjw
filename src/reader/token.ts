@@ -108,9 +108,21 @@ export function par_match(lpar: LPar, rpar: RPar): boolean {
 }
 
 function substring_to_token(s: string, loc: Location): Token {
-  // Try to interpret as single dot
-  if (s === '.') {
-    return dot('.', loc);
+  // Interpret special cases
+  switch (s) {
+    case '.':
+      return dot('.', loc);
+    case '+inf.0':
+    case '+inf.f':
+      return num('Infinity', loc);
+    case '-inf.0':
+    case '-inf.f':
+      return num('-Infinity', loc);
+    case '+nan.0':
+    case '+nan.f':
+    case '-nan.0':
+    case '-nan.f':
+      return num('NaN', loc);
   }
 
   // Try to interpret as number
