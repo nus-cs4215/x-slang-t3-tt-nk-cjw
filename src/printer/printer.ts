@@ -7,7 +7,15 @@ export function print<T>(e: SListStruct<T>): string {
     case STypes.Symbol:
       return val(e);
     case STypes.Number:
-      return val(e).toString();
+      if (Number.isNaN(val(e))) {
+        return '+nan.0';
+      } else if (val(e) === Infinity) {
+        return '+inf.0';
+      } else if (val(e) === -Infinity) {
+        return '-inf.0';
+      } else {
+        return val(e).toString();
+      }
     case STypes.Boolean:
       return val(e) ? '#t' : '#f';
     case STypes.List: {

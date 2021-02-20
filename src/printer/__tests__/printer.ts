@@ -10,6 +10,9 @@ describe('valid print tests', () => {
   test('basic numbers', () => {
     expect(print(snumber(123))).toMatchInlineSnapshot(`"123"`);
     expect(print(snumber(123.5))).toMatchInlineSnapshot(`"123.5"`);
+    expect(print(snumber(Infinity))).toMatchInlineSnapshot(`"+inf.0"`);
+    expect(print(snumber(-Infinity))).toMatchInlineSnapshot(`"-inf.0"`);
+    expect(print(snumber(NaN))).toMatchInlineSnapshot(`"+nan.0"`);
   });
 
   test('basic booleans', () => {
