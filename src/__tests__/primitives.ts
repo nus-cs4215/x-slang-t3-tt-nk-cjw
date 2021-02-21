@@ -254,41 +254,41 @@ test('2 arg log', () => {
 });
 
 test('exactly binary numeric ops', () => {
-  expectOpTable(['quotient', 'remainder', 'modulo', 'expt', 'log'], [...mixedTypesArgTests])
+  expectOpTable(['quotient', 'remainder', 'modulo', 'expt'], [...mixedTypesArgTests])
     .toMatchInlineSnapshot(`
     "
-    test             | quotient | remainder | modulo | expt | log
-    ----------------------------------------------------------------------------
-    (op 0)           | ERR      | ERR       | ERR    | ERR  | -inf.0
-    (op +inf.0)      | ERR      | ERR       | ERR    | ERR  | +inf.0
-    (op -inf.0)      | ERR      | ERR       | ERR    | ERR  | +nan.0
-    (op +nan.0)      | ERR      | ERR       | ERR    | ERR  | +nan.0
-    (op #f)          | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #t)          | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a)          | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 0 0)         | ERR      | ERR       | ERR    | 1    | +nan.0
-    (op 1 0)         | ERR      | ERR       | ERR    | 1    | 0
-    (op 3 5)         | 0        | 3         | 3      | 243  | 0.6826061944859853
-    (op #f #f)       | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #t #f)       | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #f #t)       | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #t #t)       | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a 'a)       | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a 'b)       | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #f 0)        | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a 0)        | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 0 'a)        | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 1 #t)        | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 1 1 1 1)     | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 1 2 3 4)     | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #f #f #f)    | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #f #f #f #f) | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #t #t #t)    | ERR      | ERR       | ERR    | ERR  | ERR
-    (op #t #f #t)    | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a 'a 'a)    | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a 'b 'b)    | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 'a 'b 'c)    | ERR      | ERR       | ERR    | ERR  | ERR
-    (op 1 2 #t 1 'a) | ERR      | ERR       | ERR    | ERR  | ERR
+    test             | quotient | remainder | modulo | expt
+    -------------------------------------------------------
+    (op 0)           | ERR      | ERR       | ERR    | ERR
+    (op +inf.0)      | ERR      | ERR       | ERR    | ERR
+    (op -inf.0)      | ERR      | ERR       | ERR    | ERR
+    (op +nan.0)      | ERR      | ERR       | ERR    | ERR
+    (op #f)          | ERR      | ERR       | ERR    | ERR
+    (op #t)          | ERR      | ERR       | ERR    | ERR
+    (op 'a)          | ERR      | ERR       | ERR    | ERR
+    (op 0 0)         | ERR      | ERR       | ERR    | 1
+    (op 1 0)         | ERR      | ERR       | ERR    | 1
+    (op 3 5)         | 0        | 3         | 3      | 243
+    (op #f #f)       | ERR      | ERR       | ERR    | ERR
+    (op #t #f)       | ERR      | ERR       | ERR    | ERR
+    (op #f #t)       | ERR      | ERR       | ERR    | ERR
+    (op #t #t)       | ERR      | ERR       | ERR    | ERR
+    (op 'a 'a)       | ERR      | ERR       | ERR    | ERR
+    (op 'a 'b)       | ERR      | ERR       | ERR    | ERR
+    (op #f 0)        | ERR      | ERR       | ERR    | ERR
+    (op 'a 0)        | ERR      | ERR       | ERR    | ERR
+    (op 0 'a)        | ERR      | ERR       | ERR    | ERR
+    (op 1 #t)        | ERR      | ERR       | ERR    | ERR
+    (op 1 1 1 1)     | ERR      | ERR       | ERR    | ERR
+    (op 1 2 3 4)     | ERR      | ERR       | ERR    | ERR
+    (op #f #f #f)    | ERR      | ERR       | ERR    | ERR
+    (op #f #f #f #f) | ERR      | ERR       | ERR    | ERR
+    (op #t #t #t)    | ERR      | ERR       | ERR    | ERR
+    (op #t #f #t)    | ERR      | ERR       | ERR    | ERR
+    (op 'a 'a 'a)    | ERR      | ERR       | ERR    | ERR
+    (op 'a 'b 'b)    | ERR      | ERR       | ERR    | ERR
+    (op 'a 'b 'c)    | ERR      | ERR       | ERR    | ERR
+    (op 1 2 #t 1 'a) | ERR      | ERR       | ERR    | ERR
     "
   `);
 });
