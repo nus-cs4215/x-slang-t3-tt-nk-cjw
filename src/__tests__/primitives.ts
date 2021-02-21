@@ -316,8 +316,35 @@ test('unary arithmetic ops', () => {
   `);
 });
 
-test('2 arg log', () => {
-  expectOpTable(['log'], []).toMatchInlineSnapshot(`""`);
+test('2 args log', () => {
+  expectOpTable(['log'], [...twoNumArgTests]).toMatchInlineSnapshot(`
+    "
+    test               | log
+    ---------------------------------------
+    (op 0 0)           | ERR
+    (op 1 0)           | ERR
+    (op 0 1)           | ERR
+    (op 1 1)           | ERR
+    (op 3 5)           | 0.6826061944859853
+    (op 5 3)           | 1.4649735207179273
+    (op 0 +inf.0)      | ERR
+    (op 1 +inf.0)      | 0
+    (op 2 +inf.0)      | 0
+    (op +inf.0 0)      | ERR
+    (op +inf.0 1)      | ERR
+    (op +inf.0 2)      | +inf.0
+    (op +inf.0 +inf.0) | +nan.0
+    (op 0.1 0)         | ERR
+    (op 0 0.1)         | ERR
+    (op 0.1 0.1)       | 1
+    (op 0.3 0.5)       | 1.7369655941662063
+    (op 0.5 0.3)       | 0.5757166424934449
+    (op 3 5)           | 0.6826061944859853
+    (op -3 5)          | +nan.0
+    (op 3 -5)          | +nan.0
+    (op -3 -5)         | +nan.0
+    "
+  `);
 });
 
 test('exactly binary numeric ops', () => {
