@@ -3,7 +3,7 @@ import { equals, sboolean, scons, slist, snil, SNumber, snumber, val } from '../
 import { is_symbol, is_number, is_boolean, is_nil, is_list, is_boxed } from '../sexpr';
 import { car, cdr } from '../sexpr';
 import { EvalValue, EvalResult } from './types';
-import { instanceOfEvalData } from './datatypes';
+import { is_function_variant } from './datatypes';
 
 export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResult> = {
   'eq?': (...args) => {
@@ -115,7 +115,7 @@ export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResul
       return err();
     }
     const [arg] = args;
-    return ok(sboolean(is_boxed(arg) && instanceOfEvalData(arg.val)));
+    return ok(sboolean(is_boxed(arg) && is_function_variant(arg.val)));
   },
 
   'zero?': (...args) => {
