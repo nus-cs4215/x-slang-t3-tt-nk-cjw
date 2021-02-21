@@ -245,8 +245,75 @@ test('unary arithmetic ops', () => {
       'exp',
       'log',
     ],
-    []
-  ).toMatchInlineSnapshot(`""`);
+    [
+      ...zeroArgTests,
+      ...oneArgTests,
+      ...mixedTypesArgTests,
+      ...malformedArgTests,
+      ...oneListArgTests,
+    ]
+  ).toMatchInlineSnapshot(`
+    "
+    test              | zero? | positive? | negative? | round  | floor  | ceiling | truncate | sgn    | abs    | add1   | sub1   | exp                 | log
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    (op)              | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 0)            | #t    | #f        | #f        | 0      | 0      | 0       | 0        | 0      | 0      | 1      | -1     | 1                   | ERR
+    (op 1)            | #f    | #t        | #f        | 1      | 1      | 1       | 1        | 1      | 1      | 2      | 0      | 2.718281828459045   | 0
+    (op 2)            | #f    | #t        | #f        | 2      | 2      | 2       | 2        | 1      | 2      | 3      | 1      | 7.38905609893065    | 0.6931471805599453
+    (op 0.1)          | #f    | #t        | #f        | 0      | 0      | 1       | 0        | 1      | 0.1    | 1.1    | -0.9   | 1.1051709180756477  | -2.3025850929940455
+    (op 2.4)          | #f    | #t        | #f        | 2      | 2      | 3       | 2        | 1      | 2.4    | 3.4    | 1.4    | 11.023176380641601  | 0.8754687373538999
+    (op 2.5)          | #f    | #t        | #f        | 3      | 2      | 3       | 2        | 1      | 2.5    | 3.5    | 1.5    | 12.182493960703473  | 0.9162907318741551
+    (op 2.6)          | #f    | #t        | #f        | 3      | 2      | 3       | 2        | 1      | 2.6    | 3.6    | 1.6    | 13.463738035001692  | 0.9555114450274365
+    (op -2.4)         | #f    | #f        | #t        | -2     | -3     | -2      | -2       | -1     | 2.4    | -1.4   | -3.4   | 0.09071795328941251 | +nan.0
+    (op -2.5)         | #f    | #f        | #t        | -2     | -3     | -2      | -2       | -1     | 2.5    | -1.5   | -3.5   | 0.0820849986238988  | +nan.0
+    (op -2.6)         | #f    | #f        | #t        | -3     | -3     | -2      | -2       | -1     | 2.6    | -1.6   | -3.6   | 0.07427357821433388 | +nan.0
+    (op -1)           | #f    | #f        | #t        | -1     | -1     | -1      | -1       | -1     | 1      | 0      | -2     | 0.36787944117144233 | +nan.0
+    (op -2)           | #f    | #f        | #t        | -2     | -2     | -2      | -2       | -1     | 2      | -1     | -3     | 0.1353352832366127  | +nan.0
+    (op +inf.0)       | #f    | #t        | #f        | +inf.0 | +inf.0 | +inf.0  | +inf.0   | 1      | +inf.0 | +inf.0 | +inf.0 | +inf.0              | +inf.0
+    (op -inf.0)       | #f    | #f        | #t        | -inf.0 | -inf.0 | -inf.0  | -inf.0   | -1     | +inf.0 | -inf.0 | -inf.0 | 0                   | +nan.0
+    (op +nan.0)       | #f    | #f        | #f        | +nan.0 | +nan.0 | +nan.0  | +nan.0   | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0              | +nan.0
+    (op 0)            | #t    | #f        | #f        | 0      | 0      | 0       | 0        | 0      | 0      | 1      | -1     | 1                   | ERR
+    (op +inf.0)       | #f    | #t        | #f        | +inf.0 | +inf.0 | +inf.0  | +inf.0   | 1      | +inf.0 | +inf.0 | +inf.0 | +inf.0              | +inf.0
+    (op -inf.0)       | #f    | #f        | #t        | -inf.0 | -inf.0 | -inf.0  | -inf.0   | -1     | +inf.0 | -inf.0 | -inf.0 | 0                   | +nan.0
+    (op +nan.0)       | #f    | #f        | #f        | +nan.0 | +nan.0 | +nan.0  | +nan.0   | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0              | +nan.0
+    (op #f)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #t)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 0 0)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 1 0)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 3 5)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | 0.6826061944859853
+    (op #f #f)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #t #f)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #f #t)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #t #t)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a 'a)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a 'b)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #f 0)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a 0)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 0 'a)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 1 #t)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 1 1 1 1)      | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 1 2 3 4)      | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #f #f #f)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #f #f #f #f)  | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #t #t #t)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op #t #f #t)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a 'a 'a)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a 'b 'b)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 'a 'b 'c)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 1 2 #t 1 'a)  | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 1 . 2)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op . 1)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op a)            | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op a a)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op ())           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op '())          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op '(1))         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op '(1 2))       | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op '(1 2 3 4 5)) | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op '(1 #t))      | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    "
+  `);
 });
 
 test('2 arg log', () => {
