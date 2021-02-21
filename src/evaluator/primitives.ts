@@ -356,11 +356,15 @@ export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResul
     }
     const [arg, base] = args;
     if (base) {
+      // val(base) === 0 is manually checked as log 0 in the denominator should raise exception
+      // But the Javascript Math.log(0) returns -Infinity instead and causing division with it to return 0
       return !is_number(arg) || !is_number(base)
+        ? err()
+        : val(arg) === 0 || val(base) === 1 || val(base) === 0
         ? err()
         : ok(snumber(Math.log(val(arg)) / Math.log(val(base))));
     } else {
-      return !is_number(arg) ? err() : ok(snumber(Math.log(val(arg))));
+      return !is_number(arg) || val(arg) === 0 ? err() : ok(snumber(Math.log(val(arg))));
     }
   },
 
