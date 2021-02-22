@@ -1,8 +1,8 @@
 import { err, ok, isBadResult } from '../utils';
-import { SExpr, sbox, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
+import { sbox, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
-import { EvalDataType, make_closure, make_primitive } from './datatypes';
+import { EvalData, EvalDataType, make_closure, make_primitive } from './datatypes';
 import { EvalValue, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
@@ -206,12 +206,12 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
-  quote: ({ e }: { e: SExpr[] }): EvalResult => ok(e[0]),
-  quasiquote: ({ e }: { e: SExpr[] }, env: Environment): EvalResult => expand_quasiquote(e[0], env),
+  quote: ({ e }: MatchObject): EvalResult => ok(e[0]),
+  quasiquote: ({ e }: MatchObject, env: Environment): EvalResult => expand_quasiquote(e[0], env),
   unquote: (): EvalResult => err(),
 };
 
-function expand_quasiquote(e: SExpr, env: Environment): EvalResult {
+function expand_quasiquote(e: EvalValue, env: Environment): EvalResult {
   if (is_list(e)) {
     const a = car(e);
     const d = cdr(e);
@@ -280,6 +280,11 @@ const apply: Apply = (fun, ...args) => {
 };
 
 export const evaluate: Evaluate = (program, env) => {
+  // Other values cannot be evaluated
+  if (is_boxed(program)) {
+    return err();
+  }
+
   // Normal form
   if (is_value(program)) {
     return ok(program);
@@ -329,7 +334,7 @@ export const evaluate: Evaluate = (program, env) => {
       args.push(arg_r.v);
       p = cdr(p);
     }
-    if (!is_nil(p)) {
+    if (!is_nil<EvalData>(p)) {
       return err();
     }
     return apply(fun, ...args);

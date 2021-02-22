@@ -4,6 +4,7 @@ import { val, car } from '../sexpr';
 import { is_symbol } from '../sexpr';
 import { jsonRead } from '../sexpr';
 import { hasKey } from '../utils';
+import { EvalData } from './datatypes';
 
 type SpecialFormKeywordToType = {
   define: 'define_const' | 'define_func';
@@ -143,7 +144,7 @@ export type MatchResult =
   | { match_type: MatchType.InvalidSyntax; form: undefined; matches: undefined }
   | { match_type: MatchType.NoMatch; form: undefined; matches: undefined };
 
-export function match_special_form(program: SList<never>): MatchResult {
+export function match_special_form(program: SList<EvalData>): MatchResult {
   const head = car(program);
   if (!is_symbol(head)) {
     return { match_type: MatchType.NoMatch, form: undefined, matches: undefined };

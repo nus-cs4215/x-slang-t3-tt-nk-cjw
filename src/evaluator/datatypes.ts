@@ -1,6 +1,5 @@
 import { EvalValue, EvalResult } from './types';
 import { Environment } from './environment';
-import { SExpr } from '../sexpr';
 
 export enum EvalDataType {
   Closure,
@@ -11,7 +10,7 @@ export interface Closure {
   variant: EvalDataType.Closure;
   env: Environment;
   params: string[];
-  body: SExpr[];
+  body: EvalValue[];
 }
 
 export interface Primitive {
@@ -21,7 +20,7 @@ export interface Primitive {
 
 export type EvalData = Closure | Primitive;
 
-export const make_closure = (env: Environment, params: string[], body: SExpr[]): Closure => ({
+export const make_closure = (env: Environment, params: string[], body: EvalValue[]): Closure => ({
   variant: EvalDataType.Closure,
   env,
   params,

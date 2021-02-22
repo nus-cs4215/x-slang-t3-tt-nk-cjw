@@ -1,4 +1,5 @@
-import { JsonSExpr, SExpr, SListStruct } from '../sexpr';
+import { EvalValue } from '../evaluator/types';
+import { JsonSExpr, SListStruct } from '../sexpr';
 import { car, cdr, equals, is_boxed, is_list, jsonRead } from '../sexpr';
 
 export enum PatternLeafType {
@@ -15,7 +16,7 @@ export type PatternLeaf =
 export type Pattern = SListStruct<PatternLeaf>;
 export type JsonPattern = JsonSExpr<PatternLeaf>;
 
-export type MatchObject = Record<string, SExpr[]>;
+export type MatchObject = Record<string, EvalValue[]>;
 
 export function json_var(name: string): JsonPattern {
   return { boxed: { variant: PatternLeafType.Variable, name } };
@@ -41,14 +42,14 @@ export function json_plus(pattern: JsonPattern, tail_pattern: JsonPattern): Json
   };
 }
 
-function add_match(matches: MatchObject, varname: string, match: SExpr) {
+function add_match(matches: MatchObject, varname: string, match: EvalValue) {
   if (!(varname in matches)) {
     matches[varname] = [];
   }
   matches[varname].push(match);
 }
 
-export function match(program: SExpr, pattern: Pattern): MatchObject | undefined {
+export function match(program: EvalValue, pattern: Pattern): MatchObject | undefined {
   const matches: MatchObject = {};
   if (match_helper(program, pattern, matches)) {
     return matches;
@@ -57,7 +58,7 @@ export function match(program: SExpr, pattern: Pattern): MatchObject | undefined
   }
 }
 
-function match_helper(program: SExpr, pattern: Pattern, matches: MatchObject): boolean {
+function match_helper(program: EvalValue, pattern: Pattern, matches: MatchObject): boolean {
   if (is_boxed(pattern)) {
     // handle pattern leaf
     const pattern_leaf = pattern.val;
