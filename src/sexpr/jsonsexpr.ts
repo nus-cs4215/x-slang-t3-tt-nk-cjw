@@ -7,9 +7,11 @@ type JsonBoxed<T> = T extends never ? never : { boxed: T };
 
 const jbox = <T>(boxed: T): JsonBoxed<T> => ({ boxed } as JsonBoxed<T>);
 
-export type JsonSExpr<T> = JsonSExpr<T>[] | string | number | boolean | JsonBoxed<T>;
+export type JsonSExprT<T> = JsonSExprT<T>[] | string | number | boolean | JsonBoxed<T>;
 
-export function jsonPrint<T>(e: SExprT<T>): JsonSExpr<T> {
+export type JsonSExpr = JsonSExprT<never>;
+
+export function jsonPrint<T>(e: SExprT<T>): JsonSExprT<T> {
   if (is_symbol(e) || is_number(e) || is_boolean(e)) {
     return val(e);
   } else if (is_nil(e)) {
@@ -32,7 +34,7 @@ export function jsonPrint<T>(e: SExprT<T>): JsonSExpr<T> {
   }
 }
 
-export function jsonRead<T>(j: JsonSExpr<T>): SExprT<T> {
+export function jsonRead<T>(j: JsonSExprT<T>): SExprT<T> {
   if (typeof j === 'string') {
     return ssymbol(j);
   } else if (typeof j === 'number') {
