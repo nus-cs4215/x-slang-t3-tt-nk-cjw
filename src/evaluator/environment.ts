@@ -1,6 +1,6 @@
-import { EvalValue } from './types';
+import { EvalSExpr } from './types';
 
-export type Bindings = Record<string, EvalValue | undefined>;
+export type Bindings = Record<string, EvalSExpr | undefined>;
 
 export interface NonemptyEnvironment {
   bindings: Bindings;

@@ -3,7 +3,7 @@ import { sbox, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure, make_primitive } from './datatypes';
-import { EvalValue, Evaluate, Apply, EvalResult } from './types';
+import { EvalSExpr, Evaluate, Apply, EvalResult } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
 import { primitive_consts, primitive_funcs } from './primitives';
@@ -16,7 +16,7 @@ const primitive_funcs_bindings: Bindings = Object.entries(primitive_funcs).reduc
     obj[name] = sbox(make_primitive(fun));
     return obj;
   },
-  {} as Record<string, EvalValue>
+  {} as Record<string, EvalSExpr>
 );
 
 const primitive_consts_bindings: Bindings = Object.entries(primitive_consts).reduce(
@@ -24,7 +24,7 @@ const primitive_consts_bindings: Bindings = Object.entries(primitive_consts).red
     obj[name] = c;
     return obj;
   },
-  {} as Record<string, EvalValue>
+  {} as Record<string, EvalSExpr>
 );
 
 export { Environment, make_env, make_env_list };
@@ -211,7 +211,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
   unquote: (): EvalResult => err(),
 };
 
-function expand_quasiquote(e: EvalValue, env: Environment): EvalResult {
+function expand_quasiquote(e: EvalSExpr, env: Environment): EvalResult {
   if (is_list(e)) {
     const a = car(e);
     const d = cdr(e);
@@ -325,7 +325,7 @@ export const evaluate: Evaluate = (program, env) => {
     const fun = fun_r.v;
 
     let p = cdr(program);
-    const args: EvalValue[] = [];
+    const args: EvalSExpr[] = [];
     while (is_list(p)) {
       const arg_r = evaluate(car(p), env);
       if (isBadResult(arg_r)) {
