@@ -162,11 +162,91 @@ describe('list accessor primitives', () => {
       the_global_environment
     ).toMatchInlineSnapshot(`undefined`);
   });
+
+  test('valid last', () => {
+    expectJsonReadEvalPrint(
+      ['last', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`"a"`);
+  });
+
+  test('invalid last', () => {
+    expectJsonReadEvalError(['last', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['last', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last', []], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['last', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
 });
 
-// describe('list constructor primitives', () => {
+describe('list constructor primitives', () => {
+  test('valid cons', () => {
+    expectJsonReadEvalPrint(['cons', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+  ".",
+  1,
+]
+`);
 
-// })
+    expectJsonReadEvalPrint(['cons', 1, ['list']], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+]
+`);
+  });
+
+  test('invalid cons', () => {
+    expectJsonReadEvalError(['cons'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid list', () => {
+    expectJsonReadEvalPrint(['list', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+  1,
+]
+`);
+
+    expectJsonReadEvalPrint(['list', 1, ['list', 1]], the_global_environment)
+      .toMatchInlineSnapshot(`
+Array [
+  1,
+  Array [
+    1,
+  ],
+]
+`);
+
+    expectJsonReadEvalPrint(['list'], the_global_environment).toMatchInlineSnapshot(`Array []`);
+  });
+
+  test('valid list*', () => {
+    expectJsonReadEvalPrint(['list*', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+  ".",
+  1,
+]
+`);
+
+    expectJsonReadEvalPrint(['list*', 1], the_global_environment).toMatchInlineSnapshot(`1`);
+  });
+
+  test('invalid list*', () => {
+    expectJsonReadEvalError(['list*'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+  });
+});
 
 describe('boolean ops', () => {
   test('valid =', () => {
