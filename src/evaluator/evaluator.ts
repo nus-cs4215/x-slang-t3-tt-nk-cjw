@@ -34,12 +34,9 @@ export const the_global_environment: Environment = make_env_list(
   primitive_consts_bindings
 );
 
-export type SpecialFormEvaluator = (
-  matches: MatchObject,
-  env: Environment | undefined
-) => EvalResult;
+export type SpecialFormEvaluator = (matches: MatchObject, env: Environment) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
-  define_const: ({ id, expr }: MatchObject, env: Environment | undefined): EvalResult => {
+  define_const: ({ id, expr }: MatchObject, env: Environment): EvalResult => {
     if (!is_symbol(id[0])) {
       return err();
     }
@@ -50,10 +47,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     env!.bindings[val(id[0])] = r.v;
     return r;
   },
-  define_func: (
-    { fun_name, params, body }: MatchObject,
-    env: Environment | undefined
-  ): EvalResult => {
+  define_func: ({ fun_name, params, body }: MatchObject, env: Environment): EvalResult => {
     if (!is_symbol(fun_name[0])) {
       return err();
     }
@@ -73,7 +67,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     env!.bindings[val(fun_name[0])] = fun;
     return ok(fun);
   },
-  begin: ({ body }: MatchObject, env: Environment | undefined): EvalResult => {
+  begin: ({ body }: MatchObject, env: Environment): EvalResult => {
     let r: EvalResult;
     for (const expr of body) {
       r = evaluate(expr, env);
@@ -83,7 +77,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return r!;
   },
-  begin0: ({ body }: MatchObject, env: Environment | undefined): EvalResult => {
+  begin0: ({ body }: MatchObject, env: Environment): EvalResult => {
     const it = body[Symbol.iterator]();
     const r = evaluate(it.next().value, env);
     for (const expr of it) {
@@ -94,7 +88,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return r;
   },
-  cond: ({ test_exprs, then_bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+  cond: ({ test_exprs, then_bodies }: MatchObject, env: Environment): EvalResult => {
     for (let i = 0; i < test_exprs.length; i++) {
       const r: EvalResult = evaluate(test_exprs[i], env);
       if (isBadResult(r)) {
@@ -126,7 +120,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return err();
   },
-  lambda: ({ params, body }: MatchObject, env: Environment | undefined): EvalResult => {
+  lambda: ({ params, body }: MatchObject, env: Environment): EvalResult => {
     if (params === undefined) {
       params = [];
     }
@@ -143,7 +137,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       )
     );
   },
-  let: ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+  let: ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
     const bindings: Bindings = {};
     for (let i = 0; i < val_exprs.length; i++) {
       const id = ids[i];
@@ -165,7 +159,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
-  'let*': ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+  'let*': ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
     for (let i = 0; i < val_exprs.length; i++) {
       const bindings: Bindings = {};
       const id = ids[i];
@@ -187,7 +181,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
-  letrec: ({ ids, val_exprs, bodies }: MatchObject, env: Environment | undefined): EvalResult => {
+  letrec: ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
     if (!ids.every(is_symbol)) {
       return err();
     }
@@ -213,12 +207,11 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     return evaluate(bodies[bodies.length - 1], env);
   },
   quote: ({ e }: { e: SExpr[] }): EvalResult => ok(e[0]),
-  quasiquote: ({ e }: { e: SExpr[] }, env: Environment | undefined): EvalResult =>
-    expand_quasiquote(e[0], env),
+  quasiquote: ({ e }: { e: SExpr[] }, env: Environment): EvalResult => expand_quasiquote(e[0], env),
   unquote: (): EvalResult => err(),
 };
 
-function expand_quasiquote(e: SExpr, env: Environment | undefined): EvalResult {
+function expand_quasiquote(e: SExpr, env: Environment): EvalResult {
   if (is_list(e)) {
     const a = car(e);
     const d = cdr(e);

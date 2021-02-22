@@ -2,23 +2,25 @@ import { EvalValue } from './types';
 
 export type Bindings = Record<string, EvalValue | undefined>;
 
-export interface Environment {
+export interface NonemptyEnvironment {
   bindings: Bindings;
-  parent: Environment | undefined;
+  parent: Environment;
 }
 
-export function make_env(bindings: Bindings, parent: Environment | undefined): Environment {
+export type Environment = undefined | NonemptyEnvironment;
+
+export function make_env(bindings: Bindings, parent: Environment): NonemptyEnvironment {
   return { bindings, parent };
 }
 
-export function make_env_list(...bindings: [Bindings, ...Bindings[]]): Environment;
-export function make_env_list(...bindings: Bindings[]): Environment | undefined;
-export function make_env_list(...bindings: Bindings[]): Environment | undefined {
+export function make_env_list(...bindings: [Bindings, ...Bindings[]]): NonemptyEnvironment;
+export function make_env_list(...bindings: Bindings[]): Environment;
+export function make_env_list(...bindings: Bindings[]): Environment {
   return bindings.reduceRight((env, bindings) => make_env(bindings, env), undefined);
 }
 
-export function find_env(name: string, env_: Environment | undefined): Environment | undefined {
-  let env: Environment | undefined;
+export function find_env(name: string, env_: Environment): Environment {
+  let env: Environment;
   for (env = env_; env !== undefined; env = env.parent) {
     if (name in env.bindings) {
       break;

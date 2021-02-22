@@ -9,11 +9,11 @@ import {
 } from '../evaluator';
 import { ok, getOk, getErr } from '../../utils';
 
-function expectJsonReadEvalPrint(j: JsonSExpr<never>, env: Environment | undefined) {
+function expectJsonReadEvalPrint(j: JsonSExpr<never>, env: Environment) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
 }
 
-function expectJsonReadEvalError(j: JsonSExpr<never>, env: Environment | undefined) {
+function expectJsonReadEvalError(j: JsonSExpr<never>, env: Environment) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
