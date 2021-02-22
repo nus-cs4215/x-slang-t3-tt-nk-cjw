@@ -1,9 +1,9 @@
 import { Result } from '../utils';
-import { SListStruct } from '../sexpr';
+import { SExprT } from '../sexpr';
 import { Environment } from './environment';
 import { EvalData } from './datatypes';
 
-export type EvalValue = SListStruct<EvalData>;
+export type EvalValue = SExprT<EvalData>;
 
 export type EvalResult = Result<EvalValue, void>;
 

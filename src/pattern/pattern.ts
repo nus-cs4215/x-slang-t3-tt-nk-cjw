@@ -1,5 +1,5 @@
 import { EvalValue } from '../evaluator/types';
-import { JsonSExpr, SListStruct } from '../sexpr';
+import { JsonSExpr, SExprT } from '../sexpr';
 import { car, cdr, equals, is_boxed, is_list, jsonRead } from '../sexpr';
 
 export enum PatternLeafType {
@@ -13,7 +13,7 @@ export type PatternLeaf =
   | { variant: PatternLeafType.ZeroOrMore; pattern: Pattern; tail_pattern: Pattern }
   | { variant: PatternLeafType.OneOrMore; pattern: Pattern; tail_pattern: Pattern };
 
-export type Pattern = SListStruct<PatternLeaf>;
+export type Pattern = SExprT<PatternLeaf>;
 export type JsonPattern = JsonSExpr<PatternLeaf>;
 
 export type MatchObject = Record<string, EvalValue[]>;

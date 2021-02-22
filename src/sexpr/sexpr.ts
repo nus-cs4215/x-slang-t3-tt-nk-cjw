@@ -42,9 +42,11 @@ interface SListBase {
 interface SListPair<T> extends SListBase {
   _variant: SListVariants.PAIR;
 
-  x: SListStruct<T>;
-  y: SListStruct<T>;
+  x: SExprT<T>;
+  y: SExprT<T>;
 }
+
+export type SList<T> = SListPair<T>;
 
 interface SBoxedF<T> {
   _type: STypes.Boxed;
@@ -53,12 +55,10 @@ interface SBoxedF<T> {
 
 export type SBoxed<T> = T extends never ? never : SBoxedF<T>;
 
-export type SList<T> = SListPair<T>;
-export type SListStruct<T> = SExprBase<T> | SList<T>;
-
 export type SExprBase<T> = SSymbol | SNumber | SBoolean | SNil | SBoxed<T>;
 
-export type SExpr = SListStruct<never>;
+export type SExprT<T> = SExprBase<T> | SList<T>;
+export type SExpr = SExprT<never>;
 
 /****************
  * CONSTRUCTORS *
@@ -72,16 +72,16 @@ export const sboolean = (val: boolean): SBoolean => ({
 });
 
 export const snil = (): SNil => ({ _type: STypes.Nil });
-export const scons = <T>(x: SListStruct<T>, y: SListStruct<T>): SList<T> => ({
+export const scons = <T>(x: SExprT<T>, y: SExprT<T>): SList<T> => ({
   _type: STypes.List,
   _variant: SListVariants.PAIR,
   x,
   y,
 });
 
-export function slist<T>(xs: [SListStruct<T>, ...SListStruct<T>[]], tail: SListStruct<T>): SList<T>;
-export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruct<T>;
-export function slist<T>(xs: SListStruct<T>[], tail: SListStruct<T>): SListStruct<T> {
+export function slist<T>(xs: [SExprT<T>, ...SExprT<T>[]], tail: SExprT<T>): SList<T>;
+export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T>;
+export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T> {
   return xs.reduceRight((p, x) => scons(x, p), tail);
 }
 
@@ -110,29 +110,29 @@ export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | nu
 export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T {
   return e.val;
 }
-export const car = <T>(p: SList<T>): SListStruct<T> => p.x;
-export const cdr = <T>(p: SList<T>): SListStruct<T> => p.y;
+export const car = <T>(p: SList<T>): SExprT<T> => p.x;
+export const cdr = <T>(p: SList<T>): SExprT<T> => p.y;
 
 /**************
  * PREDICATES *
  **************/
 
-export const is_symbol = <T>(e: SListStruct<T>): e is SSymbol => e._type === STypes.Symbol;
-export const is_number = <T>(e: SListStruct<T>): e is SNumber => e._type === STypes.Number;
-export const is_boolean = <T>(e: SListStruct<T>): e is SBoolean => e._type === STypes.Boolean;
-export const is_nil = <T>(e: SListStruct<T>): e is SNil => e._type === STypes.Nil;
-export const is_value = <T>(e: SListStruct<T>): e is SNumber | SBoolean =>
+export const is_symbol = <T>(e: SExprT<T>): e is SSymbol => e._type === STypes.Symbol;
+export const is_number = <T>(e: SExprT<T>): e is SNumber => e._type === STypes.Number;
+export const is_boolean = <T>(e: SExprT<T>): e is SBoolean => e._type === STypes.Boolean;
+export const is_nil = <T>(e: SExprT<T>): e is SNil => e._type === STypes.Nil;
+export const is_value = <T>(e: SExprT<T>): e is SNumber | SBoolean =>
   e._type === STypes.Number || e._type === STypes.Boolean;
-export const is_list = <T>(e: SListStruct<T>): e is SList<T> => e._type === STypes.List;
-export const is_boxed = <T>(e: SListStruct<T>): e is SBoxed<T> => e._type === STypes.Boxed;
+export const is_list = <T>(e: SExprT<T>): e is SList<T> => e._type === STypes.List;
+export const is_boxed = <T>(e: SExprT<T>): e is SBoxed<T> => e._type === STypes.Boxed;
 
 /*************
  * UTILITIES *
  *************/
 
-export function equals<E2 extends SListStruct<unknown>>(e1: SListStruct<unknown>, e2: E2): e1 is E2;
-export function equals<E1 extends SListStruct<unknown>>(e1: E1, e2: SListStruct<unknown>): e2 is E1;
-export function equals(e1: SListStruct<unknown>, e2: SListStruct<unknown>): boolean {
+export function equals<E2 extends SExprT<unknown>>(e1: SExprT<unknown>, e2: E2): e1 is E2;
+export function equals<E1 extends SExprT<unknown>>(e1: E1, e2: SExprT<unknown>): e2 is E1;
+export function equals(e1: SExprT<unknown>, e2: SExprT<unknown>): boolean {
   for (;;) {
     if (
       (e1._type === STypes.Symbol || e1._type === STypes.Number || e1._type === STypes.Boolean) &&
