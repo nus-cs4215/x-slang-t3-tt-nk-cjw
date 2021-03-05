@@ -1260,20 +1260,4 @@ describe('listEqualityOps', () => {
       `false`
     );
   });
-
-  test('invalid equal?', () => {
-    expectJsonReadEvalPrint(['equal?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['equal?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(['equal?', 0, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['equal?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['equal?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-  });
 });
