@@ -1,7 +1,8 @@
 import { print } from '../printer';
 import { read } from '../reader';
-import { evaluate, the_global_environment } from '../evaluator';
-import { cases, formatTable, getOk } from '../utils';
+import { Environment, evaluate, the_global_environment } from '../evaluator';
+import { cases, formatTable, getOk, getErr } from '../utils';
+import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
 
 function expectOpTable(ops: string[], tests: string[]) {
   return expect(
@@ -92,6 +93,8 @@ export const mixedTypesArgTests = [
 
   '(op 0 0)',
   '(op 1 0)',
+  '(op 3 3)',
+  '(op -1 3)',
   '(op 3 5)',
 
   '(op #f #f)',
@@ -195,6 +198,8 @@ test('type predicates', () => {
     (op 'a)                         | #t      | #f      | #f       | #f    | #f    | #f        | ERR  | ERR
     (op 0 0)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
     (op 1 0)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op 3 3)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
+    (op -1 3)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
     (op 3 5)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
     (op #f #f)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
     (op #t #f)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
@@ -281,6 +286,8 @@ test('unary arithmetic ops', () => {
     (op 'a)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
     (op 0 0)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
     (op 1 0)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    (op 3 3)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | 1
+    (op -1 3)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | +nan.0
     (op 3 5)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | 0.6826061944859853
     (op #f #f)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
     (op #t #f)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
@@ -362,6 +369,8 @@ test('exactly binary numeric ops', () => {
     (op 'a)          | ERR      | ERR       | ERR    | ERR
     (op 0 0)         | ERR      | ERR       | ERR    | 1
     (op 1 0)         | ERR      | ERR       | ERR    | 1
+    (op 3 3)         | 1        | 0         | 0      | 27
+    (op -1 3)        | 0        | -1        | 2      | -1
     (op 3 5)         | 0        | 3         | 3      | 243
     (op #f #f)       | ERR      | ERR       | ERR    | ERR
     (op #t #f)       | ERR      | ERR       | ERR    | ERR
@@ -461,6 +470,8 @@ test('variable arity arithmetic ops', () => {
     (op 'a)            | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
     (op 0 0)           | 0      | 0      | 0                    | ERR                  | 0      | 0
     (op 1 0)           | 1      | 1      | 0                    | ERR                  | 1      | 0
+    (op 3 3)           | 6      | 0      | 9                    | 1                    | 3      | 3
+    (op -1 3)          | 2      | -4     | -3                   | -0.3333333333333333  | 3      | -1
     (op 3 5)           | 8      | -2     | 15                   | 0.6                  | 5      | 3
     (op #f #f)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
     (op #t #f)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
@@ -543,6 +554,8 @@ test('numeric comparsion ops', () => {
     (op 'a)            | ERR | ERR | ERR | ERR | ERR
     (op 0 0)           | #t  | #f  | #f  | #t  | #t
     (op 1 0)           | #f  | #f  | #t  | #f  | #t
+    (op 3 3)           | #t  | #f  | #f  | #t  | #t
+    (op -1 3)          | #f  | #t  | #f  | #t  | #f
     (op 3 5)           | #f  | #t  | #f  | #t  | #f
     (op #f #f)         | ERR | ERR | ERR | ERR | ERR
     (op #t #f)         | ERR | ERR | ERR | ERR | ERR
@@ -616,6 +629,8 @@ test('trigonometric ops', () => {
     (op 'a)              | ERR                     | ERR                   | ERR
     (op 0 0)             | ERR                     | ERR                   | ERR
     (op 1 0)             | ERR                     | ERR                   | ERR
+    (op 3 3)             | ERR                     | ERR                   | ERR
+    (op -1 3)            | ERR                     | ERR                   | ERR
     (op 3 5)             | ERR                     | ERR                   | ERR
     (op #f #f)           | ERR                     | ERR                   | ERR
     (op #t #f)           | ERR                     | ERR                   | ERR
@@ -680,6 +695,8 @@ test('trigonometric ops', () => {
     (op 'a)                         | ERR                  | ERR                | ERR
     (op 0 0)                        | ERR                  | ERR                | 0
     (op 1 0)                        | ERR                  | ERR                | 1.5707963267948966
+    (op 3 3)                        | ERR                  | ERR                | 0.7853981633974483
+    (op -1 3)                       | ERR                  | ERR                | -0.3217505543966422
     (op 3 5)                        | ERR                  | ERR                | 0.5404195002705842
     (op #f #f)                      | ERR                  | ERR                | ERR
     (op #t #f)                      | ERR                  | ERR                | ERR
@@ -734,6 +751,8 @@ test('trigonometric ops', () => {
     (op 'a)                                       | ERR                | ERR                | ERR
     (op 0 0)                                      | ERR                | ERR                | ERR
     (op 1 0)                                      | ERR                | ERR                | ERR
+    (op 3 3)                                      | ERR                | ERR                | ERR
+    (op -1 3)                                     | ERR                | ERR                | ERR
     (op 3 5)                                      | ERR                | ERR                | ERR
     (op #f #f)                                    | ERR                | ERR                | ERR
     (op #t #f)                                    | ERR                | ERR                | ERR
@@ -798,6 +817,8 @@ test('2 arg atan', () => {
     (op 'a)           | ERR
     (op 0 0)          | 0
     (op 1 0)          | 1.5707963267948966
+    (op 3 3)          | 0.7853981633974483
+    (op -1 3)         | -0.3217505543966422
     (op 3 5)          | 0.5404195002705842
     (op #f #f)        | ERR
     (op #t #f)        | ERR
@@ -840,6 +861,8 @@ test('boolean ops', () => {
     (op 'a)          | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
     (op 0 0)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
     (op 1 0)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
+    (op 3 3)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
+    (op -1 3)        | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
     (op 3 5)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
     (op #f #f)       | #f  | #f  | #t   | #t  | #f  | #t      | ERR | ERR
     (op #t #f)       | #f  | #t  | #t   | #f  | #t  | #f      | ERR | ERR
@@ -865,7 +888,213 @@ test('boolean ops', () => {
   `);
 });
 
-// these prolly need manual testing
-// const listOps = ['cons', 'list', 'list*', 'car', 'cdr', 'first', 'rest', 'last', 'last-pair'];
-// const valueEqualityOps = ['eq?', 'symbol=?', 'number=?', 'boolean=?'];
-// const listEqualityOps = ['equal?'];
+/// MANUAL TESTS ///
+
+// Test utils
+function expectJsonReadEvalPrint(j: JsonSExpr<never>, env: Environment | undefined) {
+  return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
+}
+
+function expectJsonReadEvalError(j: JsonSExpr<never>, env: Environment | undefined) {
+  return expect(getErr(evaluate(jsonRead(j), env)));
+}
+
+// const listOps = ['first', 'rest', 'last-pair'];
+describe('listOps', () => {
+  test('valid cons', () => {
+    expectJsonReadEvalPrint(['cons', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+  ".",
+  1,
+]
+`);
+
+    expectJsonReadEvalPrint(['cons', 1, ['list']], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+]
+`);
+  });
+
+  test('invalid cons', () => {
+    expectJsonReadEvalError(['cons'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid list', () => {
+    expectJsonReadEvalPrint(['list', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+  1,
+]
+`);
+
+    expectJsonReadEvalPrint(['list', 1, ['list', 1]], the_global_environment)
+      .toMatchInlineSnapshot(`
+Array [
+  1,
+  Array [
+    1,
+  ],
+]
+`);
+
+    expectJsonReadEvalPrint(['list'], the_global_environment).toMatchInlineSnapshot(`Array []`);
+  });
+
+  test('valid list*', () => {
+    expectJsonReadEvalPrint(['list*', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+Array [
+  1,
+  ".",
+  1,
+]
+`);
+
+    expectJsonReadEvalPrint(['list*', 1], the_global_environment).toMatchInlineSnapshot(`1`);
+  });
+
+  test('invalid list*', () => {
+    expectJsonReadEvalError(['list*'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid car', () => {
+    expectJsonReadEvalPrint(
+      ['car', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`"a"`);
+  });
+
+  test('invalid car', () => {
+    expectJsonReadEvalError(['car', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['car', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['car', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['car', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['car'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['car', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid cdr', () => {
+    expectJsonReadEvalPrint(
+      ['cdr', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`Array []`);
+  });
+
+  test('invalid cdr', () => {
+    expectJsonReadEvalError(['cdr', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['cdr', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['cdr', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['cdr', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['cdr'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['cdr', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid last', () => {
+    expectJsonReadEvalPrint(
+      ['last', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`"a"`);
+  });
+
+  test('invalid last', () => {
+    expectJsonReadEvalError(['last', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['last', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last', []], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['last', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
+});
+
+describe('valueEqualityOps', () => {
+  test('valid eq?', () => {
+    expectJsonReadEvalPrint(['eq?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+  });
+
+  test('invalid eq?', () => {
+    expectJsonReadEvalPrint(['eq?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+  });
+
+
+  test('valid symbol=?', () => {
+    expectJsonReadEvalPrint(['symbol=?', 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['symbol=?', 'symbol=?'], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['symbol=?', 'number=?'], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['symbol=?', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['symbol=?', ['quote', 'a'], ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['symbol=?', ['quote', 'a'], ['quote', 'b']], the_global_environment).toMatchInlineSnapshot(`false`);
+  });
+
+  test('invalid symbol=?', () => {
+    expectJsonReadEvalError(['symbol=?', "iamsymbol"], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['symbol=?', 'a', 'a'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['symbol=?', 'z'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['symbol=?', '1'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid number=?', () => {
+    expectJsonReadEvalPrint(['number=?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['number=?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['number=?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['number=?', 0, ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(`false`);
+  });
+
+  test('valid boolean=?', () => {
+    expectJsonReadEvalPrint(['boolean=?', 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['boolean=?', false, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['boolean=?', false], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['boolean=?', false, true], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['boolean=?', true, true], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['boolean=?'], the_global_environment).toMatchInlineSnapshot(`true`);
+  });
+});
+
+describe("listEqualityOps", () => {
+   test('valid equal?', () => {
+    expectJsonReadEvalPrint(['equal?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['equal?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['equal?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['equal?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['equal?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+  });
+
+  test('invalid equal?', () => {
+    expectJsonReadEvalPrint(['equal?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['equal?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['equal?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['equal?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['equal?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+  });
+})
