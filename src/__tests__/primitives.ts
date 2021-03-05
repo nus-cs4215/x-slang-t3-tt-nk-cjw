@@ -1004,11 +1004,71 @@ Array [
     ).toMatchInlineSnapshot(`undefined`);
   });
 
+  test('valid first', () => {
+    expectJsonReadEvalPrint(
+      ['first', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`"a"`);
+  });
+
+  test('invalid first', () => {
+    expectJsonReadEvalError(['first', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['first', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['first', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['first', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['first'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['first', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
+
+  test('valid rest', () => {
+    expectJsonReadEvalPrint(
+      ['rest', ['quote', ['a']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`Array []`);
+    expectJsonReadEvalPrint(
+      ['rest', ['quote', ['a', 'b']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`
+Array [
+  "b",
+]
+`);
+  });
+
+  test('invalid rest', () => {
+    expectJsonReadEvalError(['rest', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['rest', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['rest', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['rest', []], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['rest'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['rest', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  });
+
   test('valid last', () => {
     expectJsonReadEvalPrint(
       ['last', ['quote', ['a']]],
       the_global_environment
     ).toMatchInlineSnapshot(`"a"`);
+    expectJsonReadEvalPrint(
+      ['last', ['quote', ['a', 'b']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`"b"`);
   });
 
   test('invalid last', () => {
@@ -1028,6 +1088,45 @@ Array [
       the_global_environment
     ).toMatchInlineSnapshot(`undefined`);
   });
+
+  test('valid last-pair', () => {
+    expectJsonReadEvalPrint(
+      ['last-pair', ['quote', ['a', 'b']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`
+Array [
+  "b",
+]
+`);
+    expectJsonReadEvalPrint(
+      ['last-pair', ['quote', ['a', '.', 'b']]],
+      the_global_environment
+    ).toMatchInlineSnapshot(`
+Array [
+  "a",
+  ".",
+  "b",
+]
+`);
+  });
+
+  test('invalid last-pair', () => {
+    expectJsonReadEvalError(['last-pair', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last-pair', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['last-pair', true], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last-pair', []], the_global_environment).toMatchInlineSnapshot(
+      `undefined`
+    );
+    expectJsonReadEvalError(['last-pair'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      ['last-pair', ['quote', 'a'], ['quote', 'a']],
+      the_global_environment
+    ).toMatchInlineSnapshot(`undefined`);
+  })
 });
 
 describe('valueEqualityOps', () => {
@@ -1037,16 +1136,13 @@ describe('valueEqualityOps', () => {
     expectJsonReadEvalPrint(['eq?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
     expectJsonReadEvalPrint(['eq?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(`false`);
     expectJsonReadEvalPrint(['eq?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', ['quote', 'a'], ['quote', 'b']], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', ['quote', 'a'], ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', true, true], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', true, false], the_global_environment).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', ['list'], ['list']], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', ['list', ['quote', 'b'], ['quote', 'c']], ['list', ['quote', 'b'], ['quote', 'c']]], the_global_environment).toMatchInlineSnapshot(`false`);
   });
-
-  test('invalid eq?', () => {
-    expectJsonReadEvalPrint(['eq?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['eq?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['eq?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['eq?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['eq?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(`false`);
-  });
-
 
   test('valid symbol=?', () => {
     expectJsonReadEvalPrint(['symbol=?', 1], the_global_environment).toMatchInlineSnapshot(`false`);
