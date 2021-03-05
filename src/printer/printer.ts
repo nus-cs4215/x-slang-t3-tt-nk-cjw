@@ -1,6 +1,6 @@
-import { STypes, SListStruct, val, car, cdr, is_list, is_nil } from '../sexpr';
+import { STypes, SExprT, val, car, cdr, is_list, is_nil } from '../sexpr';
 
-export function print<T>(e: SListStruct<T>): string {
+export function print<T>(e: SExprT<T>): string {
   switch (e._type) {
     case STypes.Nil:
       return '()';

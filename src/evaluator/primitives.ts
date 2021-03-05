@@ -2,10 +2,10 @@ import { err, ok } from '../utils';
 import { equals, sboolean, scons, slist, snil, SNumber, snumber, val } from '../sexpr';
 import { is_symbol, is_number, is_boolean, is_nil, is_list, is_boxed } from '../sexpr';
 import { car, cdr } from '../sexpr';
-import { EvalValue, EvalResult } from './types';
+import { EvalSExpr, EvalResult } from './types';
 import { is_function_variant } from './datatypes';
 
-export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResult> = {
+export const primitive_funcs: Record<string, (...args: EvalSExpr[]) => EvalResult> = {
   'eq?': (...args) => {
     for (let i = 0; i < args.length - 1; i++) {
       const lhs = args[i];
@@ -682,7 +682,7 @@ export const primitive_funcs: Record<string, (...args: EvalValue[]) => EvalResul
   },
 };
 
-export const primitive_consts: Record<string, EvalValue> = {
+export const primitive_consts: Record<string, EvalSExpr> = {
   pi: snumber(Math.PI),
   e: snumber(Math.E),
   true: sboolean(true),

@@ -1,19 +1,19 @@
-import { JsonSExpr, jsonRead, SExpr, jsonPrint } from '../../sexpr';
+import { JsonSExpr, JsonSExprT, jsonRead, SExpr, jsonPrint } from '../../sexpr';
 import { json_plus, json_star, json_var, match, PatternLeaf } from '../pattern';
 
-function expectJsonGoodPatternMatch(program: JsonSExpr<never>, pattern: JsonSExpr<PatternLeaf>) {
+function expectJsonGoodPatternMatch(program: JsonSExpr, pattern: JsonSExprT<PatternLeaf>) {
   const matches = match(jsonRead(program), jsonRead(pattern));
   if (matches === undefined) {
     expect({ program, pattern, matches }).not.toEqual({ program, pattern, undefined });
   }
-  const json_matches = {} as Record<string, JsonSExpr<never>[]>;
+  const json_matches = {} as Record<string, JsonSExpr[]>;
   Object.entries(matches!).forEach(
     ([k, v]: [string, SExpr[]]) => (json_matches[k] = v.map(jsonPrint))
   );
   return expect(json_matches);
 }
 
-function expectJsonBadPatternMatch(program: JsonSExpr<never>, pattern: JsonSExpr<PatternLeaf>) {
+function expectJsonBadPatternMatch(program: JsonSExpr, pattern: JsonSExprT<PatternLeaf>) {
   const matches = match(jsonRead(program), jsonRead(pattern));
   if (matches !== undefined) {
     expect({ program, pattern, matches }).toEqual({ program, pattern, undefined });
