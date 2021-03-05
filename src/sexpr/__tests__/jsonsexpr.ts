@@ -12,7 +12,7 @@ test('correct json representation of complex lists', () => {
       Array [],
       Array [],
     ]
-  `)
+  `);
   expect(jsonPrint(slist([snil()], scons(snil(), snil())))).toMatchInlineSnapshot(`
     Array [
       Array [],
@@ -62,8 +62,8 @@ test('correct json representation of complex lists', () => {
 });
 
 test('Correct reading of Json lists', () => {
-  expect(jsonRead("[]")).toStrictEqual({"_type": 0, "val": "[]"})
-  expect(jsonRead([])).toStrictEqual({"_type": 3 })
-  expect(jsonRead(['a'])).toEqual(slist([ssymbol('a')], snil()))
-  expect(jsonRead(['a', 'b'])).toEqual(slist([ssymbol('a'), ssymbol('b')], snil()))
-})
+  expect(jsonRead('[]')).toStrictEqual({ _type: 0, val: '[]' });
+  expect(jsonRead([])).toStrictEqual({ _type: 3 });
+  expect(jsonRead(['a'])).toEqual(slist([ssymbol('a')], snil()));
+  expect(jsonRead(['a', 'b'])).toEqual(slist([ssymbol('a'), ssymbol('b')], snil()));
+});
