@@ -3,7 +3,7 @@ import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure, make_primitive } from './datatypes';
-import { EvalSExpr, Evaluate, Apply, EvalResult } from './types';
+import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel, Compile } from './types';
 import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
 
 import { primitive_consts, primitive_funcs } from './primitives';
@@ -375,4 +375,12 @@ export const evaluate: Evaluate = (program, env) => {
     }
     return apply(fun, ...args);
   }
+};
+
+export const compile: Compile = (program_, compile_env_) => {
+  throw 'Not yet implemented';
+};
+
+export const evaluate_top_level: EvaluateTopLevel = (program_, env_) => {
+  throw 'Not yet implemented';
 };

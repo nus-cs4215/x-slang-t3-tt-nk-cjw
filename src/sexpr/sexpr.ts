@@ -30,23 +30,11 @@ export interface SNil {
   _type: STypes.Nil;
 }
 
-enum SListVariants {
-  PAIR,
-}
-
-interface SListBase {
+export interface SCons<T, U> {
   _type: STypes.List;
-  _variant: SListVariants;
+  x: T;
+  y: U;
 }
-
-interface SListPair<T> extends SListBase {
-  _variant: SListVariants.PAIR;
-
-  x: SExprT<T>;
-  y: SExprT<T>;
-}
-
-export type SList<T> = SListPair<T>;
 
 interface SBoxedF<T> {
   _type: STypes.Boxed;
@@ -57,7 +45,12 @@ export type SBoxed<T> = T extends never ? never : SBoxedF<T>;
 
 export type SExprBase<T> = SSymbol | SNumber | SBoolean | SNil | SBoxed<T>;
 
-export type SExprT<T> = SExprBase<T> | SList<T>;
+export type SNonemptyHomList<T> = SCons<T, SHomList<T>>;
+export type SHomList<T> = SNil | SNonemptyHomList<T>;
+
+export type SList<T> = SCons<SExprT<T>, SExprT<T>>;
+
+export type SExprT<T> = SExprBase<T> | SCons<SExprT<T>, SExprT<T>>;
 export type SExpr = SExprT<never>;
 
 /****************
@@ -72,14 +65,13 @@ export const sboolean = (val: boolean): SBoolean => ({
 });
 
 export const snil = (): SNil => ({ _type: STypes.Nil });
-export const scons = <T>(x: SExprT<T>, y: SExprT<T>): SList<T> => ({
+export const scons = <T, U>(x: T, y: U): SCons<T, U> => ({
   _type: STypes.List,
-  _variant: SListVariants.PAIR,
   x,
   y,
 });
 
-export function slist<T>(xs: [SExprT<T>, ...SExprT<T>[]], tail: SExprT<T>): SList<T>;
+export function slist<T, U>(xs: [T, ...SExprT<U>[]], tail: SExprT<U>): SCons<T, SExprT<U>>;
 export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T>;
 export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T> {
   return xs.reduceRight((p, x) => scons(x, p), tail);
@@ -110,8 +102,8 @@ export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | nu
 export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T {
   return e.val;
 }
-export const car = <T>(p: SList<T>): SExprT<T> => p.x;
-export const cdr = <T>(p: SList<T>): SExprT<T> => p.y;
+export const car = <T, U>(p: SCons<T, U>): T => p.x;
+export const cdr = <T, U>(p: SCons<T, U>): U => p.y;
 
 /**************
  * PREDICATES *
