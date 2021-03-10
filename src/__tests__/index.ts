@@ -32,7 +32,6 @@ test('exports', () => {
       "make_env_list",
       "the_global_environment",
       "evaluate",
-      "compile",
       "evaluate_top_level",
       "startRepl",
     ]

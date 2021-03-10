@@ -11,7 +11,22 @@ export type Apply = (fun: EvalSExpr, ...args: EvalSExpr[]) => EvalResult;
 
 export type Evaluate = (program: EvalSExpr, env: Environment) => EvalResult;
 
-export type CompileError = {};
+export interface ModuleFile {
+  name: string;
+  // Contrary to its name,
+  // module_path is more like the parent module's name
+  // rather than the location of the module...
+  // This is also why I'm letting it be undefined;
+  // the base module should have no parents.
+  module_path: string | undefined;
+  contents(): string;
+}
+
+export interface ModuleResolver {
+  resolve(cwd: string, name: string): ModuleFile | undefined;
+}
+
+export type CompileError = string;
 export type CompileResult = Result<TopLevelForm, CompileError>;
 export type Compile = (program: SExpr, env: Environment) => CompileResult;
 
