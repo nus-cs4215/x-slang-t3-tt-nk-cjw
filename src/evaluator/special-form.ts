@@ -11,6 +11,8 @@ type SpecialFormKeywordToType = {
   begin: 'begin';
   begin0: 'begin0';
   cond: 'cond';
+  and: 'and';
+  or: 'or';
   lambda: 'lambda';
   let: 'let';
   'let*': 'let*';
@@ -74,7 +76,7 @@ export const special_forms: Record<SpecialFormKeywords, Form[]> = {
       pattern: jsonRead([
         'and',
         '.',
-        json_star(json_var('exprs')),
+        json_star(json_var('exprs'), []),
       ]),
       form: 'and',
     },
@@ -84,7 +86,7 @@ export const special_forms: Record<SpecialFormKeywords, Form[]> = {
       pattern: jsonRead([
         'or',
         '.',
-        json_star(json_var('exprs')),
+        json_star(json_var('exprs'), []),
       ]),
       form: 'or',
     },

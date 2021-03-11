@@ -533,6 +533,15 @@ describe('basic lambda expressions', () => {
   });
 });
 
+describe('basic and expressions', () => {
+  test('valid', () => {
+    expectJsonReadEvalPrint(['and', true, true], test_env()).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['and', false, true], test_env()).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['and'], test_env()).toMatchInlineSnapshot(`true`);
+    // expectJsonReadEvalPrint(['and', false, err()], test_env()).toMatchInlineSnapshot(`false`);
+  })
+})
+
 describe('basic cond expressions', () => {
   test('valid', () => {
     expectJsonReadEvalPrint(['cond', [true, 1]], test_env()).toMatchInlineSnapshot(`1`);

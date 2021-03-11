@@ -541,18 +541,18 @@ export const primitive_funcs: Record<string, (...args: EvalSExpr[]) => EvalResul
       : ok(sboolean(!Number.isFinite(val(arg)) && !Number.isNaN(val(arg))));
   },
 
-  and: (...args) => {
-    if (!args.every(is_boolean)) {
-      return err();
-    }
-    return ok(sboolean(args.reduce((prev, a) => prev && val(a), true)));
-  },
-  or: (...args) => {
-    if (!args.every(is_boolean)) {
-      return err();
-    }
-    return ok(sboolean(args.reduce((prev, a) => prev || val(a), false)));
-  },
+  // and: (...args) => {
+  //   if (!args.every(is_boolean)) {
+  //     return err();
+  //   }
+  //   return ok(sboolean(args.reduce((prev, a) => prev && val(a), true)));
+  // },
+  // or: (...args) => {
+  //   if (!args.every(is_boolean)) {
+  //     return err();
+  //   }
+  //   return ok(sboolean(args.reduce((prev, a) => prev || val(a), false)));
+  // },
   not: (...args) => {
     if (args.length !== 1) {
       return err();

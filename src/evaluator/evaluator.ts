@@ -1,5 +1,5 @@
 import { err, ok, isBadResult } from '../utils';
-import { sbox, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
+import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure, make_primitive } from './datatypes';
@@ -119,6 +119,47 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       return evaluate(car(t), env);
     }
     return err();
+  },
+  and: ({exprs}: MatchObject, env: Environment): EvalResult => {
+    for (let i = 0; i < exprs.length; i++) {
+      const r: EvalResult = evaluate(exprs[i], env);
+      if (isBadResult(r)) {
+        return r;
+      }
+      const v = r.v;
+
+      // Error out if not boolean
+      if (!is_boolean(v)) {
+        return err();
+      }
+
+      // SHORTCIRCUIT IF FALSE
+      if (is_boolean(v) && val(v) === false) {
+        return r;
+      }
+
+    }
+    return ok(sboolean(true));
+  },
+  or: ({exprs}: MatchObject, env: Environment): EvalResult => {
+    for (let i = 0; i < exprs.length; i++) {
+      const r: EvalResult = evaluate(exprs[i], env);
+      if (isBadResult(r)) {
+        return r;
+      }
+      const v = r.v;
+
+      // Error out if not boolean
+      if (!is_boolean(v)) {
+        return err();
+      }
+
+      // SHORTCIRCUIT IF TRUE
+      if (is_boolean(v) && val(v) === true) {
+        return r;
+      }
+    }
+    return ok(sboolean(false));
   },
   lambda: ({ params, body }: MatchObject, env: Environment): EvalResult => {
     if (params === undefined) {
