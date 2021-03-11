@@ -128,9 +128,9 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       }
       const v = r.v;
 
-      // Error out if not boolean
+      // Shortcircuit if not boolean
       if (!is_boolean(v)) {
-        return err();
+        return r;
       }
 
       // SHORTCIRCUIT IF FALSE
@@ -149,9 +149,9 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       }
       const v = r.v;
 
-      // Error out if not boolean
+      // Shortcircuit if not boolean
       if (!is_boolean(v)) {
-        return err();
+        return r;
       }
 
       // SHORTCIRCUIT IF TRUE
