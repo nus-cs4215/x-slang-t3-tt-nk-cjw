@@ -73,21 +73,13 @@ export const special_forms: Record<SpecialFormKeywords, Form[]> = {
   ],
   and: [
     {
-      pattern: jsonRead([
-        'and',
-        '.',
-        json_star(json_var('exprs'), []),
-      ]),
+      pattern: jsonRead(['and', '.', json_star(json_var('exprs'), [])]),
       form: 'and',
     },
   ],
   or: [
     {
-      pattern: jsonRead([
-        'or',
-        '.',
-        json_star(json_var('exprs'), []),
-      ]),
+      pattern: jsonRead(['or', '.', json_star(json_var('exprs'), [])]),
       form: 'or',
     },
   ],

@@ -120,28 +120,28 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return err();
   },
-  and: ({exprs}: MatchObject, env: Environment): EvalResult => {
-    for (let i = 0; i < exprs.length; i++) {
+  and: ({ exprs }: MatchObject, env: Environment): EvalResult => {
+    if (exprs === undefined) {
+      return ok(sboolean(true));
+    }
+    for (let i = 0; i < exprs.length - 1; i++) {
       const r: EvalResult = evaluate(exprs[i], env);
       if (isBadResult(r)) {
         return r;
       }
       const v = r.v;
-
-      // Shortcircuit if not boolean
-      if (!is_boolean(v)) {
-        return r;
-      }
 
       // SHORTCIRCUIT IF FALSE
       if (is_boolean(v) && val(v) === false) {
         return r;
       }
-
     }
-    return ok(sboolean(true));
+    return evaluate(exprs[exprs.length - 1], env);
   },
-  or: ({exprs}: MatchObject, env: Environment): EvalResult => {
+  or: ({ exprs }: MatchObject, env: Environment): EvalResult => {
+    if (exprs === undefined) {
+      return ok(sboolean(false));
+    }
     for (let i = 0; i < exprs.length; i++) {
       const r: EvalResult = evaluate(exprs[i], env);
       if (isBadResult(r)) {
@@ -149,17 +149,12 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       }
       const v = r.v;
 
-      // Shortcircuit if not boolean
-      if (!is_boolean(v)) {
-        return r;
-      }
-
-      // SHORTCIRCUIT IF TRUE
-      if (is_boolean(v) && val(v) === true) {
+      // SHORTCIRCUIT IF NOT FALSE
+      if (!(is_boolean(v) && val(v) === false)) {
         return r;
       }
     }
-    return ok(sboolean(false));
+    return evaluate(exprs[exprs.length - 1], env);
   },
   lambda: ({ params, body }: MatchObject, env: Environment): EvalResult => {
     if (params === undefined) {

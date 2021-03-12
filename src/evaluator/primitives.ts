@@ -558,39 +558,21 @@ export const primitive_funcs: Record<string, (...args: EvalSExpr[]) => EvalResul
       return err();
     }
     const [arg] = args;
-    return !is_boolean(arg) ? err() : ok(sboolean(!val(arg)));
+    return is_boolean(arg) && val(arg) === false ? ok(sboolean(true)) : ok(sboolean(false));
   },
-  nand: (...args) => {
-    if (!args.every(is_boolean)) {
-      return err();
-    }
-    return ok(sboolean(!args.reduce((prev, a) => prev && val(a), true)));
-  },
-  nor: (...args) => {
-    if (!args.every(is_boolean)) {
-      return err();
-    }
-    return ok(sboolean(!args.reduce((prev, a) => prev || val(a), false)));
-  },
+  // nand, nor, implies, should be implemented as a stdlib macro
   xor: (...args) => {
     if (!args.every(is_boolean)) {
       return err();
     }
     return ok(sboolean(args.reduce((prev, a) => prev !== val(a), false)));
   },
-  implies: (...args) => {
-    if (args.length !== 2) {
-      return err();
-    }
-    const [p, q] = args;
-    return !is_boolean(p) || !is_boolean(q) ? err() : ok(sboolean(!val(p) || val(q)));
-  },
   'false?': (...args) => {
     if (args.length !== 1) {
       return err();
     }
     const [arg] = args;
-    return !is_boolean(arg) ? err() : ok(sboolean(!val(arg)));
+    return is_boolean(arg) && val(arg) === false ? ok(sboolean(true)) : ok(sboolean(false));
   },
 
   cons: (...args) => {

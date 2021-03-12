@@ -539,8 +539,8 @@ describe('basic and expressions', () => {
     expectJsonReadEvalPrint(['and', false, true], test_env()).toMatchInlineSnapshot(`false`);
     expectJsonReadEvalPrint(['and'], test_env()).toMatchInlineSnapshot(`true`);
     // expectJsonReadEvalPrint(['and', false, err()], test_env()).toMatchInlineSnapshot(`false`);
-  })
-})
+  });
+});
 
 describe('basic cond expressions', () => {
   test('valid', () => {

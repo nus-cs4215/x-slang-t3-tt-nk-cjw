@@ -243,10 +243,6 @@ describe('boolean ops', () => {
     ).toMatchInlineSnapshot(`true`);
   });
 
-  test('invalid and', () => {
-    expectJsonReadEvalError(['and', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-  });
-
   test('valid or', () => {
     expectJsonReadEvalPrint(['or'], the_global_environment).toMatchInlineSnapshot(`false`);
     expectJsonReadEvalPrint(['or', true], the_global_environment).toMatchInlineSnapshot(`true`);
@@ -263,20 +259,16 @@ describe('boolean ops', () => {
     ).toMatchInlineSnapshot(`false`);
   });
 
-  test('invalid or', () => {
-    expectJsonReadEvalError(['or', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-  });
-
   test('valid not', () => {
     expectJsonReadEvalPrint(['not', true], the_global_environment).toMatchInlineSnapshot(`false`);
     expectJsonReadEvalPrint(['not', false], the_global_environment).toMatchInlineSnapshot(`true`);
     expectJsonReadEvalPrint(['not', ['not', false]], the_global_environment).toMatchInlineSnapshot(
       `false`
     );
+    expectJsonReadEvalPrint(['not', 1], the_global_environment).toMatchInlineSnapshot(`false`);
   });
 
   test('invalid not', () => {
-    expectJsonReadEvalError(['not', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['not'], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['not', true, true], the_global_environment).toMatchInlineSnapshot(
       `undefined`
@@ -287,7 +279,6 @@ describe('boolean ops', () => {
   });
 
   test('invalid not', () => {
-    expectJsonReadEvalError(['not', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['not'], the_global_environment).toMatchInlineSnapshot(`undefined`);
     expectJsonReadEvalError(['not', true, true], the_global_environment).toMatchInlineSnapshot(
       `undefined`
@@ -295,46 +286,6 @@ describe('boolean ops', () => {
     expectJsonReadEvalError(['not', false, false], the_global_environment).toMatchInlineSnapshot(
       `undefined`
     );
-  });
-
-  test('valid nand', () => {
-    expectJsonReadEvalPrint(['nand'], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['nand', true], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['nand', false], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['nand', true, true], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['nand', false, false], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(
-      ['nand', ['nand', false, true], false],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-  });
-
-  test('invalid nand', () => {
-    expectJsonReadEvalError(['nand', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-  });
-
-  test('valid nor', () => {
-    expectJsonReadEvalPrint(['nor'], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['nor', true], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['nor', false], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['nor', true, true], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['nor', false, false], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(
-      ['nor', ['or', false], false],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-  });
-
-  test('invalid nor', () => {
-    expectJsonReadEvalError(['nor', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
   });
 
   test('valid xor', () => {
@@ -357,32 +308,6 @@ describe('boolean ops', () => {
     expectJsonReadEvalError(['xor', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
   });
 
-  test('valid implies', () => {
-    expectJsonReadEvalPrint(['implies', true, true], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(['implies', true, false], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['implies', false, true], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(
-      ['implies', false, false],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-  });
-
-  test('invalid implies', () => {
-    expectJsonReadEvalError(['implies'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['implies', true, 1], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
-    expectJsonReadEvalError(['implies', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
-  });
-
   test('valid false?', () => {
     expectJsonReadEvalPrint(['false?', true], the_global_environment).toMatchInlineSnapshot(
       `false`
@@ -394,13 +319,11 @@ describe('boolean ops', () => {
       ['false?', ['false?', false]],
       the_global_environment
     ).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['false?', 1], the_global_environment).toMatchInlineSnapshot(`false`);
   });
 
   test('invalid false?', () => {
     expectJsonReadEvalError(['false?'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['false?', 1], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
-    );
     expectJsonReadEvalError(['false?', false, false], the_global_environment).toMatchInlineSnapshot(
       `undefined`
     );

@@ -12,7 +12,7 @@ function expectOpTable(ops: string[], tests: string[]) {
           test,
           ...ops.map((op) =>
             cases(
-              evaluate(getOk(read(`(let ([op ${op}]) ${test})`)), the_global_environment),
+              evaluate(getOk(read(test.replace(/op/g, op))), the_global_environment),
               print,
               (e) => (e === undefined ? 'ERR' : JSON.stringify(e))
             )
@@ -845,45 +845,43 @@ test('2 arg atan', () => {
 });
 
 test('boolean ops', () => {
-  expectOpTable(
-    ['and', 'or', 'nand', 'nor', 'xor', 'implies', 'not', 'false?'],
-    [...mixedTypesArgTests]
-  ).toMatchInlineSnapshot(`
+  expectOpTable(['and', 'or', 'xor', 'not', 'false?'], [...mixedTypesArgTests])
+    .toMatchInlineSnapshot(`
     "
-    test             | and | or  | nand | nor | xor | implies | not | false?
-    ------------------------------------------------------------------------
-    (op 0)           | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op +inf.0)      | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op -inf.0)      | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op +nan.0)      | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op #f)          | #f  | #f  | #t   | #t  | #f  | ERR     | #t  | #t
-    (op #t)          | #t  | #t  | #f   | #f  | #t  | ERR     | #f  | #f
-    (op 'a)          | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 0 0)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 1 0)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 3 3)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op -1 3)        | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 3 5)         | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op #f #f)       | #f  | #f  | #t   | #t  | #f  | #t      | ERR | ERR
-    (op #t #f)       | #f  | #t  | #t   | #f  | #t  | #f      | ERR | ERR
-    (op #f #t)       | #f  | #t  | #t   | #f  | #t  | #t      | ERR | ERR
-    (op #t #t)       | #t  | #t  | #f   | #f  | #f  | #t      | ERR | ERR
-    (op 'a 'a)       | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 'a 'b)       | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op #f 0)        | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 'a 0)        | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 0 'a)        | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 1 #t)        | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 1 1 1 1)     | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 1 2 3 4)     | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op #f #f #f)    | #f  | #f  | #t   | #t  | #f  | ERR     | ERR | ERR
-    (op #f #f #f #f) | #f  | #f  | #t   | #t  | #f  | ERR     | ERR | ERR
-    (op #t #t #t)    | #t  | #t  | #f   | #f  | #t  | ERR     | ERR | ERR
-    (op #t #f #t)    | #f  | #t  | #t   | #f  | #f  | ERR     | ERR | ERR
-    (op 'a 'a 'a)    | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 'a 'b 'b)    | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 'a 'b 'c)    | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
-    (op 1 2 #t 1 'a) | ERR | ERR | ERR  | ERR | ERR | ERR     | ERR | ERR
+    test             | and    | or     | xor | not | false?
+    -------------------------------------------------------
+    (op 0)           | 0      | 0      | ERR | #f  | #f
+    (op +inf.0)      | +inf.0 | +inf.0 | ERR | #f  | #f
+    (op -inf.0)      | -inf.0 | -inf.0 | ERR | #f  | #f
+    (op +nan.0)      | +nan.0 | +nan.0 | ERR | #f  | #f
+    (op #f)          | #f     | #f     | #f  | #t  | #t
+    (op #t)          | #t     | #t     | #t  | #f  | #f
+    (op 'a)          | a      | a      | ERR | #f  | #f
+    (op 0 0)         | 0      | 0      | ERR | ERR | ERR
+    (op 1 0)         | 0      | 1      | ERR | ERR | ERR
+    (op 3 3)         | 3      | 3      | ERR | ERR | ERR
+    (op -1 3)        | 3      | -1     | ERR | ERR | ERR
+    (op 3 5)         | 5      | 3      | ERR | ERR | ERR
+    (op #f #f)       | #f     | #f     | #f  | ERR | ERR
+    (op #t #f)       | #f     | #t     | #t  | ERR | ERR
+    (op #f #t)       | #f     | #t     | #t  | ERR | ERR
+    (op #t #t)       | #t     | #t     | #f  | ERR | ERR
+    (op 'a 'a)       | a      | a      | ERR | ERR | ERR
+    (op 'a 'b)       | b      | a      | ERR | ERR | ERR
+    (op #f 0)        | #f     | 0      | ERR | ERR | ERR
+    (op 'a 0)        | 0      | a      | ERR | ERR | ERR
+    (op 0 'a)        | a      | 0      | ERR | ERR | ERR
+    (op 1 #t)        | #t     | 1      | ERR | ERR | ERR
+    (op 1 1 1 1)     | 1      | 1      | ERR | ERR | ERR
+    (op 1 2 3 4)     | 4      | 1      | ERR | ERR | ERR
+    (op #f #f #f)    | #f     | #f     | #f  | ERR | ERR
+    (op #f #f #f #f) | #f     | #f     | #f  | ERR | ERR
+    (op #t #t #t)    | #t     | #t     | #t  | ERR | ERR
+    (op #t #f #t)    | #f     | #t     | #f  | ERR | ERR
+    (op 'a 'a 'a)    | a      | a      | ERR | ERR | ERR
+    (op 'a 'b 'b)    | b      | a      | ERR | ERR | ERR
+    (op 'a 'b 'c)    | c      | a      | ERR | ERR | ERR
+    (op 1 2 #t 1 'a) | a      | 1      | ERR | ERR | ERR
     "
   `);
 });
@@ -903,18 +901,18 @@ function expectJsonReadEvalError(j: JsonSExpr, env: Environment | undefined) {
 describe('listOps', () => {
   test('valid cons', () => {
     expectJsonReadEvalPrint(['cons', 1, 1], the_global_environment).toMatchInlineSnapshot(`
-Array [
-  1,
-  ".",
-  1,
-]
-`);
+      Array [
+        1,
+        ".",
+        1,
+      ]
+    `);
 
     expectJsonReadEvalPrint(['cons', 1, ['list']], the_global_environment).toMatchInlineSnapshot(`
-Array [
-  1,
-]
-`);
+      Array [
+        1,
+      ]
+    `);
   });
 
   test('invalid cons', () => {
@@ -923,33 +921,33 @@ Array [
 
   test('valid list', () => {
     expectJsonReadEvalPrint(['list', 1, 1], the_global_environment).toMatchInlineSnapshot(`
-Array [
-  1,
-  1,
-]
-`);
+      Array [
+        1,
+        1,
+      ]
+    `);
 
     expectJsonReadEvalPrint(['list', 1, ['list', 1]], the_global_environment)
       .toMatchInlineSnapshot(`
-Array [
-  1,
-  Array [
-    1,
-  ],
-]
-`);
+      Array [
+        1,
+        Array [
+          1,
+        ],
+      ]
+    `);
 
     expectJsonReadEvalPrint(['list'], the_global_environment).toMatchInlineSnapshot(`Array []`);
   });
 
   test('valid list*', () => {
     expectJsonReadEvalPrint(['list*', 1, 1], the_global_environment).toMatchInlineSnapshot(`
-Array [
-  1,
-  ".",
-  1,
-]
-`);
+      Array [
+        1,
+        ".",
+        1,
+      ]
+    `);
 
     expectJsonReadEvalPrint(['list*', 1], the_global_environment).toMatchInlineSnapshot(`1`);
   });
@@ -1039,10 +1037,10 @@ Array [
     ).toMatchInlineSnapshot(`Array []`);
     expectJsonReadEvalPrint(['rest', ['quote', ['a', 'b']]], the_global_environment)
       .toMatchInlineSnapshot(`
-Array [
-  "b",
-]
-`);
+      Array [
+        "b",
+      ]
+    `);
   });
 
   test('invalid rest', () => {
@@ -1095,18 +1093,18 @@ Array [
   test('valid last-pair', () => {
     expectJsonReadEvalPrint(['last-pair', ['quote', ['a', 'b']]], the_global_environment)
       .toMatchInlineSnapshot(`
-Array [
-  "b",
-]
-`);
+      Array [
+        "b",
+      ]
+    `);
     expectJsonReadEvalPrint(['last-pair', ['quote', ['a', '.', 'b']]], the_global_environment)
       .toMatchInlineSnapshot(`
-Array [
-  "a",
-  ".",
-  "b",
-]
-`);
+      Array [
+        "a",
+        ".",
+        "b",
+      ]
+    `);
   });
 
   test('invalid last-pair', () => {
