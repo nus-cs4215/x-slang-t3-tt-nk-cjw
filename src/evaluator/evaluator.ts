@@ -8,33 +8,14 @@ import {
   Bindings,
   Environment,
   make_env,
-  make_env_list,
   find_env_with_define,
-  make_bindings,
   set_define,
   make_empty_bindings,
   get_define,
 } from '../environment';
 
-import { primitive_consts, primitive_funcs } from './primitives';
-
 import { match_special_form, MatchType, SpecialFormType } from './special-form';
 import { MatchObject } from '../pattern';
-
-const primitive_funcs_bindings: Bindings = make_bindings(
-  new Map(Object.entries(primitive_funcs).map(([name, fun]) => [name, sbox(make_primitive(fun))])),
-  new Map()
-);
-
-const primitive_consts_bindings: Bindings = make_bindings(
-  new Map(Object.entries(primitive_consts)),
-  new Map()
-);
-
-export const the_global_environment: Environment = make_env_list(
-  primitive_funcs_bindings,
-  primitive_consts_bindings
-);
 
 export type SpecialFormEvaluator = (matches: MatchObject, env: Environment) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {

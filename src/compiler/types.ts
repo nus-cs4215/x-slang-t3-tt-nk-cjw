@@ -1,31 +1,25 @@
-import { Environment, NonemptyEnvironment } from '../environment';
+import { Environment } from '../environment';
 import { TopLevelForm } from '../fep-types';
-import { SExpr } from '../sexpr';
+import { Module, ModuleName } from '../modules';
+import { read, ReadErr, ReadResult } from '../reader';
 import { Result } from '../utils';
-
-export type ModuleName = string;
-
-// A module is basically an environment we can evaluate in
-export interface Module {
-  name: ModuleName;
-  context: NonemptyEnvironment;
-}
 
 export interface ModuleFile {
   name: ModuleName;
-  // Contrary to its name,
-  // module_path is more like the parent module's name
-  // rather than the location of the module...
-  // This is also why I'm letting it be undefined;
-  // the base module should have no parents.
-  module_path: ModuleName | undefined;
   contents(): string;
 }
 
-export interface ModuleResolver {
-  resolve(cwd: string, name: string): ModuleFile | undefined;
+// Convenience methods on module_file
+export function read_module_file(f: ModuleFile): ReadResult {
+  return read(f.contents());
 }
 
-export type CompileError = string;
-export type CompileResult = Result<TopLevelForm, CompileError>;
-export type Compile = (program: SExpr, env: Environment) => CompileResult;
+export type ModuleResolutionErr = string | ReadErr | CompileErr;
+
+export interface ModuleResolver {
+  resolve(cwd: string, name: string): Result<Module, ModuleResolutionErr>;
+}
+
+export type CompileErr = string;
+export type CompileResult = Result<TopLevelForm, CompileErr>;
+export type Compile = (program: ModuleFile, env: Environment) => CompileResult;

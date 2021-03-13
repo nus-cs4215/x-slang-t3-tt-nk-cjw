@@ -3,4 +3,5 @@ export * from './reader';
 export * from './printer';
 export * from './evaluator';
 export * from './environment';
+export * from './modules';
 export * from './repl';

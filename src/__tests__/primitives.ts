@@ -1,9 +1,12 @@
 import { print } from '../printer';
 import { read } from '../reader';
 import { Environment } from '../environment';
-import { evaluate, the_global_environment } from '../evaluator';
+import { evaluate } from '../evaluator';
 import { cases, formatTable, getOk, getErr } from '../utils';
 import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
+import { primitives_module } from '../modules';
+
+const the_global_environment = primitives_module.env;
 
 function expectOpTable(ops: string[], tests: string[]) {
   return expect(

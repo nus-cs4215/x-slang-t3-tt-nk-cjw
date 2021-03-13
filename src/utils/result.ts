@@ -62,6 +62,17 @@ export function ok<T>(v: T): GoodResult<T> {
   return { good: true, v, err: undefined };
 }
 
+export function ok_unless_void<T, Err>(
+  v: Exclude<T, void> | void,
+  err: Err
+): Result<Exclude<T, void>, Err> {
+  if (v === undefined) {
+    return { good: false, v: undefined, err };
+  } else {
+    return { good: true, v, err: undefined };
+  }
+}
+
 export function err(err?: void): BadResult<void>;
 export function err<Err>(err: Err): BadResult<Err>;
 export function err<Err>(err: Err): BadResult<Err> {

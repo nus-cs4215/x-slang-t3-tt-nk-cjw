@@ -1,22 +1,14 @@
-import { ModuleFile, ModuleResolver } from './types';
+import { Module, ModuleName, primitives_module } from '../modules';
+import { ok_unless_void } from '../utils';
+import { ModuleResolver } from './types';
 
-const racket_base_module_contents = ``;
-const racket_base_module_file: ModuleFile = {
-  name: 'racket/base',
-  module_path: undefined,
-  contents() {
-    return racket_base_module_contents;
-  },
-};
-
-const racket_modules: ModuleFile[] = [racket_base_module_file];
-
-const racket_modules_map: Map<string, ModuleFile> = new Map(
-  racket_modules.map((module_file) => [module_file.name, module_file])
+const ts_based_modules_list: Module[] = [primitives_module];
+const ts_based_modules: Map<ModuleName, Module> = new Map(
+  ts_based_modules_list.map((mod) => [mod.name, mod])
 );
 
-export const racket_module_resolver: ModuleResolver = {
+export const ts_based_module_resolver: ModuleResolver = {
   resolve(cwd_: string, name: string) {
-    return racket_modules_map.get(name);
+    return ok_unless_void(ts_based_modules.get(name), 'module not found');
   },
 };
