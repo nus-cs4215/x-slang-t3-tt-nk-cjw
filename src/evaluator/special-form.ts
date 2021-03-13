@@ -154,7 +154,7 @@ export enum MatchType {
 }
 
 export type MatchResult =
-  | { match_type: MatchType.Match; form: SpecialFormType; matches: MatchObject }
+  | { match_type: MatchType.Match; form: SpecialFormType; matches: MatchObject<EvalData> }
   | { match_type: MatchType.InvalidSyntax; form: undefined; matches: undefined }
   | { match_type: MatchType.NoMatch; form: undefined; matches: undefined };
 
@@ -167,7 +167,7 @@ export function match_special_form(program: SList<EvalData>): MatchResult {
 
   if (hasKey(special_forms, keyword)) {
     for (const form of special_forms[keyword]) {
-      const matches: MatchObject | undefined = match(program, form.pattern);
+      const matches: MatchObject<EvalData> | undefined = match(program, form.pattern);
       if (matches !== undefined) {
         return { match_type: MatchType.Match, form: form.form, matches };
       }

@@ -1,4 +1,3 @@
-import { Environment } from '../environment';
 import { TopLevelForm } from '../fep-types';
 import { Module, ModuleName } from '../modules';
 import { read, ReadErr, ReadResult } from '../reader';
@@ -17,9 +16,10 @@ export function read_module_file(f: ModuleFile): ReadResult {
 export type ModuleResolutionErr = string | ReadErr | CompileErr;
 
 export interface ModuleResolver {
-  resolve(cwd: string, name: string): Result<Module, ModuleResolutionErr>;
+  resolveFileModule(cwd: string, name: string): Result<Module, ModuleResolutionErr>;
+  resolveBuiltinModule(name: string): Result<Module, ModuleResolutionErr>;
 }
 
 export type CompileErr = string;
-export type CompileResult = Result<TopLevelForm, CompileErr>;
-export type Compile = (program: ModuleFile, env: Environment) => CompileResult;
+export type CompileResult = Result<TopLevelForm, CompileErr | ReadErr>;
+export type CompileModule = (module_file: ModuleFile) => CompileResult;

@@ -2,7 +2,7 @@ import { err, ok, isBadResult } from '../utils';
 import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
-import { EvalData, EvalDataType, make_closure, make_primitive } from './datatypes';
+import { EvalData, EvalDataType, make_closure } from './datatypes';
 import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel } from './types';
 import {
   Bindings,
@@ -17,9 +17,9 @@ import {
 import { match_special_form, MatchType, SpecialFormType } from './special-form';
 import { MatchObject } from '../pattern';
 
-export type SpecialFormEvaluator = (matches: MatchObject, env: Environment) => EvalResult;
+export type SpecialFormEvaluator = (matches: MatchObject<EvalData>, env: Environment) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
-  define_const: ({ id, expr }: MatchObject, env: Environment): EvalResult => {
+  define_const: ({ id, expr }: MatchObject<EvalData>, env: Environment): EvalResult => {
     if (!is_symbol(id[0])) {
       return err();
     }
@@ -30,7 +30,10 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     set_define(env!.bindings, val(id[0]), r.v);
     return r;
   },
-  define_func: ({ fun_name, params, body }: MatchObject, env: Environment): EvalResult => {
+  define_func: (
+    { fun_name, params, body }: MatchObject<EvalData>,
+    env: Environment
+  ): EvalResult => {
     if (!is_symbol(fun_name[0])) {
       return err();
     }
@@ -50,7 +53,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     set_define(env!.bindings, val(fun_name[0]), fun);
     return ok(fun);
   },
-  begin: ({ body }: MatchObject, env: Environment): EvalResult => {
+  begin: ({ body }: MatchObject<EvalData>, env: Environment): EvalResult => {
     let r: EvalResult;
     for (const expr of body) {
       r = evaluate(expr, env);
@@ -60,7 +63,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return r!;
   },
-  begin0: ({ body }: MatchObject, env: Environment): EvalResult => {
+  begin0: ({ body }: MatchObject<EvalData>, env: Environment): EvalResult => {
     const it = body[Symbol.iterator]();
     const r = evaluate(it.next().value, env);
     for (const expr of it) {
@@ -71,7 +74,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return r;
   },
-  cond: ({ test_exprs, then_bodies }: MatchObject, env: Environment): EvalResult => {
+  cond: ({ test_exprs, then_bodies }: MatchObject<EvalData>, env: Environment): EvalResult => {
     for (let i = 0; i < test_exprs.length; i++) {
       const r: EvalResult = evaluate(test_exprs[i], env);
       if (isBadResult(r)) {
@@ -103,7 +106,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return err();
   },
-  and: ({ exprs }: MatchObject, env: Environment): EvalResult => {
+  and: ({ exprs }: MatchObject<EvalData>, env: Environment): EvalResult => {
     if (exprs === undefined) {
       return ok(sboolean(true));
     }
@@ -121,7 +124,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(exprs[exprs.length - 1], env);
   },
-  or: ({ exprs }: MatchObject, env: Environment): EvalResult => {
+  or: ({ exprs }: MatchObject<EvalData>, env: Environment): EvalResult => {
     if (exprs === undefined) {
       return ok(sboolean(false));
     }
@@ -139,7 +142,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(exprs[exprs.length - 1], env);
   },
-  lambda: ({ params, body }: MatchObject, env: Environment): EvalResult => {
+  lambda: ({ params, body }: MatchObject<EvalData>, env: Environment): EvalResult => {
     if (params === undefined) {
       params = [];
     }
@@ -156,7 +159,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       )
     );
   },
-  let: ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
+  let: ({ ids, val_exprs, bodies }: MatchObject<EvalData>, env: Environment): EvalResult => {
     const bindings: Bindings = make_empty_bindings();
     for (let i = 0; i < val_exprs.length; i++) {
       const id = ids[i];
@@ -178,7 +181,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
-  'let*': ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
+  'let*': ({ ids, val_exprs, bodies }: MatchObject<EvalData>, env: Environment): EvalResult => {
     for (let i = 0; i < val_exprs.length; i++) {
       const bindings: Bindings = make_empty_bindings();
       const id = ids[i];
@@ -200,7 +203,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
-  letrec: ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
+  letrec: ({ ids, val_exprs, bodies }: MatchObject<EvalData>, env: Environment): EvalResult => {
     if (!ids.every(is_symbol)) {
       return err();
     }
@@ -225,8 +228,9 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     }
     return evaluate(bodies[bodies.length - 1], env);
   },
-  quote: ({ e }: MatchObject): EvalResult => ok(e[0]),
-  quasiquote: ({ e }: MatchObject, env: Environment): EvalResult => expand_quasiquote(e[0], env),
+  quote: ({ e }: MatchObject<EvalData>): EvalResult => ok(e[0]),
+  quasiquote: ({ e }: MatchObject<EvalData>, env: Environment): EvalResult =>
+    expand_quasiquote(e[0], env),
   unquote: (): EvalResult => err(),
 };
 
