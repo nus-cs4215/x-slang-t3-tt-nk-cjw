@@ -1,6 +1,6 @@
 import { Result } from '../utils';
 import { SExprT, SCons, SSymbol, SNil, SHomList, SNonemptyHomList, SExpr } from '../sexpr';
-import { Environment } from './environment';
+import { Environment } from '../environment';
 import { EvalData } from './datatypes';
 
 export type EvalSExpr = SExprT<EvalData>;

@@ -4,30 +4,32 @@ import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure, make_primitive } from './datatypes';
 import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel } from './types';
-import { Bindings, Environment, make_env, make_env_list, find_env } from './environment';
+import {
+  Bindings,
+  Environment,
+  make_env,
+  make_env_list,
+  find_env_with_define,
+  make_bindings,
+  set_define,
+  make_empty_bindings,
+  get_define,
+} from '../environment';
 
 import { primitive_consts, primitive_funcs } from './primitives';
 
 import { match_special_form, MatchType, SpecialFormType } from './special-form';
 import { MatchObject } from '../pattern';
 
-const primitive_funcs_bindings: Bindings = Object.entries(primitive_funcs).reduce(
-  (obj, [name, fun]) => {
-    obj[name] = sbox(make_primitive(fun));
-    return obj;
-  },
-  {} as Record<string, EvalSExpr>
+const primitive_funcs_bindings: Bindings = make_bindings(
+  new Map(Object.entries(primitive_funcs).map(([name, fun]) => [name, sbox(make_primitive(fun))])),
+  new Map()
 );
 
-const primitive_consts_bindings: Bindings = Object.entries(primitive_consts).reduce(
-  (obj, [name, c]) => {
-    obj[name] = c;
-    return obj;
-  },
-  {} as Record<string, EvalSExpr>
+const primitive_consts_bindings: Bindings = make_bindings(
+  new Map(Object.entries(primitive_consts)),
+  new Map()
 );
-
-export { Environment, make_env, make_env_list };
 
 export const the_global_environment: Environment = make_env_list(
   primitive_funcs_bindings,
@@ -44,7 +46,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     if (isBadResult(r)) {
       return r;
     }
-    env!.bindings[val(id[0])] = r.v;
+    set_define(env!.bindings, val(id[0]), r.v);
     return r;
   },
   define_func: ({ fun_name, params, body }: MatchObject, env: Environment): EvalResult => {
@@ -64,7 +66,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
         body
       )
     );
-    env!.bindings[val(fun_name[0])] = fun;
+    set_define(env!.bindings, val(fun_name[0]), fun);
     return ok(fun);
   },
   begin: ({ body }: MatchObject, env: Environment): EvalResult => {
@@ -174,7 +176,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     );
   },
   let: ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
-    const bindings: Bindings = {};
+    const bindings: Bindings = make_empty_bindings();
     for (let i = 0; i < val_exprs.length; i++) {
       const id = ids[i];
       if (!is_symbol(id)) {
@@ -184,7 +186,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       if (isBadResult(val_r)) {
         return val_r;
       }
-      bindings[val(id)] = val_r.v;
+      set_define(bindings, val(id), val_r.v);
     }
     env = make_env(bindings, env);
     for (let i = 0; i < bodies.length - 1; i++) {
@@ -197,7 +199,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
   },
   'let*': ({ ids, val_exprs, bodies }: MatchObject, env: Environment): EvalResult => {
     for (let i = 0; i < val_exprs.length; i++) {
-      const bindings: Bindings = {};
+      const bindings: Bindings = make_empty_bindings();
       const id = ids[i];
       if (!is_symbol(id)) {
         return err();
@@ -206,7 +208,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       if (isBadResult(val_r)) {
         return val_r;
       }
-      bindings[val(id)] = val_r.v;
+      set_define(bindings, val(id), val_r.v);
       env = make_env(bindings, env);
     }
     for (let i = 0; i < bodies.length - 1; i++) {
@@ -221,9 +223,9 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
     if (!ids.every(is_symbol)) {
       return err();
     }
-    const bindings: Bindings = {};
+    const bindings: Bindings = make_empty_bindings();
     for (const id of ids) {
-      bindings[val(id)] = undefined;
+      set_define(bindings, val(id), undefined);
     }
     env = make_env(bindings, env);
     for (let i = 0; i < val_exprs.length; i++) {
@@ -232,7 +234,7 @@ const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
       if (isBadResult(val_r)) {
         return val_r;
       }
-      bindings[val(id)] = val_r.v;
+      set_define(bindings, val(id), val_r.v);
     }
     for (let i = 0; i < bodies.length - 1; i++) {
       const r = evaluate(bodies[i], env);
@@ -283,9 +285,9 @@ const apply: Apply = (fun, ...args) => {
       if (args.length !== params.length) {
         return err();
       }
-      const bindings: Bindings = {};
+      const bindings: Bindings = make_empty_bindings();
       for (let i = 0; i < params.length; i++) {
-        bindings[params[i]] = args[i];
+        set_define(bindings, params[i], args[i]);
       }
       const inner_env = make_env(bindings, env);
       for (let i = 0; i < body.length - 1; i++) {
@@ -329,12 +331,12 @@ export const evaluate: Evaluate = (program, env) => {
   // Variable references
   if (is_symbol(program)) {
     const name = val(program);
-    const binding_env = find_env(name, env);
+    const binding_env = find_env_with_define(name, env);
     if (binding_env === undefined) {
       // Unbound variable error
       return err();
     }
-    const v = binding_env.bindings[name];
+    const v = get_define(binding_env.bindings, name) as EvalSExpr | undefined;
     return v !== undefined ? ok(v) : err();
   }
 

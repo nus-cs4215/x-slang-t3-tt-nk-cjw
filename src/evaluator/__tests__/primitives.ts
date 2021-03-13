@@ -1,5 +1,6 @@
 import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
-import { Environment, evaluate, the_global_environment } from '../../evaluator';
+import { Environment } from '../../environment';
+import { evaluate, the_global_environment } from '../../evaluator';
 import { getOk, getErr } from '../../utils';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {

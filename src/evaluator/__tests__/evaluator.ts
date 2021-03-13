@@ -1,13 +1,9 @@
 import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
 import { snumber, sboolean } from '../../sexpr';
-import {
-  Environment,
-  evaluate,
-  make_env,
-  make_env_list,
-  the_global_environment,
-} from '../evaluator';
+import { Environment, make_env, make_env_list } from '../../environment';
+import { evaluate, the_global_environment } from '../evaluator';
 import { ok, getOk, getErr } from '../../utils';
+import { make_bindings_from_record, make_empty_bindings } from '../../environment';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
@@ -17,7 +13,7 @@ function expectJsonReadEvalError(j: JsonSExpr, env: Environment) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
-const test_env = () => make_env({}, the_global_environment);
+const test_env = () => make_env(make_empty_bindings(), the_global_environment);
 
 test('evaluate values', () => {
   expect(evaluate(snumber(1), undefined)).toEqual(ok(snumber(1)));
@@ -26,30 +22,54 @@ test('evaluate values', () => {
 
 describe('evaluate variables', () => {
   test('valid', () => {
-    expectJsonReadEvalPrint('a', make_env_list({ a: snumber(1) })).toMatchInlineSnapshot(`1`);
     expectJsonReadEvalPrint(
       'a',
-      make_env_list({ a: snumber(1) }, { a: snumber(2) })
+      make_env_list(make_bindings_from_record({ a: snumber(1) }, {}))
     ).toMatchInlineSnapshot(`1`);
     expectJsonReadEvalPrint(
       'a',
-      make_env_list({ b: snumber(3) }, { a: snumber(1) })
+      make_env_list(
+        make_bindings_from_record({ a: snumber(1) }, {}),
+        make_bindings_from_record({ a: snumber(2) }, {})
+      )
     ).toMatchInlineSnapshot(`1`);
     expectJsonReadEvalPrint(
       'a',
-      make_env_list({ a: snumber(1) }, { b: snumber(3) })
+      make_env_list(
+        make_bindings_from_record({ b: snumber(3) }, {}),
+        make_bindings_from_record({ a: snumber(1) }, {})
+      )
     ).toMatchInlineSnapshot(`1`);
-    expectJsonReadEvalPrint('a', make_env_list({}, { a: snumber(1) })).toMatchInlineSnapshot(`1`);
-    expectJsonReadEvalPrint('a', make_env_list({ a: snumber(1) }, {})).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(
+      'a',
+      make_env_list(
+        make_bindings_from_record({ a: snumber(1) }, {}),
+        make_bindings_from_record({ b: snumber(3) }, {})
+      )
+    ).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(
+      'a',
+      make_env_list(make_empty_bindings(), make_bindings_from_record({ a: snumber(1) }, {}))
+    ).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(
+      'a',
+      make_env_list(make_bindings_from_record({ a: snumber(1) }, {}), make_empty_bindings())
+    ).toMatchInlineSnapshot(`1`);
   });
 
   test('invalid', () => {
     expectJsonReadEvalError('a', undefined).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError('a', make_env_list({})).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError('a', make_env_list({}, {})).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError('a', make_env_list({ b: snumber(1) })).toMatchInlineSnapshot(
+    expectJsonReadEvalError('a', make_env_list(make_empty_bindings())).toMatchInlineSnapshot(
       `undefined`
     );
+    expectJsonReadEvalError(
+      'a',
+      make_env_list(make_empty_bindings(), make_empty_bindings())
+    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(
+      'a',
+      make_env_list(make_bindings_from_record({ b: snumber(1) }, {}))
+    ).toMatchInlineSnapshot(`undefined`);
   });
 });
 

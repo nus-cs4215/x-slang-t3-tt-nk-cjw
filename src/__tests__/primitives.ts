@@ -1,6 +1,7 @@
 import { print } from '../printer';
 import { read } from '../reader';
-import { Environment, evaluate, the_global_environment } from '../evaluator';
+import { Environment } from '../environment';
+import { evaluate, the_global_environment } from '../evaluator';
 import { cases, formatTable, getOk, getErr } from '../utils';
 import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
 
