@@ -3,11 +3,11 @@ import { getErr, getOk } from '../../utils';
 import { compile_module } from '../compiler';
 
 function expectReadCompilePrint(module_contents: string) {
-  return expect(print(getOk(compile_module(module_contents))));
+  return expect(print(getOk(compile_module(module_contents, {} as any)).fep));
 }
 
 function expectReadCompileError(module_contents: string) {
-  return expect(getErr(compile_module(module_contents)));
+  return expect(getErr(compile_module(module_contents, {} as any)));
 }
 
 describe('compile succeeds', () => {
@@ -103,7 +103,9 @@ describe('compile succeeds', () => {
 
   test('compilation is idempotent', () => {
     const compiled = print(
-      getOk(compile_module("(module name '#%builtin-base-lang (define f (lambda (x) x)))"))
+      getOk(
+        compile_module("(module name '#%builtin-base-lang (define f (lambda (x) x)))", {} as any)
+      ).fep
     );
     expectReadCompilePrint(compiled).toEqual(compiled);
   });

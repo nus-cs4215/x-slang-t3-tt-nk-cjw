@@ -32,6 +32,7 @@ import {
   MatchObject,
 } from '../pattern';
 import { read } from '../reader';
+import { print } from '../printer';
 import {
   car,
   cdr,
@@ -53,7 +54,15 @@ import {
 } from '../sexpr';
 import { err, isBadResult, map_results, ok, Result, then } from '../utils';
 import { builtin_module_resolver } from './compiler-base';
-import { CompileModule, CompileErr } from './types';
+import {
+  CompileModule,
+  CompileErr,
+  CompileModuleResultV,
+  Compile,
+  CompilerHost,
+  FileName,
+  CompileResultV,
+} from './types';
 
 function noop_expr_transformer(
   expr: SList<never> | SSymbol,
@@ -605,7 +614,10 @@ export function expand_in_module_context(
   return expand_in_internal_definition_context(statements, compile_env);
 }
 
-export const compile_module: CompileModule = (module_contents) => {
+export const compile_module: CompileModule = (
+  module_contents: string,
+  host_: CompilerHost
+): Result<CompileModuleResultV, CompileErr> => {
   const module_sexpr_result = read(module_contents);
   if (isBadResult(module_sexpr_result)) {
     return module_sexpr_result;
@@ -623,7 +635,7 @@ export const compile_module: CompileModule = (module_contents) => {
     return err('recursively loading modules not supported yet, lmao. pls use a builtin module :)');
   }
 
-  const parent_module_result = builtin_module_resolver.resolveBuiltinModule(module_path_name);
+  const parent_module_result = builtin_module_resolver.read_builtin_module(module_path_name);
   if (isBadResult(parent_module_result)) {
     return err('could not load parent module');
   }
@@ -644,5 +656,35 @@ export const compile_module: CompileModule = (module_contents) => {
     ] as const,
     snil()
   );
-  return ok(fep_module);
+  return ok({ fep: fep_module, compiled_filenames: new Map() });
+};
+
+export const compile: Compile = (
+  host: CompilerHost,
+  filename: FileName
+): Result<CompileResultV, CompileErr> => {
+  const module_contents_r = host.read_file(filename);
+  if (isBadResult(module_contents_r)) {
+    return module_contents_r;
+  }
+  const module_contents = module_contents_r.v;
+
+  const compile_r = compile_module(module_contents, host);
+  if (isBadResult(compile_r)) {
+    return compile_r;
+  }
+
+  const fep = compile_r.v.fep;
+  const fep_string = print(fep);
+  const fep_filename = filename + '.fep';
+
+  const write_r = host.write_file(fep_filename, fep_string);
+  if (isBadResult(write_r)) {
+    return write_r;
+  }
+
+  const compiled_filenames = compile_r.v.compiled_filenames;
+  compiled_filenames.set(filename, fep_filename);
+
+  return ok({ compiled_filenames });
 };
