@@ -3,12 +3,12 @@ import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure } from './datatypes';
-import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel } from './types';
+import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel, ApplySyntax } from './types';
 import {
   Bindings,
   Environment,
   make_env,
-  find_env_with_define,
+  find_env,
   set_define,
   make_empty_bindings,
   get_define,
@@ -261,7 +261,50 @@ function expand_quasiquote(e: EvalSExpr, env: Environment): EvalResult {
   }
 }
 
-const apply: Apply = (fun, ...args) => {
+export const apply_syntax: ApplySyntax = (fun, stx, compile_env) => {
+  if (is_boxed(fun)) {
+    const v = fun.val;
+    if (v.variant === EvalDataType.Closure) {
+      // v was a Closure
+      // closure syntaxes don't support env... (for now?)
+      const { env, params, body } = v;
+      if (1 !== params.length) {
+        return err();
+      }
+      const bindings: Bindings = make_empty_bindings();
+      set_define(bindings, params[0], stx);
+      const inner_env = make_env(bindings, env);
+      for (let i = 0; i < body.length - 1; i++) {
+        const r = evaluate(body[i], inner_env);
+        if (isBadResult(r)) {
+          return r;
+        }
+      }
+      return evaluate(body[body.length - 1], inner_env);
+    } else if (v.variant === EvalDataType.Primitive) {
+      // v is a Primitive
+      // You should have used a PrimitiveTransformer
+      return err();
+    } else {
+      // if (v.variant === EvalDataType.PrimitiveTransformer) {
+      return v.fun(stx, compile_env);
+    }
+  }
+
+  if (!is_list(fun)) {
+    return err();
+  }
+  const fun_type = car(fun);
+  if (!is_symbol(fun_type)) {
+    // not in the right format for a function
+    return err();
+  }
+
+  // unsupported function type
+  return err();
+};
+
+export const apply: Apply = (fun, ...args) => {
   if (is_boxed(fun)) {
     const v = fun.val;
     if (v.variant === EvalDataType.Closure) {
@@ -282,10 +325,13 @@ const apply: Apply = (fun, ...args) => {
         }
       }
       return evaluate(body[body.length - 1], inner_env);
-    } else {
-      // if (v.variant === EvalDataType.Primitive) {
+    } else if (v.variant === EvalDataType.Primitive) {
       // v is a Primitive
       return v.fun(...args);
+    } else {
+      // v is a PrimitiveTransformer
+      // You can't call them
+      return err();
     }
   }
 
@@ -316,7 +362,7 @@ export const evaluate: Evaluate = (program, env) => {
   // Variable references
   if (is_symbol(program)) {
     const name = val(program);
-    const binding_env = find_env_with_define(name, env);
+    const binding_env = find_env(name, env);
     if (binding_env === undefined) {
       // Unbound variable error
       return err();

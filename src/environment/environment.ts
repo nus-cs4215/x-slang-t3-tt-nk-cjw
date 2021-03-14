@@ -55,20 +55,10 @@ export function make_env_list(...bindings: Bindings[]): Environment {
   return bindings.reduceRight((env, bindings) => make_env(bindings, env), undefined);
 }
 
-export function find_env_with_syntax(name: string, env_: Environment): Environment {
+export function find_env(name: string, env_: Environment): Environment {
   let env: Environment;
   for (env = env_; env !== undefined; env = env.parent) {
-    if (has_syntax(env.bindings, name)) {
-      break;
-    }
-  }
-  return env;
-}
-
-export function find_env_with_define(name: string, env_: Environment): Environment {
-  let env: Environment;
-  for (env = env_; env !== undefined; env = env.parent) {
-    if (has_define(env.bindings, name)) {
+    if (has_define(env.bindings, name) || has_syntax(env.bindings, name)) {
       break;
     }
   }

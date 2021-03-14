@@ -57,7 +57,10 @@ export type SExpr = SExprT<never>;
  * CONSTRUCTORS *
  ****************/
 
-export const ssymbol = (val: string): SSymbol => ({ _type: STypes.Symbol, val });
+export const ssymbol = <V extends string>(val: V): SSymbol & { val: V } => ({
+  _type: STypes.Symbol,
+  val,
+});
 export const snumber = (val: number): SNumber => ({ _type: STypes.Number, val });
 export const sboolean = (val: boolean): SBoolean => ({
   _type: STypes.Boolean,
@@ -71,6 +74,18 @@ export const scons = <T, U>(x: T, y: U): SCons<T, U> => ({
   y,
 });
 
+type TupleTail<T> = T extends readonly [infer U_, ...infer V] ? V : [];
+
+type SListReturnValue<
+  T,
+  Xs extends readonly [...SExprT<T>[]],
+  Tail extends SExprT<T>
+> = Xs['length'] extends 0 ? Tail : SCons<Xs[0], SListReturnValue<T, TupleTail<Xs>, Tail>>;
+
+export function slist<T, Xs extends readonly [...SExprT<T>[]], Tail extends SExprT<T>>(
+  xs: Xs,
+  tail: Tail
+): SListReturnValue<T, Xs, Tail>;
 export function slist<T, U>(xs: [T, ...SExprT<U>[]], tail: SExprT<U>): SCons<T, SExprT<U>>;
 export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T>;
 export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T> {

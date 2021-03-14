@@ -1,7 +1,8 @@
 import { SCons, SExpr, SHomList, SNil, SNonemptyHomList, SSymbol } from './sexpr';
 
 // For now, let them be equal
-export type FepAst = TopLevelForm;
+export type TopLevelFormAst = TopLevelForm;
+export type ModuleLevelFormAst = ModuleLevelForm;
 
 export type Token<V> = SSymbol & { val: V };
 
@@ -9,61 +10,86 @@ export type Token<V> = SSymbol & { val: V };
 // This is so we can be sure that what compile outputs is always serializable by the writer into valid FEP.
 export type TopLevelForm =
   | GeneralTopLevelForm
-  | SCons<Token<'#%expression'>, FEExpr>
-  | SCons<
-      Token<'module'>,
-      SCons<
-        SSymbol,
-        SCons<SSymbol, SCons<SCons<Token<'#%plain-module-begin'>, SHomList<ModuleLevelForm>>, SNil>>
-      >
-    >
-  | SCons<Token<'begin'>, SNonemptyHomList<TopLevelForm>>
-  | SCons<Token<'begin-for-syntax'>, SNonemptyHomList<TopLevelForm>>;
-
-export type ModuleLevelForm =
-  | GeneralTopLevelForm
-  | SCons<Token<'#%provide'>, SHomList<SSymbol>>
-  | SCons<Token<'begin-for-syntax'>, SNonemptyHomList<ModuleLevelForm>>
-  | SubmoduleForm
-  | SCons<Token<'#%declare'>, SHomList<SSymbol>>;
-
-export type SubmoduleForm = SCons<
+  | ExplicitExpressionForm
+  | ModuleFileParentForm
+  | ModuleBuiltinParentForm;
+export type ExplicitExpressionForm = SCons<Token<'#%expression'>, FEExpr>;
+export type ModuleFileParentForm = SCons<
   Token<'module'>,
   SCons<
     SSymbol,
     SCons<SSymbol, SCons<SCons<Token<'#%plain-module-begin'>, SHomList<ModuleLevelForm>>, SNil>>
   >
 >;
+export type ModuleBuiltinParentForm = SCons<
+  Token<'module'>,
+  SCons<
+    SSymbol,
+    SCons<
+      SCons<Token<'quote'>, SCons<SSymbol, SNil>>,
+      SCons<SCons<Token<'#%plain-module-begin'>, SHomList<ModuleLevelForm>>, SNil>
+    >
+  >
+>;
+
+export type ModuleLevelForm =
+  | GeneralTopLevelForm
+  | ProvideForm
+  | BeginForSyntaxForm
+  | ModuleFileParentForm
+  | ModuleBuiltinParentForm
+  | DeclareForm;
+
+export type ProvideForm = SCons<Token<'#%provide'>, SHomList<SSymbol>>;
+export type BeginForSyntaxForm = SCons<
+  Token<'begin-for-syntax'>,
+  SNonemptyHomList<ModuleLevelForm>
+>;
+export type DeclareForm = SCons<Token<'#%declare'>, SHomList<SSymbol>>;
 
 export type GeneralTopLevelForm =
   | FEExpr
-  | SCons<Token<'define'>, SCons<SHomList<SSymbol>, SCons<FEExpr, SNil>>>
-  | SCons<Token<'define-syntax'>, SCons<SHomList<SSymbol>, SCons<FEExpr, SNil>>>
-  | SCons<Token<'require'>, SCons<SSymbol, SNil>>;
+  | DefineForm
+  | DefineSyntaxForm
+  | RequireFileForm
+  | RequireBuiltinForm;
+
+export type DefineForm = SCons<Token<'define'>, SCons<SSymbol, SCons<FEExpr, SNil>>>;
+export type DefineSyntaxForm = SCons<Token<'define-syntax'>, SCons<SSymbol, SCons<FEExpr, SNil>>>;
+export type RequireFileForm = SCons<Token<'require'>, SCons<SSymbol, SNil>>;
+export type RequireBuiltinForm = SCons<
+  Token<'require'>,
+  SCons<SCons<Token<'quote'>, SCons<SSymbol, SNil>>, SNil>
+>;
 
 export type FEExpr =
-  | SSymbol
-  | SCons<Token<'#%plain-lambda'>, SCons<FEFormals, SNonemptyHomList<FEExpr>>>
-  // | SCons<Token<'case-lambda'>, SHomList<SCons<FEFormals, SNonemptyHomList<FEExpr>>>>
-  | SCons<Token<'if'>, SCons<FEExpr, SCons<FEExpr, SCons<FEExpr, SNil>>>>
-  | SCons<Token<'begin'>, SNonemptyHomList<FEExpr>>
-  | SCons<Token<'begin0'>, SNonemptyHomList<FEExpr>>
-  // | SCons<Token<'let-values'>, SNonemptyHomList<FEExpr>>
-  | SCons<
-      Token<'let'>,
-      SCons<SHomList<SCons<SHomList<SSymbol>, SCons<FEExpr, SNil>>>, SNonemptyHomList<FEExpr>>
-    >
-  | SCons<
-      Token<'letrec'>,
-      SCons<SHomList<SCons<SHomList<SSymbol>, SCons<FEExpr, SNil>>>, SNonemptyHomList<FEExpr>>
-    >
-  // | SCons<Token<'set!'>, SCons<SSymbol, SCons<FEExpr, SNil>>>
-  | SCons<Token<'quote'>, SCons<SExpr, SNil>>
-  // | SCons<Token<'quote-syntax'>, SCons<SExpr, SNil>>
-  | SCons<Token<'#%plain-app'>, SNonemptyHomList<FEExpr>>
-  | SCons<Token<'#%top'>, SSymbol>
-  | SCons<Token<'#%variable-reference'>, SCons<SSymbol, SNil>>
-  | SCons<Token<'#%variable-reference'>, SCons<SCons<Token<'#%top'>, SSymbol>, SNil>>
-  | SCons<Token<'#%variable-reference'>, SNil>;
+  | PlainLambdaForm
+  | IfForm
+  | BeginForm
+  | Begin0Form
+  | LetForm
+  | LetrecForm
+  | QuoteForm
+  | PlainAppForm
+  | VariableReferenceForm;
+
+export type PlainLambdaForm = SCons<
+  Token<'#%plain-lambda'>,
+  SCons<FEFormals, SNonemptyHomList<FEExpr>>
+>;
+export type IfForm = SCons<Token<'if'>, SCons<FEExpr, SCons<FEExpr, SCons<FEExpr, SNil>>>>;
+export type BeginForm = SCons<Token<'begin'>, SNonemptyHomList<FEExpr>>;
+export type Begin0Form = SCons<Token<'begin0'>, SNonemptyHomList<FEExpr>>;
+export type LetForm = SCons<
+  Token<'let'>,
+  SCons<SHomList<SCons<SSymbol, SCons<FEExpr, SNil>>>, SNonemptyHomList<FEExpr>>
+>;
+export type LetrecForm = SCons<
+  Token<'letrec'>,
+  SCons<SHomList<SCons<SSymbol, SCons<FEExpr, SNil>>>, SNonemptyHomList<FEExpr>>
+>;
+export type QuoteForm = SCons<Token<'quote'>, SCons<SExpr, SNil>>;
+export type PlainAppForm = SCons<Token<'#%plain-app'>, SNonemptyHomList<FEExpr>>;
+export type VariableReferenceForm = SCons<Token<'#%variable-reference'>, SCons<SSymbol, SNil>>;
 
 export type FEFormals = SSymbol | SNil | SCons<SSymbol, FEFormals>;

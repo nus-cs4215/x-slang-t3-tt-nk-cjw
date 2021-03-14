@@ -20,6 +20,6 @@ const primitives_env: Environment = make_env_list(
 );
 
 export const primitives_module: Module = {
-  name: '#%builtins-primitives',
+  name: '#%builtin-primitives',
   env: primitives_env,
 };

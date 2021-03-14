@@ -28,6 +28,8 @@ test('exports', () => {
       "readOneDatum",
       "read",
       "print",
+      "apply_syntax",
+      "apply",
       "evaluate",
       "evaluate_top_level",
       "make_empty_bindings",
@@ -41,9 +43,9 @@ test('exports', () => {
       "set_syntax",
       "make_env",
       "make_env_list",
-      "find_env_with_syntax",
-      "find_env_with_define",
+      "find_env",
       "primitives_module",
+      "empty_module",
       "startRepl",
     ]
   `);
