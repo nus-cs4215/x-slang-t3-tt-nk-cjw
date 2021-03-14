@@ -129,6 +129,7 @@ describe('compile fails', () => {
     expectReadCompileError(`
       (module name '#%builtin-empty (#%plain-app . 1))
     `).toMatchInlineSnapshot(`"#%plain-app should be proper list"`);
+
     expectReadCompileError(`
       (module name '#%builtin-empty (quote))
     `).toMatchInlineSnapshot(`"quote should be a proper list containing exactly 1 argument"`);
@@ -138,6 +139,19 @@ describe('compile fails', () => {
     expectReadCompileError(`
       (module name '#%builtin-empty (quote 1 2))
     `).toMatchInlineSnapshot(`"quote should be a proper list containing exactly 1 argument"`);
+
+    expectReadCompileError(`
+      (module name '#%builtin-empty (define))
+    `).toMatchInlineSnapshot(`"did not match form for define"`);
+    expectReadCompileError(`
+      (module name '#%builtin-empty (define x))
+    `).toMatchInlineSnapshot(`"did not match form for define"`);
+    expectReadCompileError(`
+      (module name '#%builtin-empty (define (x) 2))
+    `).toMatchInlineSnapshot(`"did not match form for define"`);
+    expectReadCompileError(`
+      (module name '#%builtin-empty (define 1 2))
+    `).toMatchInlineSnapshot(`"did not match form for define"`);
   });
 
   test('nonexistent binding in expr', () => {

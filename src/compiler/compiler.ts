@@ -22,7 +22,15 @@ import {
   QuoteForm,
   VariableReferenceForm,
 } from '../fep-types';
-import { json_plus, json_star, json_var, match } from '../pattern';
+import {
+  extract_matches,
+  json_plus,
+  json_star,
+  json_symvar,
+  json_var,
+  match,
+  MatchObject,
+} from '../pattern';
 import { read } from '../reader';
 import {
   car,
@@ -63,7 +71,7 @@ function noop_statement_transformer(
   return ok([]);
 }
 
-const define_pattern = jsonRead(['define', json_var('name'), json_var('value')]);
+const define_pattern = jsonRead(['define', json_symvar('name'), json_var('value')]);
 function define(
   expr: SList<never>,
   compile_env: NonemptyEnvironment,
@@ -74,10 +82,7 @@ function define(
     const {
       name: [name_expr],
       value: [value_expr],
-    } = match_result;
-    if (!is_symbol(name_expr)) {
-      return err('tried to define non-symbol variable name');
-    }
+    } = match_result as MatchObject<never> & { name: [SSymbol] };
     const expanded_value_result = expand_in_expression_context(value_expr, compile_env);
     if (isBadResult(expanded_value_result)) {
       return expanded_value_result;
@@ -98,7 +103,7 @@ function define(
   }
 }
 
-const define_syntax_pattern = jsonRead(['define-syntax', json_var('name'), json_var('value')]);
+const define_syntax_pattern = jsonRead(['define-syntax', json_symvar('name'), json_var('value')]);
 function define_syntax(
   expr: SList<never>,
   compile_env: NonemptyEnvironment,
@@ -109,10 +114,7 @@ function define_syntax(
     const {
       name: [name_expr],
       value: [value_expr],
-    } = match_result;
-    if (!is_symbol(name_expr)) {
-      return err('tried to define non-symbol syntax name');
-    }
+    } = match_result as MatchObject<never> & { name: [SSymbol] };
     const expanded_value_result = expand_in_expression_context(value_expr, compile_env);
     if (isBadResult(expanded_value_result)) {
       return expanded_value_result;
@@ -172,7 +174,7 @@ function if_(
 
 const let_pattern = jsonRead([
   'let',
-  json_star([json_var('ids'), json_var('values')], []),
+  json_star([json_symvar('ids'), json_var('values')], []),
   '.',
   json_plus(json_var('body'), []),
 ]);
@@ -187,46 +189,45 @@ function let_(
   if (match_result === undefined) {
     return err();
   }
-  const { ids, values, body } = match_result;
-  if (ids === undefined) {
-    // Let with no bindings is the same as body
+
+  return extract_matches(match_result, (ids: SSymbol[], values: SExpr[], body: SExpr[]) => {
+    if (ids.length === 0) {
+      // Let with no bindings is the same as body
+      const expanded_body_result: Result<FEExpr[], CompileErr> = map_results(
+        (e) => expand_in_expression_context(e, compile_env),
+        body
+      );
+      if (isBadResult(expanded_body_result)) {
+        return err();
+      }
+      return ok(slist([ssymbol('begin'), ...expanded_body_result.v] as const, snil()));
+    }
+    const id_value_pairs: SCons<SSymbol, SCons<FEExpr, SNil>>[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      const expanded_body_expr_result = expand_in_expression_context(values[i], compile_env);
+      if (isBadResult(expanded_body_expr_result)) {
+        return err();
+      }
+      id_value_pairs.push(slist([ids[i], expanded_body_expr_result.v] as const, snil()));
+    }
     const expanded_body_result: Result<FEExpr[], CompileErr> = map_results(
-      (e) => expand_in_expression_context(e as SExpr, compile_env),
+      (e) => expand_in_expression_context(e, compile_env),
       body
     );
     if (isBadResult(expanded_body_result)) {
       return err();
     }
-    return ok(slist([ssymbol('begin'), ...expanded_body_result.v] as const, snil()));
-  }
-  if (!ids.every(is_symbol)) {
-    err();
-  }
-  const id_value_pairs: SCons<SSymbol, SCons<FEExpr, SNil>>[] = [];
-  for (let i = 0; i < ids.length; i++) {
-    const expanded_body_expr_result = expand_in_expression_context(values[i] as SExpr, compile_env);
-    if (isBadResult(expanded_body_expr_result)) {
-      return err();
-    }
-    id_value_pairs.push(slist([ids[i] as SSymbol, expanded_body_expr_result.v] as const, snil()));
-  }
-  const expanded_body_result: Result<FEExpr[], CompileErr> = map_results(
-    (e) => expand_in_expression_context(e as SExpr, compile_env),
-    body
-  );
-  if (isBadResult(expanded_body_result)) {
-    return err();
-  }
-  const let_form: LetForm = slist(
-    [ssymbol('let'), slist(id_value_pairs, snil()), ...expanded_body_result.v] as const,
-    snil()
-  );
-  return ok(let_form);
+    const let_form: LetForm = slist(
+      [ssymbol('let'), slist(id_value_pairs, snil()), ...expanded_body_result.v] as const,
+      snil()
+    );
+    return ok(let_form);
+  });
 }
 
 const letrec_pattern = jsonRead([
   'letrec',
-  json_star([json_var('ids'), json_var('values')], []),
+  json_star([json_symvar('ids'), json_var('values')], []),
   '.',
   json_plus(json_var('body'), []),
 ]);
@@ -237,45 +238,43 @@ function letrec(
   if (is_symbol(expr)) {
     return err('letrec is a reserved keyword, and cannot be used as a variable');
   }
-  const match_result = match(expr, letrec_pattern);
+  const match_result = match(expr, letrec_pattern) as MatchObject<never> & { ids: SSymbol[] };
   if (match_result === undefined) {
     return err();
   }
-  const { ids, values, body } = match_result;
-  if (ids === undefined) {
-    // Let with no bindings is the same as body
+  return extract_matches(match_result, (ids: SSymbol[], values: SExpr[], body: SExpr[]) => {
+    if (ids === undefined) {
+      // Let with no bindings is the same as body
+      const expanded_body_result: Result<FEExpr[], CompileErr> = map_results(
+        (e) => expand_in_expression_context(e, compile_env),
+        body
+      );
+      if (isBadResult(expanded_body_result)) {
+        return err();
+      }
+      return ok(slist([ssymbol('begin'), ...expanded_body_result.v] as const, snil()));
+    }
+    const id_value_pairs: SCons<SSymbol, SCons<FEExpr, SNil>>[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      const expanded_body_expr_result = expand_in_expression_context(values[i], compile_env);
+      if (isBadResult(expanded_body_expr_result)) {
+        return err();
+      }
+      id_value_pairs.push(slist([ids[i], expanded_body_expr_result.v] as const, snil()));
+    }
     const expanded_body_result: Result<FEExpr[], CompileErr> = map_results(
-      (e) => expand_in_expression_context(e as SExpr, compile_env),
+      (e) => expand_in_expression_context(e, compile_env),
       body
     );
     if (isBadResult(expanded_body_result)) {
       return err();
     }
-    return ok(slist([ssymbol('begin'), ...expanded_body_result.v] as const, snil()));
-  }
-  if (!ids.every(is_symbol)) {
-    err();
-  }
-  const id_value_pairs: SCons<SSymbol, SCons<FEExpr, SNil>>[] = [];
-  for (let i = 0; i < ids.length; i++) {
-    const expanded_body_expr_result = expand_in_expression_context(values[i] as SExpr, compile_env);
-    if (isBadResult(expanded_body_expr_result)) {
-      return err();
-    }
-    id_value_pairs.push(slist([ids[i] as SSymbol, expanded_body_expr_result.v] as const, snil()));
-  }
-  const expanded_body_result: Result<FEExpr[], CompileErr> = map_results(
-    (e) => expand_in_expression_context(e as SExpr, compile_env),
-    body
-  );
-  if (isBadResult(expanded_body_result)) {
-    return err();
-  }
-  const letrec_form: LetrecForm = slist(
-    [ssymbol('letrec'), slist(id_value_pairs, snil()), ...expanded_body_result.v] as const,
-    snil()
-  );
-  return ok(letrec_form);
+    const letrec_form: LetrecForm = slist(
+      [ssymbol('letrec'), slist(id_value_pairs, snil()), ...expanded_body_result.v] as const,
+      snil()
+    );
+    return ok(letrec_form);
+  });
 }
 
 function begin(
