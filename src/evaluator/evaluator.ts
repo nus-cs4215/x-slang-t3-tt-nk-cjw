@@ -1,9 +1,17 @@
 import { err, ok, isBadResult } from '../utils';
-import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
+import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons, SExpr } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure } from './datatypes';
-import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel, ApplySyntax } from './types';
+import {
+  EvalSExpr,
+  Evaluate,
+  Apply,
+  EvalResult,
+  EvaluateTopLevel,
+  ApplySyntax,
+  EvaluateGeneralTopLevel,
+} from './types';
 import {
   Bindings,
   Environment,
@@ -16,6 +24,7 @@ import {
 
 import { match_special_form, MatchType, SpecialFormType } from './special-form';
 import { MatchObject } from '../pattern';
+import { GeneralTopLevelForm, FEExpr, Token } from '../fep-types';
 
 export type SpecialFormEvaluator = (matches: MatchObject<EvalData>, env: Environment) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
@@ -412,4 +421,53 @@ export const evaluate: Evaluate = (program, env) => {
 
 export const evaluate_top_level: EvaluateTopLevel = (program_, env_) => {
   throw 'Not yet implemented';
+};
+
+export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env) => {
+  const token_val = program.x.val;
+  switch (token_val) {
+    // DefineForm
+    case 'define': {
+      throw 'TODO: Implement define';
+    }
+
+    // Define Syntax Form
+    case 'define-syntax': {
+      throw 'TODO: Implement define-syntax';
+    }
+
+    // FEExpr
+    case '#%plain-lambda': {
+      throw 'TODO: Implement #%plain-lambda';
+    }
+    case 'if': {
+      throw 'TODO: Implement if';
+    }
+    case 'begin': {
+      throw 'TODO: Implement begin';
+    }
+    case 'begin0': {
+      throw 'TODO: Implement begin0';
+    }
+    case 'let': {
+      throw 'TODO: Implement let';
+    }
+    case 'letrec': {
+      throw 'TODO: Implement letrec';
+    }
+    case 'quote': {
+      throw 'TODO: Implement quote';
+    }
+    case '#%plain-app': {
+      throw 'TODO: Implement #%plain-app';
+    }
+    case '#%variable-reference': {
+      throw 'TODO: Implement #%variable-reference';
+    }
+
+    // Currently: RequireFileForm and RequireBuiltinForm
+    default: {
+      throw 'TODO: Not yet fully implemented';
+    }
+  }
 };
