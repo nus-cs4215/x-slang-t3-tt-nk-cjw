@@ -1,4 +1,5 @@
-import { QuoteForm } from './../fep-types';
+import { SHomList } from './../sexpr/sexpr';
+import { QuoteForm, BeginForm, FEExpr } from './../fep-types';
 import {
   Bindings,
   Environment,
@@ -469,7 +470,21 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
         : evaluate_general_top_level(alternative, env);
     }
     case 'begin': {
-      throw 'TODO: Implement begin';
+      let r: EvalResult;
+      const beginprogram = program as BeginForm;
+
+      let sequence: SHomList<FEExpr> = cdr(beginprogram);
+      while (is_list(sequence)) {
+        const expr = car(sequence);
+        r = evaluate_general_top_level(expr, env);
+
+        if (isBadResult(r)) {
+          return r;
+        }
+        sequence = cdr(sequence);
+      }
+
+      return r!;
     }
     case 'begin0': {
       throw 'TODO: Implement begin0';
