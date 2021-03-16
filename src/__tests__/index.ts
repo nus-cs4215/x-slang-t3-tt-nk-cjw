@@ -32,6 +32,7 @@ test('exports', () => {
       "apply",
       "evaluate",
       "evaluate_top_level",
+      "evaluate_general_top_level",
       "make_empty_bindings",
       "make_bindings",
       "make_bindings_from_record",
