@@ -36,6 +36,36 @@ describe('evaluate_general_top_level', () => {
       evaluate_general_top_level(getOk(read('(quote a)')) as GeneralTopLevelForm, undefined)
     ).toEqual(ok(ssymbol('a')));
   });
+
+  test('evaluate if', () => {
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote #t) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote a) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote 100) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote #f) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(2)));
+  });
 });
 
 test('evaluate values', () => {
