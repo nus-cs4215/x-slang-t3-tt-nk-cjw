@@ -7,7 +7,14 @@ import {
   make_env,
   set_define,
 } from '../environment';
-import { Begin0Form, BeginForm, FEExpr, IfForm, QuoteForm } from '../fep-types';
+import {
+  Begin0Form,
+  BeginForm,
+  FEExpr,
+  IfForm,
+  QuoteForm,
+  VariableReferenceForm,
+} from '../fep-types';
 import { empty_module } from '../modules';
 import { MatchObject } from '../pattern';
 import {
@@ -518,7 +525,20 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
       throw 'TODO: Implement #%plain-app';
     }
     case '#%variable-reference': {
-      throw 'TODO: Implement #%variable-reference';
+      const variablereference_program = program as VariableReferenceForm;
+      const symbol = car(cdr(variablereference_program));
+
+      const found_env = find_env(symbol.val, env);
+      if (found_env === undefined) {
+        return err();
+      }
+
+      const maybe_expr = get_define(found_env.bindings, symbol.val);
+      if (maybe_expr === undefined) {
+        return err();
+      }
+
+      return ok(maybe_expr as EvalSExpr);
     }
 
     // Currently: RequireFileForm and RequireBuiltinForm

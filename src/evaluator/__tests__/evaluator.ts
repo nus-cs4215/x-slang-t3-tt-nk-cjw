@@ -1,11 +1,16 @@
-import { Environment, make_env, make_env_list } from '../../environment';
-import { make_bindings_from_record, make_empty_bindings } from '../../environment';
+import {
+  Environment,
+  make_bindings_from_record,
+  make_empty_bindings,
+  make_env,
+  make_env_list,
+} from '../../environment';
+import { set_define } from '../../environment/environment';
 import { GeneralTopLevelForm } from '../../fep-types';
 import { primitives_module } from '../../modules';
 import { read } from '../../reader';
-import { JsonSExpr, jsonRead, jsonPrint, ssymbol } from '../../sexpr';
-import { snumber, sboolean } from '../../sexpr';
-import { ok, getOk, getErr } from '../../utils';
+import { jsonPrint, jsonRead, JsonSExpr, sboolean, snumber, ssymbol } from '../../sexpr';
+import { getErr, getOk, ok } from '../../utils';
 import { evaluate, evaluate_general_top_level } from '../evaluator';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {
@@ -115,6 +120,30 @@ describe('evaluate_general_top_level', () => {
         undefined
       )
     ).toEqual(ok(ssymbol('a')));
+  });
+  test('evaluate #%variable-reference', () => {
+    const env = test_env();
+    set_define(env.bindings, 'x', snumber(10));
+    set_define(env.bindings, 'y', sboolean(true));
+    set_define(env.bindings, 'z', ssymbol('hi'));
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(#%variable-reference x)')) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snumber(10)));
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(#%variable-reference y)')) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(sboolean(true)));
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(#%variable-reference z)')) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(ssymbol('hi')));
   });
 });
 
