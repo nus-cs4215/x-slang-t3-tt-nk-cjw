@@ -4,11 +4,12 @@ import {
   has_syntax,
   make_empty_bindings,
   make_env,
+  make_env_list,
   NonemptyEnvironment,
   set_define,
   set_syntax,
 } from '../environment';
-import { apply_syntax, evaluate, evaluate_top_level } from '../evaluator';
+import { apply_syntax, evaluate, evaluate_module } from '../evaluator';
 import { EvalData } from '../evaluator/datatypes';
 import {
   DefineForm,
@@ -659,14 +660,14 @@ export const compile_module: CompileModule = (
     if (isBadResult(read_parent_module_result)) {
       return read_parent_module_result;
     }
-    const parent_module_result = evaluate_top_level(read_parent_module_result.v as TopLevelForm);
+    const parent_module_result = evaluate_module(read_parent_module_result.v as TopLevelForm);
     if (isBadResult(parent_module_result)) {
       return parent_module_result;
     }
     parent_module = parent_module_result.v;
   }
 
-  const env = make_env(make_empty_bindings(), parent_module.env);
+  const env = make_env_list(make_empty_bindings(), parent_module.provides);
   const expanded_module_statements_result = expand_in_module_context(module_info.module_body, env);
   if (isBadResult(expanded_module_statements_result)) {
     return expanded_module_statements_result;

@@ -24,7 +24,7 @@ function expectJsonReadEvalError(j: JsonSExpr, env: Environment) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
-const the_global_environment = primitives_module.env;
+const the_global_environment = make_env_list(primitives_module.provides);
 
 const test_env = () => make_env(make_empty_bindings(), the_global_environment);
 

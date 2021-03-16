@@ -1,4 +1,4 @@
-import { Environment } from '../../environment';
+import { Environment, make_env_list } from '../../environment';
 import { evaluate } from '../../evaluator';
 import { primitives_module } from '../../modules';
 import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
@@ -12,7 +12,7 @@ function expectJsonReadEvalError(j: JsonSExpr, env: Environment) {
   return expect(getErr(evaluate(jsonRead(j), env)));
 }
 
-const the_global_environment = primitives_module.env;
+const the_global_environment = make_env_list(primitives_module.provides);
 
 describe('arithmetic primitives', () => {
   test('valid +', () => {

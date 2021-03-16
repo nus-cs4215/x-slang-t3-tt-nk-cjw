@@ -1,4 +1,4 @@
-import { Environment } from '../environment';
+import { Environment, make_env_list } from '../environment';
 import { evaluate } from '../evaluator';
 import { primitives_module } from '../modules';
 import { print } from '../printer';
@@ -6,7 +6,7 @@ import { read } from '../reader';
 import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
 import { cases, formatTable, getOk, getErr } from '../utils';
 
-const the_global_environment = primitives_module.env;
+const the_global_environment = make_env_list(primitives_module.provides);
 
 function expectOpTable(ops: string[], tests: string[]) {
   return expect(

@@ -18,9 +18,10 @@ import {
   LetrecForm,
   PlainLambdaForm,
   QuoteForm,
+  TopLevelFormAst,
   VariableReferenceForm,
 } from '../fep-types';
-import { empty_module } from '../modules';
+import { empty_module, Module } from '../modules';
 import { MatchObject } from '../pattern';
 import {
   car,
@@ -38,7 +39,7 @@ import {
   SSymbol,
   val,
 } from '../sexpr';
-import { err, isBadResult, ok } from '../utils';
+import { err, isBadResult, ok, Result } from '../utils';
 import {
   EvalData,
   EvalDataType,
@@ -50,6 +51,7 @@ import { MatchType, match_special_form, SpecialFormType } from './special-form';
 import {
   Apply,
   ApplySyntax,
+  EvalErr,
   EvalResult,
   EvalSExpr,
   Evaluate,
@@ -450,10 +452,6 @@ export const evaluate: Evaluate = (program, env) => {
   }
 };
 
-export const evaluate_top_level: EvaluateModule = (program_) => {
-  return ok(empty_module);
-};
-
 export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
   program: GeneralTopLevelFormAst,
   env: Environment
@@ -657,4 +655,10 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       throw 'TODO: Not yet fully implemented';
     }
   }
+};
+
+export const evaluate_module: EvaluateModule = (
+  program_: TopLevelFormAst
+): Result<Module, EvalErr> => {
+  return ok(empty_module);
 };

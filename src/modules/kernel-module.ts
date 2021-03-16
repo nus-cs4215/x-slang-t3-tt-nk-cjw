@@ -1,4 +1,4 @@
-import { Bindings, Environment, make_bindings, make_env_list } from '../environment';
+import { Bindings, make_bindings } from '../environment';
 import { make_primitive_transformer } from '../evaluator/datatypes';
 import { sbox } from '../sexpr';
 import { kernel_syntaxes } from './kernel-impl';
@@ -14,9 +14,7 @@ const kernel_bindings: Bindings = make_bindings(
   )
 );
 
-const kernel_env: Environment = make_env_list(kernel_bindings);
-
 export const kernel_module: Module = {
   name: '#%builtin-kernel',
-  env: kernel_env,
+  provides: kernel_bindings,
 };

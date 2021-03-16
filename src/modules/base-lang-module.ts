@@ -1,4 +1,4 @@
-import { Bindings, Environment, make_bindings, make_env_list } from '../environment';
+import { Bindings, make_bindings } from '../environment';
 import { make_primitive_transformer } from '../evaluator/datatypes';
 import { sbox } from '../sexpr';
 import { base_lang_syntaxes } from './base-lang-impl';
@@ -14,9 +14,7 @@ const base_lang_bindings: Bindings = make_bindings(
   )
 );
 
-const base_lang_env: Environment = make_env_list(base_lang_bindings);
-
 export const base_lang_module: Module = {
   name: '#%builtin-base-lang',
-  env: base_lang_env,
+  provides: base_lang_bindings,
 };
