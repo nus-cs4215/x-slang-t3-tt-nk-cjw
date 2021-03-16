@@ -8,7 +8,7 @@ import {
   set_define,
   set_syntax,
 } from '../environment';
-import { apply_syntax, evaluate } from '../evaluator';
+import { apply_syntax, evaluate, evaluate_top_level } from '../evaluator';
 import { EvalData } from '../evaluator/datatypes';
 import {
   DefineForm,
@@ -20,6 +20,7 @@ import {
   ModuleBuiltinParentForm,
   ModuleLevelForm,
   QuoteForm,
+  TopLevelForm,
   VariableReferenceForm,
 } from '../fep-types';
 import {
@@ -52,17 +53,10 @@ import {
   ssymbol,
   val,
 } from '../sexpr';
-import { err, isBadResult, map_results, ok, Result, then } from '../utils';
-import { builtin_module_resolver } from './compiler-base';
-import {
-  CompileModule,
-  CompileErr,
-  CompileModuleResultV,
-  Compile,
-  CompilerHost,
-  FileName,
-  CompileResultV,
-} from './types';
+import { err, isBadResult, isGoodResult, map_results, ok, Result, then } from '../utils';
+import { CompileModule, CompileErr, CompileModuleResultV, Compile, CompileResultV } from './types';
+import { CompilerHost, FileContents, FileName } from './compiler-host';
+import { Module } from '../modules';
 
 function noop_expr_transformer(
   expr: SList<never> | SSymbol,
@@ -615,8 +609,9 @@ export function expand_in_module_context(
 }
 
 export const compile_module: CompileModule = (
-  module_contents: string,
-  host_: CompilerHost
+  module_filename: FileName,
+  module_contents: FileContents,
+  host: CompilerHost
 ): Result<CompileModuleResultV, CompileErr> => {
   const module_sexpr_result = read(module_contents);
   if (isBadResult(module_sexpr_result)) {
@@ -631,15 +626,45 @@ export const compile_module: CompileModule = (
   const module_info = module_info_result.v;
 
   const { module_path_is_builtin, module_path_name } = module_info;
-  if (!module_path_is_builtin) {
-    return err('recursively loading modules not supported yet, lmao. pls use a builtin module :)');
-  }
+  let parent_module: Module;
+  let compiled_filenames: Map<FileName, FileName>;
+  if (module_path_is_builtin) {
+    const parent_module_result = host.read_builtin_module(module_path_name);
+    if (isBadResult(parent_module_result)) {
+      return parent_module_result;
+    }
+    parent_module = parent_module_result.v;
+    compiled_filenames = new Map();
+  } else {
+    const parent_module_filename = host.module_name_to_filename(module_path_name, module_filename);
 
-  const parent_module_result = builtin_module_resolver.read_builtin_module(module_path_name);
-  if (isBadResult(parent_module_result)) {
-    return err('could not load parent module');
+    // First compile it
+    const parent_module_precompiled_filename = parent_module_filename + '.fep';
+    const compile_result = compile(host, parent_module_filename);
+    if (isBadResult(compile_result)) {
+      return compile_result;
+    }
+    compiled_filenames = compile_result.v.compiled_filenames;
+
+    // Now we evaluate the parent module
+    const parent_module_precompiled_contents_result = host.read_file(
+      parent_module_precompiled_filename
+    );
+    if (isBadResult(parent_module_precompiled_contents_result)) {
+      return parent_module_precompiled_contents_result;
+    }
+
+    const parent_module_precompiled_contents = parent_module_precompiled_contents_result.v;
+    const read_parent_module_result = read(parent_module_precompiled_contents);
+    if (isBadResult(read_parent_module_result)) {
+      return read_parent_module_result;
+    }
+    const parent_module_result = evaluate_top_level(read_parent_module_result.v as TopLevelForm);
+    if (isBadResult(parent_module_result)) {
+      return parent_module_result;
+    }
+    parent_module = parent_module_result.v;
   }
-  const parent_module = parent_module_result.v;
 
   const env = make_env(make_empty_bindings(), parent_module.env);
   const expanded_module_statements_result = expand_in_module_context(module_info.module_body, env);
@@ -656,27 +681,35 @@ export const compile_module: CompileModule = (
     ] as const,
     snil()
   );
-  return ok({ fep: fep_module, compiled_filenames: new Map() });
+  return ok({ fep: fep_module, compiled_filenames });
 };
 
 export const compile: Compile = (
   host: CompilerHost,
   filename: FileName
 ): Result<CompileResultV, CompileErr> => {
+  const fep_filename = filename + '.fep';
+
+  // Check if it was already compiled
+  // Exit immediately if so
+  const precompiled_module_contents_r = host.read_file(fep_filename);
+  if (isGoodResult(precompiled_module_contents_r)) {
+    return ok({ compiled_filenames: new Map() });
+  }
+
   const module_contents_r = host.read_file(filename);
   if (isBadResult(module_contents_r)) {
     return module_contents_r;
   }
   const module_contents = module_contents_r.v;
 
-  const compile_r = compile_module(module_contents, host);
+  const compile_r = compile_module(filename, module_contents, host);
   if (isBadResult(compile_r)) {
     return compile_r;
   }
 
   const fep = compile_r.v.fep;
   const fep_string = print(fep);
-  const fep_filename = filename + '.fep';
 
   const write_r = host.write_file(fep_filename, fep_string);
   if (isBadResult(write_r)) {

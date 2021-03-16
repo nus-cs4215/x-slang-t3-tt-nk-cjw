@@ -1,13 +1,17 @@
 import { print } from '../../printer';
 import { getErr, getOk } from '../../utils';
-import { compile_module } from '../compiler';
+import { compile, compile_module } from '../compiler';
+import { builtin_compiler_host, ts_based_modules } from '../compiler-base';
+import { maps_to_compiler_host } from '../compiler-host';
 
 function expectReadCompilePrint(module_contents: string) {
-  return expect(print(getOk(compile_module(module_contents, {} as any)).fep));
+  return expect(
+    print(getOk(compile_module('input.rkt', module_contents, builtin_compiler_host)).fep)
+  );
 }
 
 function expectReadCompileError(module_contents: string) {
-  return expect(getErr(compile_module(module_contents, {} as any)));
+  return expect(getErr(compile_module('input.rkt', module_contents, builtin_compiler_host)));
 }
 
 describe('compile succeeds', () => {
@@ -104,10 +108,53 @@ describe('compile succeeds', () => {
   test('compilation is idempotent', () => {
     const compiled = print(
       getOk(
-        compile_module("(module name '#%builtin-base-lang (define f (lambda (x) x)))", {} as any)
+        compile_module(
+          'input.rkt',
+          "(module name '#%builtin-base-lang (define f (lambda (x) x)))",
+          builtin_compiler_host
+        )
       ).fep
     );
     expectReadCompilePrint(compiled).toEqual(compiled);
+  });
+
+  test('compile file based parent modules', () => {
+    const host = maps_to_compiler_host(
+      new Map([
+        ['/input.rkt', '(module input parent)'],
+        ['/parent.rkt', "(module parent '#%builtin-empty)"],
+      ]),
+      ts_based_modules
+    );
+    const compile_result = compile(host, '/input.rkt');
+    expect(compile_result).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled_filenames": Map {
+            "/parent.rkt" => "/parent.rkt.fep",
+            "/input.rkt" => "/input.rkt.fep",
+          },
+        },
+      }
+    `);
+    const compiled_input = getOk(compile_result).compiled_filenames.get('/input.rkt')!;
+    const compiled_parent = getOk(compile_result).compiled_filenames.get('/parent.rkt')!;
+    expect(host.read_file(compiled_input)).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module input (quote parent) (#%plain-module-begin))",
+      }
+    `);
+    expect(host.read_file(compiled_parent)).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module parent (quote #%builtin-empty) (#%plain-module-begin))",
+      }
+    `);
   });
 });
 
@@ -115,7 +162,7 @@ describe('compile fails', () => {
   test('nonexistent parent module', () => {
     expectReadCompileError(`
       (module name '#%builtin-nonexistent)
-    `).toMatchInlineSnapshot(`"could not load parent module"`);
+    `).toMatchInlineSnapshot(`"builtin module not found: #%builtin-nonexistent"`);
   });
 
   test('use nonexistent binding', () => {

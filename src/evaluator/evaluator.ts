@@ -3,7 +3,7 @@ import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
 import { val, car, cdr } from '../sexpr';
 import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
 import { EvalData, EvalDataType, make_closure } from './datatypes';
-import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateTopLevel, ApplySyntax } from './types';
+import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateModule, ApplySyntax } from './types';
 import {
   Bindings,
   Environment,
@@ -16,6 +16,7 @@ import {
 
 import { match_special_form, MatchType, SpecialFormType } from './special-form';
 import { MatchObject } from '../pattern';
+import { empty_module } from '../modules';
 
 export type SpecialFormEvaluator = (matches: MatchObject<EvalData>, env: Environment) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
@@ -410,6 +411,6 @@ export const evaluate: Evaluate = (program, env) => {
   }
 };
 
-export const evaluate_top_level: EvaluateTopLevel = (program_, env_) => {
-  throw 'Not yet implemented';
+export const evaluate_top_level: EvaluateModule = (program_) => {
+  return ok(empty_module);
 };
