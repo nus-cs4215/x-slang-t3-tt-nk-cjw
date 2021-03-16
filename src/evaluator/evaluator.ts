@@ -14,6 +14,7 @@ import {
   FEExpr,
   IfForm,
   LetForm,
+  LetrecForm,
   QuoteForm,
   VariableReferenceForm,
 } from '../fep-types';
@@ -557,7 +558,46 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
       return r!;
     }
     case 'letrec': {
-      throw 'TODO: Implement letrec';
+      const letrecprogram = program as LetrecForm;
+      const bindings: Bindings = make_empty_bindings();
+      let list_of_binding_pairs = car(cdr(letrecprogram));
+
+      // the copy is used to iterate through the symbols once
+      let list_of_binding_pairs_copy = list_of_binding_pairs;
+      while (is_list(list_of_binding_pairs_copy)) {
+        const symbol = car(car(list_of_binding_pairs_copy));
+        set_define(bindings, val(symbol), undefined);
+        list_of_binding_pairs_copy = cdr(list_of_binding_pairs_copy);
+      }
+      env = make_env(bindings, env);
+
+      while (is_list(list_of_binding_pairs)) {
+        const binding_pair = car(list_of_binding_pairs);
+        const symbol = car(binding_pair);
+        const expr = car(cdr(binding_pair));
+
+        const r = evaluate_general_top_level(expr, env);
+        if (isBadResult(r)) {
+          return r;
+        }
+
+        set_define(bindings, val(symbol), r.v);
+        list_of_binding_pairs = cdr(list_of_binding_pairs);
+      }
+
+      let r: EvalResult;
+      let sequence: SHomList<FEExpr> = cdr(cdr(letrecprogram));
+      while (is_list(sequence)) {
+        const expr = car(sequence);
+        r = evaluate_general_top_level(expr, env);
+
+        if (isBadResult(r)) {
+          return r;
+        }
+        sequence = cdr(sequence);
+      }
+
+      return r!;
     }
     case 'quote': {
       const quoteprogram = program as QuoteForm;
