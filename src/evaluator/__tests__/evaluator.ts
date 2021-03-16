@@ -109,7 +109,6 @@ describe('evaluate_general_top_level', () => {
         undefined
       )
     ).toEqual(ok(ssymbol('a')));
-
     expect(
       evaluate_general_top_level(
         getOk(
@@ -122,6 +121,7 @@ describe('evaluate_general_top_level', () => {
       )
     ).toEqual(ok(ssymbol('a')));
   });
+
   test('evaluate #%variable-reference', () => {
     const env = test_env();
     set_define(env.bindings, 'x', snumber(10));
@@ -146,6 +146,7 @@ describe('evaluate_general_top_level', () => {
       )
     ).toEqual(ok(ssymbol('hi')));
   });
+
   test('evaluate define', () => {
     const env = test_env();
     expect(
@@ -181,6 +182,34 @@ describe('evaluate_general_top_level', () => {
         env
       )
     ).toEqual(ok(ssymbol('hi')));
+  });
+
+  test('evaluate let', () => {
+    const env = test_env();
+    set_define(env.bindings, 'x', snumber(10));
+    set_define(env.bindings, 'y', sboolean(true));
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(let ([x (quote 1)]) (#%variable-reference x))`)) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snumber(1)));
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(let ([x (#%variable-reference y)]) (#%variable-reference x))`)
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(sboolean(true)));
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(let ([x (quote 2)] [y (#%variable-reference x)]) (#%variable-reference y))`)
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snumber(10)));
   });
 });
 

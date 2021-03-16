@@ -13,6 +13,7 @@ import {
   DefineForm,
   FEExpr,
   IfForm,
+  LetForm,
   QuoteForm,
   VariableReferenceForm,
 } from '../fep-types';
@@ -523,7 +524,37 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
       return r;
     }
     case 'let': {
-      throw 'TODO: Implement let';
+      const letprogram = program as LetForm;
+      const bindings: Bindings = make_empty_bindings();
+      let list_of_binding_pairs = car(cdr(letprogram));
+      while (is_list(list_of_binding_pairs)) {
+        const binding_pair = car(list_of_binding_pairs);
+        const symbol = car(binding_pair);
+        const expr = car(cdr(binding_pair));
+
+        const r = evaluate_general_top_level(expr, env);
+        if (isBadResult(r)) {
+          return r;
+        }
+
+        set_define(bindings, val(symbol), r.v);
+        list_of_binding_pairs = cdr(list_of_binding_pairs);
+      }
+      env = make_env(bindings, env);
+
+      let r: EvalResult;
+      let sequence: SHomList<FEExpr> = cdr(cdr(letprogram));
+      while (is_list(sequence)) {
+        const expr = car(sequence);
+        r = evaluate_general_top_level(expr, env);
+
+        if (isBadResult(r)) {
+          return r;
+        }
+        sequence = cdr(sequence);
+      }
+
+      return r!;
     }
     case 'letrec': {
       throw 'TODO: Implement letrec';
