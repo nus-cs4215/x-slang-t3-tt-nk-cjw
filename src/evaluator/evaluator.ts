@@ -10,6 +10,7 @@ import {
 import {
   Begin0Form,
   BeginForm,
+  DefineForm,
   FEExpr,
   IfForm,
   QuoteForm,
@@ -448,7 +449,17 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
   switch (token_val) {
     // DefineForm
     case 'define': {
-      throw 'TODO: Implement define';
+      const defineprogram = program as DefineForm;
+      const symbol = car(cdr(defineprogram));
+      const expr = car(cdr(cdr(defineprogram)));
+
+      const r = evaluate_general_top_level(expr, env);
+      if (isBadResult(r)) {
+        return r;
+      }
+
+      set_define(env!.bindings, val(symbol), r.v);
+      return r;
     }
 
     // Define Syntax Form

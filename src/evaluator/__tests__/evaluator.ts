@@ -12,6 +12,7 @@ import { read } from '../../reader';
 import { jsonPrint, jsonRead, JsonSExpr, sboolean, snumber, ssymbol } from '../../sexpr';
 import { getErr, getOk, ok } from '../../utils';
 import { evaluate, evaluate_general_top_level } from '../evaluator';
+import { isGoodResult } from '../../utils/result';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
@@ -141,6 +142,42 @@ describe('evaluate_general_top_level', () => {
     expect(
       evaluate_general_top_level(
         getOk(read('(#%variable-reference z)')) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(ssymbol('hi')));
+  });
+  test('evaluate define', () => {
+    const env = test_env();
+    expect(
+      isGoodResult(
+        evaluate_general_top_level(getOk(read(`(define x (quote 10))`)) as GeneralTopLevelForm, env)
+      )
+    ).toEqual(true);
+    expect(
+      isGoodResult(
+        evaluate_general_top_level(getOk(read(`(define y (quote #t))`)) as GeneralTopLevelForm, env)
+      )
+    ).toEqual(true);
+    expect(
+      isGoodResult(
+        evaluate_general_top_level(getOk(read(`(define z (quote hi))`)) as GeneralTopLevelForm, env)
+      )
+    ).toEqual(true);
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%variable-reference x)`)) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snumber(10)));
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%variable-reference y)`)) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(sboolean(true)));
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%variable-reference z)`)) as GeneralTopLevelForm,
         env
       )
     ).toEqual(ok(ssymbol('hi')));
