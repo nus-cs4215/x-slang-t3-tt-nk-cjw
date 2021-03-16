@@ -468,7 +468,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
         : evaluate_general_top_level(alternative, env);
     }
     case 'begin': {
-      let y = program.y;
+      throw 'TODO: Implement begin';
     }
     case 'begin0': {
       throw 'TODO: Implement begin0';
