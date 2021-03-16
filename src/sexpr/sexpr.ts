@@ -99,26 +99,11 @@ export const sbox = <T>(val: T): SBoxed<T> =>
  * ACCESSORS *
  *************/
 
-export function val(e: SSymbol): string;
-export function val(e: SNumber): number;
-export function val(e: SBoolean): boolean;
-export function val(e: SSymbol | SNumber): string | number;
-export function val(e: SSymbol | SBoolean): string | boolean;
-export function val(e: SNumber | SBoolean): number | boolean;
-export function val(e: SSymbol | SNumber | SBoolean): string | number | boolean;
-export function val<T>(e: SBoxed<T>): T;
-export function val<T>(e: SSymbol | SBoxed<T>): string | T;
-export function val<T>(e: SNumber | SBoxed<T>): number | T;
-export function val<T>(e: SBoolean | SBoxed<T>): boolean | T;
-export function val<T>(e: SSymbol | SNumber | SBoxed<T>): string | number | T;
-export function val<T>(e: SSymbol | SBoolean | SBoxed<T>): string | boolean | T;
-export function val<T>(e: SNumber | SBoolean | SBoxed<T>): number | boolean | T;
-export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T;
-export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T {
+export function val<T, E extends SSymbol | SNumber | SBoolean | SBoxed<T>>(e: E): E['val'] {
   return e.val;
 }
-export const car = <T, U>(p: SCons<T, U>): T => p.x;
-export const cdr = <T, U>(p: SCons<T, U>): U => p.y;
+export const car = <T, U, P extends SCons<T, U>>(p: P): P['x'] => p.x;
+export const cdr = <T, U, P extends SCons<T, U>>(p: P): P['y'] => p.y;
 
 /**************
  * PREDICATES *
