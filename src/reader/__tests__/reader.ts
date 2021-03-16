@@ -1,5 +1,5 @@
-import { getOk, getErr } from '../../utils';
 import { equals, jsonPrint } from '../../sexpr';
+import { getOk, getErr } from '../../utils';
 import { read, formatReadErr } from '../reader';
 
 function expectReadAsJson(s: string) {

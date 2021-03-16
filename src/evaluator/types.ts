@@ -1,9 +1,9 @@
-import { Result } from '../utils';
-import { SExprT } from '../sexpr';
 import { Environment } from '../environment';
-import { EvalData } from './datatypes';
 import { TopLevelForm } from '../fep-types';
 import { Module } from '../modules';
+import { SExprT } from '../sexpr';
+import { Result } from '../utils';
+import { EvalData } from './datatypes';
 
 export type EvalSExpr = SExprT<EvalData>;
 

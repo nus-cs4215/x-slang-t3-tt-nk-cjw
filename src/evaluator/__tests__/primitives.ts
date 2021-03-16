@@ -1,7 +1,7 @@
-import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
 import { Environment } from '../../environment';
 import { evaluate } from '../../evaluator';
 import { primitives_module } from '../../modules';
+import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
 import { getOk, getErr } from '../../utils';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {

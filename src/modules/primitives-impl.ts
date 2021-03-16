@@ -1,9 +1,9 @@
-import { err, ok } from '../utils';
+import { is_function_variant } from '../evaluator/datatypes';
+import { EvalSExpr, EvalResult } from '../evaluator/types';
 import { equals, sboolean, scons, slist, snil, SNumber, snumber, val } from '../sexpr';
 import { is_symbol, is_number, is_boolean, is_nil, is_list, is_boxed } from '../sexpr';
 import { car, cdr } from '../sexpr';
-import { EvalSExpr, EvalResult } from '../evaluator/types';
-import { is_function_variant } from '../evaluator/datatypes';
+import { err, ok } from '../utils';
 
 function eq_(...args: EvalSExpr[]) {
   for (let i = 0; i < args.length - 1; i++) {

@@ -1,5 +1,5 @@
-import { ssymbol, snil, scons, slist } from '../sexpr';
 import { jsonRead, jsonPrint } from '../jsonsexpr';
+import { ssymbol, snil, scons, slist } from '../sexpr';
 
 test('correct json representation of complex lists', () => {
   expect(jsonPrint(scons(snil(), snil()))).toMatchInlineSnapshot(`

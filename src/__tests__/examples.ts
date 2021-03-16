@@ -1,8 +1,8 @@
+import { evaluate } from '../evaluator';
+import { primitives_module } from '../modules';
 import { print } from '../printer';
 import { read } from '../reader';
-import { evaluate } from '../evaluator';
 import { getOk } from '../utils';
-import { primitives_module } from '../modules';
 
 const the_global_environment = primitives_module.env;
 

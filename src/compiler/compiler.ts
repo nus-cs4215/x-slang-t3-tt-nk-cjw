@@ -23,6 +23,7 @@ import {
   TopLevelForm,
   VariableReferenceForm,
 } from '../fep-types';
+import { Module } from '../modules';
 import {
   extract_matches,
   json_plus,
@@ -32,8 +33,8 @@ import {
   match,
   MatchObject,
 } from '../pattern';
-import { read } from '../reader';
 import { print } from '../printer';
+import { read } from '../reader';
 import {
   car,
   cdr,
@@ -54,9 +55,8 @@ import {
   val,
 } from '../sexpr';
 import { err, isBadResult, isGoodResult, map_results, ok, Result, then } from '../utils';
-import { CompileModule, CompileErr, CompileModuleResultV, Compile, CompileResultV } from './types';
 import { CompilerHost, FileContents, FileName } from './compiler-host';
-import { Module } from '../modules';
+import { CompileModule, CompileErr, CompileModuleResultV, Compile, CompileResultV } from './types';
 
 function noop_expr_transformer(
   expr: SList<never> | SSymbol,

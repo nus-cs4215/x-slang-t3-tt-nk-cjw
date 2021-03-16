@@ -1,5 +1,5 @@
-import { read } from '../reader';
 import { print } from '../printer';
+import { read } from '../reader';
 import { SExpr } from '../sexpr';
 import { ssymbol, snumber, sboolean, snil, scons, slist } from '../sexpr';
 import { equals } from '../sexpr';

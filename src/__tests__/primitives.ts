@@ -1,10 +1,10 @@
-import { print } from '../printer';
-import { read } from '../reader';
 import { Environment } from '../environment';
 import { evaluate } from '../evaluator';
-import { cases, formatTable, getOk, getErr } from '../utils';
-import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
 import { primitives_module } from '../modules';
+import { print } from '../printer';
+import { read } from '../reader';
+import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
+import { cases, formatTable, getOk, getErr } from '../utils';
 
 const the_global_environment = primitives_module.env;
 

@@ -1,10 +1,10 @@
-import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
-import { snumber, sboolean } from '../../sexpr';
 import { Environment, make_env, make_env_list } from '../../environment';
-import { evaluate } from '../evaluator';
-import { ok, getOk, getErr } from '../../utils';
 import { make_bindings_from_record, make_empty_bindings } from '../../environment';
 import { primitives_module } from '../../modules';
+import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
+import { snumber, sboolean } from '../../sexpr';
+import { ok, getOk, getErr } from '../../utils';
+import { evaluate } from '../evaluator';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));

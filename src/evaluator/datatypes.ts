@@ -1,5 +1,5 @@
-import { EvalSExpr, EvalResult } from './types';
 import { Environment, NonemptyEnvironment } from '../environment';
+import { EvalSExpr, EvalResult } from './types';
 
 export enum EvalDataType {
   Closure,

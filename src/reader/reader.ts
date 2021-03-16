@@ -1,8 +1,8 @@
-import { Result, isGoodResult, ok, err, then } from '../utils';
 import { SExpr, ssymbol, snumber, sboolean, snil, scons, slist } from '../sexpr';
+import { Result, isGoodResult, ok, err, then } from '../utils';
+import { Location, merge_loc, format_loc, highlight_loc } from '../utils/location';
 import * as Tok from './token';
 import { Token, tokenize, par_match } from './token';
-import { Location, merge_loc, format_loc, highlight_loc } from '../utils/location';
 
 export interface ReadErr {
   message: string;
