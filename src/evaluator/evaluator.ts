@@ -7,7 +7,7 @@ import {
   make_env,
   set_define,
 } from '../environment';
-import { BeginForm, FEExpr, IfForm, QuoteForm } from '../fep-types';
+import { Begin0Form, BeginForm, FEExpr, IfForm, QuoteForm } from '../fep-types';
 import { empty_module } from '../modules';
 import { MatchObject } from '../pattern';
 import {
@@ -487,7 +487,22 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
       return r!;
     }
     case 'begin0': {
-      throw 'TODO: Implement begin0';
+      const begin0program = program as Begin0Form;
+      const nonempty_sequence = cdr(begin0program);
+      const r = evaluate_general_top_level(car(nonempty_sequence), env);
+
+      let rest_sequence = cdr(nonempty_sequence);
+      while (is_list(rest_sequence)) {
+        const expr = car(rest_sequence);
+        const rr = evaluate_general_top_level(expr, env);
+
+        if (isBadResult(rr)) {
+          return rr;
+        }
+        rest_sequence = cdr(rest_sequence);
+      }
+
+      return r;
     }
     case 'let': {
       throw 'TODO: Implement let';

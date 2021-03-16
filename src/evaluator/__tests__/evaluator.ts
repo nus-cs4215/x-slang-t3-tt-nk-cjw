@@ -90,6 +90,32 @@ describe('evaluate_general_top_level', () => {
       )
     ).toEqual(ok(ssymbol('c')));
   });
+
+  test('evaluate begin0', () => {
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(begin0
+                  (quote a)
+                  (quote b)
+                  (quote 1))`)
+        ) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(ssymbol('a')));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(begin0
+                  (quote a)
+                  (quote b)
+                  (quote c))`)
+        ) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(ssymbol('a')));
+  });
 });
 
 test('evaluate values', () => {
