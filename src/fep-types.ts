@@ -3,6 +3,7 @@ import { SCons, SExpr, SHomList, SNil, SNonemptyHomList, SSymbol } from './sexpr
 // For now, let them be equal
 export type TopLevelFormAst = TopLevelForm;
 export type ModuleLevelFormAst = ModuleLevelForm;
+export type GeneralTopLevelFormAst = GeneralTopLevelForm;
 
 export type Token<V> = SSymbol & { val: V };
 

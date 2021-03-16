@@ -1,5 +1,5 @@
 import { Environment } from '../environment';
-import { TopLevelForm } from '../fep-types';
+import { GeneralTopLevelFormAst, TopLevelForm } from '../fep-types';
 import { Module } from '../modules';
 import { SExprT } from '../sexpr';
 import { Result } from '../utils';
@@ -14,5 +14,10 @@ export type ApplySyntax = (fun: EvalSExpr, stx: EvalSExpr, env: Environment) => 
 export type Apply = (fun: EvalSExpr, ...args: EvalSExpr[]) => EvalResult;
 
 export type Evaluate = (program: EvalSExpr, env: Environment) => EvalResult;
+
+export type EvaluateGeneralTopLevel = (
+  program: GeneralTopLevelFormAst,
+  env: Environment
+) => EvalResult;
 
 export type EvaluateModule = (program: TopLevelForm) => Result<Module, EvalErr>;

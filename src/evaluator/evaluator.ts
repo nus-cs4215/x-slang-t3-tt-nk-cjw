@@ -1,21 +1,43 @@
 import {
   Bindings,
   Environment,
-  make_env,
   find_env,
-  set_define,
-  make_empty_bindings,
   get_define,
+  make_empty_bindings,
+  make_env,
+  set_define,
 } from '../environment';
+import { BeginForm, FEExpr, IfForm, QuoteForm } from '../fep-types';
 import { empty_module } from '../modules';
 import { MatchObject } from '../pattern';
-import { sbox, sboolean, SSymbol, is_boxed, is_boolean, scons } from '../sexpr';
-import { val, car, cdr } from '../sexpr';
-import { is_symbol, is_value, is_list, is_nil } from '../sexpr';
-import { err, ok, isBadResult } from '../utils';
+import {
+  car,
+  cdr,
+  is_boolean,
+  is_boxed,
+  is_list,
+  is_nil,
+  is_symbol,
+  is_value,
+  sboolean,
+  sbox,
+  scons,
+  SHomList,
+  SSymbol,
+  val,
+} from '../sexpr';
+import { err, isBadResult, ok } from '../utils';
 import { EvalData, EvalDataType, make_closure } from './datatypes';
-import { match_special_form, MatchType, SpecialFormType } from './special-form';
-import { EvalSExpr, Evaluate, Apply, EvalResult, EvaluateModule, ApplySyntax } from './types';
+import { MatchType, match_special_form, SpecialFormType } from './special-form';
+import {
+  Apply,
+  ApplySyntax,
+  EvalResult,
+  EvalSExpr,
+  Evaluate,
+  EvaluateGeneralTopLevel,
+  EvaluateModule,
+} from './types';
 
 export type SpecialFormEvaluator = (matches: MatchObject<EvalData>, env: Environment) => EvalResult;
 const special_form_evaluators: Record<SpecialFormType, SpecialFormEvaluator> = {
@@ -412,4 +434,81 @@ export const evaluate: Evaluate = (program, env) => {
 
 export const evaluate_top_level: EvaluateModule = (program_) => {
   return ok(empty_module);
+};
+
+export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env) => {
+  const token_val = program.x.val;
+  switch (token_val) {
+    // DefineForm
+    case 'define': {
+      throw 'TODO: Implement define';
+    }
+
+    // Define Syntax Form
+    case 'define-syntax': {
+      throw 'TODO: Implement define-syntax';
+    }
+
+    // FEExpr
+    case '#%plain-lambda': {
+      throw 'TODO: Implement #%plain-lambda';
+    }
+    case 'if': {
+      const ifprogram = program as IfForm;
+      const condition = ifprogram.y.x;
+      const condition_r = evaluate_general_top_level(condition, env);
+
+      if (isBadResult(condition_r)) {
+        return condition_r;
+      }
+
+      const consequent = ifprogram.y.y.x;
+      const alternative = ifprogram.y.y.y.x;
+      const condition_v = condition_r.v;
+      return !(is_boolean(condition_v) && val(condition_v) === false)
+        ? evaluate_general_top_level(consequent, env)
+        : evaluate_general_top_level(alternative, env);
+    }
+    case 'begin': {
+      let r: EvalResult;
+      const beginprogram = program as BeginForm;
+
+      let sequence: SHomList<FEExpr> = cdr(beginprogram);
+      while (is_list(sequence)) {
+        const expr = car(sequence);
+        r = evaluate_general_top_level(expr, env);
+
+        if (isBadResult(r)) {
+          return r;
+        }
+        sequence = cdr(sequence);
+      }
+
+      return r!;
+    }
+    case 'begin0': {
+      throw 'TODO: Implement begin0';
+    }
+    case 'let': {
+      throw 'TODO: Implement let';
+    }
+    case 'letrec': {
+      throw 'TODO: Implement letrec';
+    }
+    case 'quote': {
+      const quoteprogram = program as QuoteForm;
+      return ok(quoteprogram.y.x);
+    }
+    case '#%plain-app': {
+      throw 'TODO: Implement #%plain-app';
+    }
+    case '#%variable-reference': {
+      throw 'TODO: Implement #%variable-reference';
+    }
+
+    // Currently: RequireFileForm and RequireBuiltinForm
+    default: {
+      throw 'TODO: Not yet fully implemented';
+    }
+  }
 };

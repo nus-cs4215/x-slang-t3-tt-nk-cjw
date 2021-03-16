@@ -1,10 +1,12 @@
 import { Environment, make_env, make_env_list } from '../../environment';
 import { make_bindings_from_record, make_empty_bindings } from '../../environment';
+import { GeneralTopLevelForm } from '../../fep-types';
 import { primitives_module } from '../../modules';
-import { JsonSExpr, jsonRead, jsonPrint } from '../../sexpr';
+import { read } from '../../reader';
+import { JsonSExpr, jsonRead, jsonPrint, ssymbol } from '../../sexpr';
 import { snumber, sboolean } from '../../sexpr';
 import { ok, getOk, getErr } from '../../utils';
-import { evaluate } from '../evaluator';
+import { evaluate, evaluate_general_top_level } from '../evaluator';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
@@ -17,6 +19,78 @@ function expectJsonReadEvalError(j: JsonSExpr, env: Environment) {
 const the_global_environment = primitives_module.env;
 
 const test_env = () => make_env(make_empty_bindings(), the_global_environment);
+
+describe('evaluate_general_top_level', () => {
+  test('evaluate quote', () => {
+    expect(
+      evaluate_general_top_level(getOk(read('(quote 1)')) as GeneralTopLevelForm, undefined)
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(getOk(read('(quote #t)')) as GeneralTopLevelForm, undefined)
+    ).toEqual(ok(sboolean(true)));
+
+    expect(
+      evaluate_general_top_level(getOk(read('(quote a)')) as GeneralTopLevelForm, undefined)
+    ).toEqual(ok(ssymbol('a')));
+  });
+
+  test('evaluate if', () => {
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote #t) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote a) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote 100) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read('(if (quote #f) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(2)));
+  });
+
+  test('evaluate begin', () => {
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(begin
+                  (quote a)
+                  (quote b)
+                  (quote 1))`)
+        ) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(begin
+                  (quote a)
+                  (quote b)
+                  (quote c))`)
+        ) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(ok(ssymbol('c')));
+  });
+});
 
 test('evaluate values', () => {
   expect(evaluate(snumber(1), undefined)).toEqual(ok(snumber(1)));
