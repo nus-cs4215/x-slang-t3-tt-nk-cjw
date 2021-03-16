@@ -1,3 +1,4 @@
+import { QuoteForm } from './../fep-types';
 import {
   Bindings,
   Environment,
@@ -480,7 +481,8 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
       throw 'TODO: Implement letrec';
     }
     case 'quote': {
-      throw 'TODO: Implement quote';
+      const quoteprogram = program as QuoteForm;
+      return ok(quoteprogram.y.x);
     }
     case '#%plain-app': {
       throw 'TODO: Implement #%plain-app';
