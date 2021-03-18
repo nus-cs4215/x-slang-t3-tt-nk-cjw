@@ -12,9 +12,11 @@ import {
   BeginForm,
   DefineForm,
   FEExpr,
+  GeneralTopLevelFormAst,
   IfForm,
   LetForm,
   LetrecForm,
+  PlainLambdaForm,
   QuoteForm,
   VariableReferenceForm,
 } from '../fep-types';
@@ -37,7 +39,13 @@ import {
   val,
 } from '../sexpr';
 import { err, isBadResult, ok } from '../utils';
-import { EvalData, EvalDataType, make_closure } from './datatypes';
+import {
+  EvalData,
+  EvalDataType,
+  make_closure,
+  make_fep_closure,
+  PrimitiveTransformer,
+} from './datatypes';
 import { MatchType, match_special_form, SpecialFormType } from './special-form';
 import {
   Apply,
@@ -319,7 +327,7 @@ export const apply_syntax: ApplySyntax = (fun, stx, compile_env) => {
       return err();
     } else {
       // if (v.variant === EvalDataType.PrimitiveTransformer) {
-      return v.fun(stx, compile_env);
+      return (v as PrimitiveTransformer).fun(stx, compile_env);
     }
   }
 
@@ -446,7 +454,10 @@ export const evaluate_top_level: EvaluateModule = (program_) => {
   return ok(empty_module);
 };
 
-export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env) => {
+export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
+  program: GeneralTopLevelFormAst,
+  env: Environment
+): EvalResult => {
   const token_val = program.x.val;
   switch (token_val) {
     // DefineForm
@@ -471,7 +482,25 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (program, env
 
     // FEExpr
     case '#%plain-lambda': {
-      throw 'TODO: Implement #%plain-lambda';
+      const plainlambda_program = program as PlainLambdaForm;
+      let unparsed_formals = car(cdr(plainlambda_program));
+      const body = cdr(cdr(plainlambda_program));
+
+      const formals: string[] = [];
+      while (is_list(unparsed_formals)) {
+        const formal = val(car(unparsed_formals));
+        formals.push(formal);
+        unparsed_formals = cdr(unparsed_formals);
+      }
+
+      let rest: string | undefined;
+      if (is_nil(unparsed_formals)) {
+        rest = undefined;
+      } else {
+        rest = val(unparsed_formals);
+      }
+
+      return ok(sbox(make_fep_closure(env, formals, rest, body)));
     }
     case 'if': {
       const ifprogram = program as IfForm;

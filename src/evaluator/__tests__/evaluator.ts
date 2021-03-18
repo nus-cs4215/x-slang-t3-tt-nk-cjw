@@ -6,13 +6,15 @@ import {
   make_env_list,
 } from '../../environment';
 import { set_define } from '../../environment/environment';
-import { GeneralTopLevelForm } from '../../fep-types';
+import { FEExpr, GeneralTopLevelForm } from '../../fep-types';
 import { primitives_module } from '../../modules';
 import { read } from '../../reader';
 import { jsonPrint, jsonRead, JsonSExpr, sboolean, snumber, ssymbol } from '../../sexpr';
+import { sbox, SNonemptyHomList } from '../../sexpr/sexpr';
 import { getErr, getOk, ok } from '../../utils';
+import { err, isGoodResult } from '../../utils/result';
+import { make_fep_closure } from '../datatypes';
 import { evaluate, evaluate_general_top_level } from '../evaluator';
-import { isGoodResult, err } from '../../utils/result';
 
 function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment) {
   return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
@@ -250,6 +252,104 @@ describe('evaluate_general_top_level', () => {
         env
       )
     ).toEqual(err());
+  });
+
+  test('evaluate #%plain-lambda', () => {
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%plain-lambda (x) (#%variable-reference x))`)) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(
+      ok(
+        sbox(
+          make_fep_closure(
+            undefined,
+            ['x'],
+            undefined,
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+          )
+        )
+      )
+    );
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%plain-lambda x (#%variable-reference x))`)) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(
+      ok(
+        sbox(
+          make_fep_closure(
+            undefined,
+            [],
+            'x',
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+          )
+        )
+      )
+    );
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%plain-lambda (x y) (#%variable-reference x))`)) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(
+      ok(
+        sbox(
+          make_fep_closure(
+            undefined,
+            ['x', 'y'],
+            undefined,
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+          )
+        )
+      )
+    );
+
+    expect(
+      evaluate_general_top_level(
+        getOk(read(`(#%plain-lambda (x y . z) (#%variable-reference x))`)) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(
+      ok(
+        sbox(
+          make_fep_closure(
+            undefined,
+            ['x', 'y'],
+            'z',
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+          )
+        )
+      )
+    );
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(
+            `(#%plain-lambda (f x) (#%plain-app (#%variable-reference f) (#%variable-reference x)))`
+          )
+        ) as GeneralTopLevelForm,
+        undefined
+      )
+    ).toEqual(
+      ok(
+        sbox(
+          make_fep_closure(
+            undefined,
+            ['f', 'x'],
+            undefined,
+            getOk(
+              read('((#%plain-app (#%variable-reference f) (#%variable-reference x)))')
+            ) as SNonemptyHomList<FEExpr>
+          )
+        )
+      )
+    );
   });
 });
 
