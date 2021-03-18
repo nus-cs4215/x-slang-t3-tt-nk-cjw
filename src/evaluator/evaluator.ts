@@ -22,6 +22,7 @@ import {
   LetForm,
   LetrecForm,
   ModuleLevelFormAst,
+  PlainAppForm,
   PlainLambdaForm,
   PlainModuleBeginForm,
   ProvideForm,
@@ -46,11 +47,14 @@ import {
   sboolean,
   sbox,
   scons,
+  SExpr,
+  SExprT,
   SHomList,
+  snil,
   SSymbol,
   val,
 } from '../sexpr';
-import { err, isBadResult, ok, Result } from '../utils';
+import { err, getOk, isBadResult, ok, Result } from '../utils';
 import {
   EvalData,
   EvalDataType,
@@ -401,6 +405,70 @@ export const apply: Apply = (fun, ...args) => {
   return err();
 };
 
+export const fep_apply: Apply = (fun, ...args) => {
+  if (is_boxed(fun)) {
+    const v = fun.val;
+    if (v.variant === EvalDataType.FEPClosure) {
+      // v was a FEPClosure
+      const { env, formals, rest, body } = v;
+      let _body: SHomList<FEExpr> = body;
+      if (rest === undefined) {
+        if (args.length !== formals.length) {
+          return err();
+        }
+      } else {
+        if (args.length < formals.length) {
+          return err();
+        }
+      }
+
+      const bindings: Bindings = make_empty_bindings();
+      for (let i = 0; i < formals.length; i++) {
+        set_define(bindings, formals[i], args[i]);
+      }
+
+      let rest_args: SExprT<unknown> = snil();
+      for (let i = args.length - 1; i > formals.length - 1; i--) {
+        rest_args = scons(args[i], rest_args);
+      }
+
+      if (rest !== undefined) {
+        set_define(bindings, rest, rest_args);
+      }
+      const inner_env = make_env(bindings, env);
+
+      let r: EvalResult;
+      while (is_list(_body)) {
+        r = evaluate_general_top_level(car(_body), inner_env);
+        if (isBadResult(r)) {
+          return r;
+        }
+        _body = cdr(_body);
+      }
+      return r!;
+    } else if (v.variant === EvalDataType.Primitive) {
+      // v is a Primitive
+      return v.fun(...args);
+    } else {
+      // v is a PrimitiveTransformer
+      // You can't call them
+      return err();
+    }
+  }
+
+  if (!is_list(fun)) {
+    return err();
+  }
+  const fun_type = car(fun);
+  if (!is_symbol(fun_type)) {
+    // not in the right format for a function
+    return err();
+  }
+
+  // unsupported function type
+  return err();
+};
+
 export const evaluate: Evaluate = (program, env) => {
   // Other values cannot be evaluated
   if (is_boxed(program)) {
@@ -642,7 +710,29 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       return ok(quoteprogram.y.x);
     }
     case '#%plain-app': {
-      throw 'TODO: Implement #%plain-app';
+      const plainapp_program = program as PlainAppForm;
+      const exprs = cdr(plainapp_program);
+      const fun_r = evaluate_general_top_level(car(exprs), env);
+
+      if (isBadResult(fun_r)) {
+        return fun_r;
+      }
+      const fun = getOk(fun_r);
+
+      const arg_rs = homlist_to_arr(cdr(exprs)).map((fexpr) =>
+        evaluate_general_top_level(fexpr, env)
+      );
+
+      const args = [];
+
+      for (let i = 0; i < arg_rs.length; i++) {
+        if (isBadResult(arg_rs[i])) {
+          return arg_rs[i];
+        }
+        args.push(getOk(arg_rs[i]));
+      }
+
+      return fep_apply(fun, ...args);
     }
     case '#%variable-reference': {
       const variablereference_program = program as VariableReferenceForm;
@@ -712,7 +802,7 @@ export const evaluate_module: EvaluateModule = (
   // We do a first pass through the entire module body first to:
   //  - find all provides so we know what we need to export
   //  - find all requires and import all of them
-  //  - TODO: handle for syntax somehow (idk what this is supposed to do)
+  //  - TODO: handle for syntaimport { getOk } from '../utils/result';
   //  - TODO: evaluate submodules
   // TODO: Make this less hacky lmao
   const provides_names: Set<string> = new Set();
@@ -816,3 +906,12 @@ export const evaluate_module: EvaluateModule = (
     provides: exported_bindings,
   });
 };
+
+function homlist_to_arr<T extends SExprT<U>, U>(homlist: SHomList<T>): T[] {
+  const arr: T[] = [];
+  while (is_list<U>(homlist)) {
+    arr.push(car(homlist));
+    homlist = cdr(homlist);
+  }
+  return arr;
+}

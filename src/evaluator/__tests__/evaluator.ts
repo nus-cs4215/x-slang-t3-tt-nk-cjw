@@ -10,7 +10,7 @@ import { FEExpr, GeneralTopLevelForm } from '../../fep-types';
 import { primitives_module } from '../../modules';
 import { read } from '../../reader';
 import { jsonPrint, jsonRead, JsonSExpr, sboolean, snumber, ssymbol } from '../../sexpr';
-import { sbox, SNonemptyHomList } from '../../sexpr/sexpr';
+import { sbox, snil, SNonemptyHomList, slist } from '../../sexpr/sexpr';
 import { getErr, getOk, ok } from '../../utils';
 import { err, isGoodResult } from '../../utils/result';
 import { make_fep_closure } from '../datatypes';
@@ -350,6 +350,76 @@ describe('evaluate_general_top_level', () => {
         )
       )
     );
+  });
+
+  test('evaluate #%plain-app', () => {
+    const env = test_env();
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(#%plain-app (#%plain-lambda (x) (#%variable-reference x)) (quote 1))`)
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snumber(1)));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(`(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1))`)
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snil()));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(
+            `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2))`
+          )
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(slist([snumber(2)], snil())));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(
+            `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2) (quote 3))`
+          )
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(slist([snumber(2), snumber(3)], snil())));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(
+            `(#%plain-app (#%plain-lambda x (#%variable-reference x)) (quote 1) (quote 2) (quote 3))`
+          )
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(slist([snumber(1), snumber(2), snumber(3)], snil())));
+
+    expect(
+      evaluate_general_top_level(
+        getOk(
+          read(
+            `(#%plain-app (#%plain-lambda 
+                            (f x) 
+                            (#%plain-app (#%variable-reference f) (#%variable-reference x))
+                           )
+                (#%plain-lambda (y) (#%variable-reference y))
+                (quote 100))`
+          )
+        ) as GeneralTopLevelForm,
+        env
+      )
+    ).toEqual(ok(snumber(100)));
   });
 });
 

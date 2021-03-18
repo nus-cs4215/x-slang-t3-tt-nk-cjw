@@ -30,6 +30,7 @@ test('exports', () => {
       "print",
       "apply_syntax",
       "apply",
+      "fep_apply",
       "evaluate",
       "evaluate_general_top_level",
       "evaluate_module",
