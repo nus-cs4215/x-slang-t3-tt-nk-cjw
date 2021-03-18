@@ -1,8 +1,8 @@
+import { maps_to_compiler_host } from '../../host';
 import { print } from '../../printer';
 import { getErr, getOk } from '../../utils';
 import { compile, compile_module } from '../compiler';
 import { builtin_compiler_host, ts_based_modules } from '../compiler-base';
-import { maps_to_compiler_host } from '../compiler-host';
 
 function expectReadCompilePrint(module_contents: string) {
   return expect(
@@ -141,11 +141,13 @@ describe('compile succeeds', () => {
     `);
     const compiled_input = getOk(compile_result).compiled_filenames.get('/input.rkt')!;
     const compiled_parent = getOk(compile_result).compiled_filenames.get('/parent.rkt')!;
+    expect(compiled_input).toMatchInlineSnapshot(`"/input.rkt.fep"`);
+    expect(compiled_parent).toMatchInlineSnapshot(`"/parent.rkt.fep"`);
     expect(host.read_file(compiled_input)).toMatchInlineSnapshot(`
       Object {
         "err": undefined,
         "good": true,
-        "v": "(module input (quote parent) (#%plain-module-begin))",
+        "v": "(module input parent (#%plain-module-begin))",
       }
     `);
     expect(host.read_file(compiled_parent)).toMatchInlineSnapshot(`
@@ -153,6 +155,65 @@ describe('compile succeeds', () => {
         "err": undefined,
         "good": true,
         "v": "(module parent (quote #%builtin-empty) (#%plain-module-begin))",
+      }
+    `);
+  });
+
+  test('compile file based parent modules and import their contents', () => {
+    const host = maps_to_compiler_host(
+      new Map([
+        ['/input.rkt', '(module input parent (1 2))'],
+        ['/parent.rkt', "(module parent '#%builtin-kernel (#%provide #%app #%datum))"],
+      ]),
+      ts_based_modules
+    );
+    const compile_result = compile(host, '/input.rkt');
+    expect(compile_result).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled_filenames": Map {
+            "/parent.rkt" => "/parent.rkt.fep",
+            "/input.rkt" => "/input.rkt.fep",
+          },
+        },
+      }
+    `);
+    const compiled_input = getOk(compile_result).compiled_filenames.get('/input.rkt')!;
+    const compiled_parent = getOk(compile_result).compiled_filenames.get('/parent.rkt')!;
+    expect(compiled_input).toMatchInlineSnapshot(`"/input.rkt.fep"`);
+    expect(compiled_parent).toMatchInlineSnapshot(`"/parent.rkt.fep"`);
+    expect(host.read_file(compiled_input)).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module input parent (#%plain-module-begin (#%plain-app (quote 1) (quote 2))))",
+      }
+    `);
+    expect(host.read_file(compiled_parent)).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module parent (quote #%builtin-kernel) (#%plain-module-begin (#%provide #%app #%datum)))",
+      }
+    `);
+  });
+
+  test('only provided definitions can be used', () => {
+    const host = maps_to_compiler_host(
+      new Map([
+        ['/input.rkt', '(module input parent (* 1 2))'],
+        ['/parent.rkt', "(module parent '#%builtin-primitives (#%provide +))"],
+      ]),
+      ts_based_modules
+    );
+    const compile_result = compile(host, '/input.rkt');
+    expect(compile_result).toMatchInlineSnapshot(`
+      Object {
+        "err": "unbound variable *",
+        "good": false,
+        "v": undefined,
       }
     `);
   });

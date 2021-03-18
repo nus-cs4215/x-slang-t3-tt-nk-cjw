@@ -35,7 +35,7 @@ export const set_define = (bindings: Bindings, name: string, value: MaybeSExpr):
   bindings.definitions.set(name, value);
 };
 export const set_syntax = (bindings: Bindings, name: string, value: MaybeSExpr): void => {
-  bindings.definitions.set(name, value);
+  bindings.syntaxes.set(name, value);
 };
 
 export interface NonemptyEnvironment {

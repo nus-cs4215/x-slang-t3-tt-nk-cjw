@@ -2,7 +2,7 @@ import { Bindings, make_bindings } from '../environment';
 import { make_primitive_transformer } from '../evaluator/datatypes';
 import { sbox } from '../sexpr';
 import { kernel_syntaxes } from './kernel-impl';
-import { Module } from './types';
+import { Module } from './modules';
 
 const kernel_bindings: Bindings = make_bindings(
   new Map(),
@@ -16,5 +16,6 @@ const kernel_bindings: Bindings = make_bindings(
 
 export const kernel_module: Module = {
   name: '#%builtin-kernel',
+  filename: '',
   provides: kernel_bindings,
 };

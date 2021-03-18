@@ -1,5 +1,6 @@
 import { Environment } from '../environment';
-import { GeneralTopLevelFormAst, TopLevelForm } from '../fep-types';
+import { GeneralTopLevelFormAst, TopLevelModuleFormAst } from '../fep-types';
+import { EvaluatorHost, FileName } from '../host';
 import { Module } from '../modules';
 import { SExprT } from '../sexpr';
 import { Result } from '../utils';
@@ -20,4 +21,8 @@ export type EvaluateGeneralTopLevel = (
   env: Environment
 ) => EvalResult;
 
-export type EvaluateModule = (program: TopLevelForm) => Result<Module, EvalErr>;
+export type EvaluateModule = (
+  program: TopLevelModuleFormAst,
+  program_filename: FileName,
+  host: EvaluatorHost
+) => Result<Module, EvalErr>;

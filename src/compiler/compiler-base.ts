@@ -1,7 +1,7 @@
+import { CompilerHost, maps_to_compiler_host, ModuleName } from '../host';
 import { empty_module, Module, primitives_module } from '../modules';
 import { base_lang_module } from '../modules/base-lang-module';
 import { kernel_module } from '../modules/kernel-module';
-import { CompilerHost, maps_to_compiler_host, ModuleName } from './compiler-host';
 
 const ts_based_modules_list: Module[] = [
   primitives_module,

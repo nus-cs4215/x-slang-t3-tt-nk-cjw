@@ -45,6 +45,7 @@ test('exports', () => {
       "make_env",
       "make_env_list",
       "find_env",
+      "get_module_info",
       "primitives_module",
       "empty_module",
       "startRepl",

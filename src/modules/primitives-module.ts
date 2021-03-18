@@ -1,8 +1,8 @@
 import { Bindings, make_bindings } from '../environment';
 import { make_primitive } from '../evaluator/datatypes';
 import { sbox } from '../sexpr';
+import { Module } from './modules';
 import { primitive_consts, primitive_funcs } from './primitives-impl';
-import { Module } from './types';
 
 const primitive_bindings: Bindings = make_bindings(
   new Map([
@@ -16,5 +16,6 @@ const primitive_bindings: Bindings = make_bindings(
 
 export const primitives_module: Module = {
   name: '#%builtin-primitives',
+  filename: '',
   provides: primitive_bindings,
 };

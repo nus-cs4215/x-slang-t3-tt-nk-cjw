@@ -1,8 +1,8 @@
 import { EvalErr } from '../evaluator/types';
 import { TopLevelForm } from '../fep-types';
+import { CompilerHost, FileContents, FileName } from '../host';
 import { ReadErr } from '../reader';
 import { Result } from '../utils';
-import { CompilerHost, FileContents, FileName } from './compiler-host';
 
 export type CompileErr = string | ReadErr | EvalErr;
 export interface CompileModuleResultV {

@@ -1,7 +1,7 @@
 import { SCons, SExpr, SHomList, SNil, SNonemptyHomList, SSymbol } from './sexpr';
 
 // For now, let them be equal
-export type TopLevelFormAst = TopLevelForm;
+export type TopLevelModuleFormAst = TopLevelModuleForm;
 export type ModuleLevelFormAst = ModuleLevelForm;
 export type GeneralTopLevelFormAst = GeneralTopLevelForm;
 
@@ -14,52 +14,44 @@ export type TopLevelForm =
   | ExplicitExpressionForm
   | ModuleFileParentForm
   | ModuleBuiltinParentForm;
+export type TopLevelModuleForm = ModuleFileParentForm | ModuleBuiltinParentForm;
 export type ExplicitExpressionForm = SCons<Token<'#%expression'>, FEExpr>;
 export type ModuleFileParentForm = SCons<
   Token<'module'>,
-  SCons<
-    SSymbol,
-    SCons<SSymbol, SCons<SCons<Token<'#%plain-module-begin'>, SHomList<ModuleLevelForm>>, SNil>>
-  >
+  SCons<SSymbol, SCons<SSymbol, SCons<PlainModuleBeginForm, SNil>>>
 >;
 export type ModuleBuiltinParentForm = SCons<
   Token<'module'>,
   SCons<
     SSymbol,
-    SCons<
-      SCons<Token<'quote'>, SCons<SSymbol, SNil>>,
-      SCons<SCons<Token<'#%plain-module-begin'>, SHomList<ModuleLevelForm>>, SNil>
-    >
+    SCons<SCons<Token<'quote'>, SCons<SSymbol, SNil>>, SCons<PlainModuleBeginForm, SNil>>
   >
 >;
+
+export type PlainModuleBeginForm = SCons<Token<'#%plain-module-begin'>, SHomList<ModuleLevelForm>>;
 
 export type ModuleLevelForm =
   | GeneralTopLevelForm
   | ProvideForm
+  | RequireFileForm
+  | RequireBuiltinForm
   | BeginForSyntaxForm
   | ModuleFileParentForm
-  | ModuleBuiltinParentForm
-  | DeclareForm;
+  | ModuleBuiltinParentForm;
 
 export type ProvideForm = SCons<Token<'#%provide'>, SHomList<SSymbol>>;
 export type BeginForSyntaxForm = SCons<
   Token<'begin-for-syntax'>,
   SNonemptyHomList<ModuleLevelForm>
 >;
-export type DeclareForm = SCons<Token<'#%declare'>, SHomList<SSymbol>>;
 
-export type GeneralTopLevelForm =
-  | FEExpr
-  | DefineForm
-  | DefineSyntaxForm
-  | RequireFileForm
-  | RequireBuiltinForm;
+export type GeneralTopLevelForm = FEExpr | DefineForm | DefineSyntaxForm;
 
 export type DefineForm = SCons<Token<'define'>, SCons<SSymbol, SCons<FEExpr, SNil>>>;
 export type DefineSyntaxForm = SCons<Token<'define-syntax'>, SCons<SSymbol, SCons<FEExpr, SNil>>>;
-export type RequireFileForm = SCons<Token<'require'>, SCons<SSymbol, SNil>>;
+export type RequireFileForm = SCons<Token<'#%require'>, SCons<SSymbol, SNil>>;
 export type RequireBuiltinForm = SCons<
-  Token<'require'>,
+  Token<'#%require'>,
   SCons<SCons<Token<'quote'>, SCons<SSymbol, SNil>>, SNil>
 >;
 

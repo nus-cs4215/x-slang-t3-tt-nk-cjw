@@ -3,9 +3,14 @@ import {
   Environment,
   find_env,
   get_define,
+  get_syntax,
+  has_define,
+  has_syntax,
   make_empty_bindings,
   make_env,
+  make_env_list,
   set_define,
+  set_syntax,
 } from '../environment';
 import {
   Begin0Form,
@@ -16,12 +21,18 @@ import {
   IfForm,
   LetForm,
   LetrecForm,
+  ModuleLevelFormAst,
   PlainLambdaForm,
+  PlainModuleBeginForm,
+  ProvideForm,
   QuoteForm,
-  TopLevelFormAst,
+  RequireBuiltinForm,
+  RequireFileForm,
+  TopLevelModuleFormAst,
   VariableReferenceForm,
 } from '../fep-types';
-import { empty_module, Module } from '../modules';
+import { EvaluatorHost, FileName } from '../host';
+import { get_module_info, Module } from '../modules';
 import { MatchObject } from '../pattern';
 import {
   car,
@@ -658,7 +669,150 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
 };
 
 export const evaluate_module: EvaluateModule = (
-  program_: TopLevelFormAst
+  program: TopLevelModuleFormAst,
+  program_filename: FileName,
+  host: EvaluatorHost
 ): Result<Module, EvalErr> => {
-  return ok(empty_module);
+  const module_info_result = get_module_info(program);
+  if (isBadResult(module_info_result)) {
+    return err();
+  }
+  const {
+    name: module_name,
+    module_path_is_builtin,
+    module_path_name,
+    module_body: module_body_,
+  } = module_info_result.v;
+  let plain_module_begin = cdr(module_body_[0] as PlainModuleBeginForm);
+  const module_body: ModuleLevelFormAst[] = [];
+  while (is_list(plain_module_begin)) {
+    module_body.push(car(plain_module_begin));
+    plain_module_begin = cdr(plain_module_begin);
+  }
+
+  // Evaluate parent module
+  let parent_module: Module;
+  if (module_path_is_builtin) {
+    const parent_module_result = host.read_builtin_module(module_path_name);
+    if (isBadResult(parent_module_result)) {
+      return err();
+    }
+    parent_module = parent_module_result.v;
+  } else {
+    const parent_module_r = host.read_fep_module(module_path_name, program_filename);
+    if (isBadResult(parent_module_r)) {
+      return err();
+    }
+    parent_module = parent_module_r.v;
+  }
+
+  // Create env containing the provides
+  const env = make_env_list(make_empty_bindings(), parent_module.provides);
+
+  // We do a first pass through the entire module body first to:
+  //  - find all provides so we know what we need to export
+  //  - find all requires and import all of them
+  //  - TODO: handle for syntax somehow (idk what this is supposed to do)
+  //  - TODO: evaluate submodules
+  // TODO: Make this less hacky lmao
+  const provides_names: Set<string> = new Set();
+
+  for (const statement of module_body) {
+    const form_type = statement.x.val;
+    switch (form_type) {
+      case '#%provide': {
+        const provide_form = statement as ProvideForm;
+        let names_to_export = provide_form.y;
+        while (is_list(names_to_export)) {
+          provides_names.add(names_to_export.x.val);
+          names_to_export = names_to_export.y;
+        }
+        break;
+      }
+      case '#%require': {
+        const require_form = statement as RequireBuiltinForm | RequireFileForm;
+        const require_spec = require_form.y.x;
+
+        // get the module
+        let required_module: Module;
+        if (is_list(require_spec)) {
+          // builtin require
+          const module_name = require_spec.y.x.val;
+          const module_r = host.read_builtin_module(module_name);
+          if (isBadResult(module_r)) {
+            return err();
+            // return err(`error requiring module ${module_name}: {module_r.err}`);
+          }
+          required_module = module_r.v;
+        } else {
+          // file require
+          const module_name = require_spec.val;
+          const module_r = host.read_fep_module(module_name, program_filename);
+          if (isBadResult(module_r)) {
+            return err();
+            // return err(`error requiring module ${module_name}: {module_r.err}`);
+          }
+          required_module = module_r.v;
+        }
+
+        // Add its bindings to ours
+        for (const [name, value] of Object.entries(required_module.provides.definitions)) {
+          set_define(env.bindings, name, value);
+        }
+        for (const [name, value] of Object.entries(required_module.provides.syntaxes)) {
+          set_syntax(env.bindings, name, value);
+        }
+        break;
+      }
+      case 'begin-for-syntax': {
+        throw 'Not yet implemented';
+      }
+      case 'module': {
+        throw 'Not yet implemented';
+      }
+      default: {
+        break;
+      }
+    }
+  }
+
+  // Now we evaluate the module body for realz
+  for (const statement of module_body) {
+    const form_type = statement.x.val;
+    switch (form_type) {
+      case '#%provide':
+      case '#%require':
+      case 'begin-for-syntax':
+      case 'module': {
+        break;
+      }
+      default: {
+        const r = evaluate_general_top_level(statement as GeneralTopLevelFormAst, env);
+        if (isBadResult(r)) {
+          return r;
+        }
+        break;
+      }
+    }
+  }
+
+  // Now that we've evaluated all the statements in the body, we return the module
+  const exported_bindings = make_empty_bindings();
+  for (const name of provides_names.keys()) {
+    const name_env = find_env(name, env);
+    if (name_env === undefined) {
+      return err();
+    }
+    if (has_define(name_env.bindings, name)) {
+      set_define(exported_bindings, name, get_define(name_env.bindings, name));
+    } else if (has_syntax(name_env.bindings, name)) {
+      set_syntax(exported_bindings, name, get_syntax(name_env.bindings, name));
+    }
+  }
+
+  return ok({
+    name: module_name,
+    filename: program_filename,
+    provides: exported_bindings,
+  });
 };
