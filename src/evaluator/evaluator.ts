@@ -16,6 +16,7 @@ import {
   Begin0Form,
   BeginForm,
   DefineForm,
+  DefineSyntaxForm,
   FEExpr,
   GeneralTopLevelFormAst,
   IfForm,
@@ -47,7 +48,6 @@ import {
   sboolean,
   sbox,
   scons,
-  SExpr,
   SExprT,
   SHomList,
   snil,
@@ -554,7 +554,17 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
 
     // Define Syntax Form
     case 'define-syntax': {
-      throw 'TODO: Implement define-syntax';
+      const definesyntax_program = program as DefineSyntaxForm;
+      const symbol = car(cdr(definesyntax_program));
+      const expr = car(cdr(cdr(definesyntax_program)));
+
+      const r = evaluate_general_top_level(expr, env);
+      if (isBadResult(r)) {
+        return r;
+      }
+
+      set_syntax(env!.bindings, val(symbol), r.v);
+      return r;
     }
 
     // FEExpr
