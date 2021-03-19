@@ -2,6 +2,8 @@ import {
   Bindings,
   Environment,
   find_env,
+  get_all_defines,
+  get_all_syntaxes,
   get_define,
   get_syntax,
   has_define,
@@ -856,10 +858,10 @@ export const evaluate_module: EvaluateModule = (
         }
 
         // Add its bindings to ours
-        for (const [name, value] of Object.entries(required_module.provides.definitions)) {
+        for (const [name, value] of get_all_defines(required_module.provides)) {
           set_define(env.bindings, name, value);
         }
-        for (const [name, value] of Object.entries(required_module.provides.syntaxes)) {
+        for (const [name, value] of get_all_syntaxes(required_module.provides)) {
           set_syntax(env.bindings, name, value);
         }
         break;
@@ -906,7 +908,7 @@ export const evaluate_module: EvaluateModule = (
     if (has_define(name_env.bindings, name)) {
       set_define(exported_bindings, name, get_define(name_env.bindings, name));
     } else if (has_syntax(name_env.bindings, name)) {
-      set_syntax(exported_bindings, name, get_syntax(name_env.bindings, name));
+      set_syntax(exported_bindings, name, get_syntax(name_env.bindings, name)!);
     }
   }
 
