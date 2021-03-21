@@ -31,7 +31,7 @@ function expectReadCompileError(module_contents: string) {
   // return expect(getErr(compile_module('input.rkt', module_contents, builtin_compiler_host)));
 }
 
-describe('compile succeeds', () => {
+describe('module forms work as expected', () => {
   test('empty module', () => {
     // no statements
     expectReadCompilePrint(`
@@ -45,84 +45,12 @@ describe('compile succeeds', () => {
     `).toMatchInlineSnapshot(`"(module name (quote #%builtin-kernel) (#%plain-module-begin))"`);
   });
 
-  test('load kernel module and use core syntactic forms', () => {
-    // core syntactic forms
-    expectReadCompilePrint(`
-      (module name '#%builtin-kernel (quote 1) (#%plain-app (quote 2)))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (quote 1) (#%plain-app (quote 2))))"`
-    );
-  });
-
-  test('load primitives module and access identifier', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-primitives (#%plain-module-begin pi))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (#%variable-reference pi)))"`
-    );
-  });
-
-  test('load primitives module and define something', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-primitives (#%plain-module-begin (define something pi)))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (define something (#%variable-reference pi))))"`
-    );
-  });
-
-  test('load primitives module and define something and use it', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-primitives (#%plain-module-begin (define something pi) something))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (define something (#%variable-reference pi)) (#%variable-reference something)))"`
-    );
-  });
-
   test('make datum', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-kernel 1)
     `).toMatchInlineSnapshot(
       `"(module name (quote #%builtin-kernel) (#%plain-module-begin (quote 1)))"`
     );
-  });
-
-  test('make datum in expression', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-kernel (define x 1))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1))))"`
-    );
-  });
-
-  test('make app', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-kernel (1 1))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%plain-app (quote 1) (quote 1))))"`
-    );
-  });
-
-  test('make lambda', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-base-lang (lambda (x) x))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (#%plain-lambda (x) (#%variable-reference x))))"`
-    );
-  });
-
-  test('make lambda in expression context', () => {
-    expectReadCompilePrint(`
-      (module name '#%builtin-base-lang (define f (lambda (x) x)))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (define f (#%plain-lambda (x) (#%variable-reference x)))))"`
-    );
-  });
-
-  test('compilation is idempotent', () => {
-    const compiled = readCompilePrint(`
-      (module name '#%builtin-base-lang (define f (lambda (x) x)))
-    `);
-    expectReadCompilePrint(compiled).toEqual(compiled);
   });
 
   test('compile file based parent modules', () => {
@@ -221,6 +149,86 @@ describe('compile succeeds', () => {
     );
     const compile_result = compile_entrypoint('/input.rkt', host);
     expect(compile_result).toMatchInlineSnapshot();
+  });
+});
+
+describe('general compilation tests', () => {
+  test('compilation is idempotent', () => {
+    const compiled = readCompilePrint(`
+      (module name '#%builtin-base-lang (define f (lambda (x) x)))
+    `);
+    expectReadCompilePrint(compiled).toEqual(compiled);
+  });
+});
+
+describe('function application expressions and datum', () => {
+  test('load kernel module and use core syntactic forms', () => {
+    // core syntactic forms
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel (quote 1) (#%plain-app (quote 2)))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (quote 1) (#%plain-app (quote 2))))"`
+    );
+  });
+
+  test('load primitives module and access identifier', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-primitives (#%plain-module-begin pi))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (#%variable-reference pi)))"`
+    );
+  });
+
+  test('make datum in expression', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel (define x 1))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1))))"`
+    );
+  });
+
+  test('make app', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel (1 1))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%plain-app (quote 1) (quote 1))))"`
+    );
+  });
+});
+
+describe('lambda', () => {
+  test('make lambda', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-base-lang (lambda (x) x))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (#%plain-lambda (x) (#%variable-reference x))))"`
+    );
+  });
+
+  test('make lambda in expression context', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-base-lang (define f (lambda (x) x)))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (define f (#%plain-lambda (x) (#%variable-reference x)))))"`
+    );
+  });
+});
+
+describe('define and define-syntax in module form', () => {
+  test('load primitives module and define something', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-primitives (#%plain-module-begin (define something pi)))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (define something (#%variable-reference pi))))"`
+    );
+  });
+
+  test('load primitives module and define something and use it', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-primitives (#%plain-module-begin (define something pi) something))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (define something (#%variable-reference pi)) (#%variable-reference something)))"`
+    );
   });
 
   test('make syntax transformer', () => {
