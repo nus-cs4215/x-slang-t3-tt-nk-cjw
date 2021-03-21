@@ -244,3 +244,94 @@ function match_helper<T>(program: SExprT<T>, pattern: Pattern, matches: MatchObj
     match_helper(cdr(program), cdr(pattern), matches)
   );
 }
+
+export function unmatch<T>(matches: MatchObject<T>, pattern: Pattern): SExprT<T> | undefined {
+  if (is_boxed(pattern)) {
+    // handle pattern leaf
+    const pattern_leaf = pattern.val;
+    if (pattern_leaf.variant === PatternLeafType.Variable) {
+      // unmatch variable
+      if (matches[pattern_leaf.name] === undefined) {
+        return undefined;
+      }
+      if (matches[pattern_leaf.name].length === 0) {
+        return undefined;
+      }
+      // pop from front of array
+      return matches[pattern_leaf.name].splice(0, 1)[0];
+    } else if (pattern_leaf.variant === PatternLeafType.SymbolVariable) {
+      // unmatch variable, just assume it's a symbol
+      if (matches[pattern_leaf.name] === undefined) {
+        return undefined;
+      }
+      if (matches[pattern_leaf.name].length === 0) {
+        return undefined;
+      }
+      // pop from front of array
+      return matches[pattern_leaf.name].splice(0, 1)[0];
+    } else if (pattern_leaf.variant === PatternLeafType.ZeroOrMore) {
+      // While unmatch gives us stuff, we build up the list
+      const progs: SExprT<T>[] = [];
+      for (;;) {
+        const prog = unmatch(matches, pattern_leaf.pattern);
+        if (prog === undefined) {
+          break;
+        }
+        progs.push(prog);
+      }
+      // Now we unmatch the tail pattern
+      const tail_prog = unmatch(matches, pattern_leaf.tail_pattern);
+      if (tail_prog === undefined) {
+        return undefined;
+      }
+      // Now we build up the list
+      let prog = tail_prog;
+      for (let i = progs.length - 1; i >= 0; i--) {
+        prog = scons(progs[i], prog);
+      }
+      return prog;
+    } else {
+      // While unmatch gives us stuff, we build up the list
+      const progs: SExprT<T>[] = [];
+      for (;;) {
+        const prog = unmatch(matches, pattern_leaf.pattern);
+        if (prog === undefined) {
+          break;
+        }
+        progs.push(prog);
+      }
+      // Now we unmatch the tail pattern
+      const tail_prog = unmatch(matches, pattern_leaf.tail_pattern);
+      if (tail_prog === undefined) {
+        return undefined;
+      }
+      // Now we build up the list
+      let prog = tail_prog;
+      for (let i = progs.length - 1; i >= 0; i--) {
+        prog = scons(progs[i], prog);
+      }
+      return prog;
+    }
+  }
+
+  // not a pattern leaf, so it's just your regular ol sexpr stuff.
+  // we need to structurally match program against the pattern
+
+  // if it's not a list, no recursion is needed, so we delegate to equals
+  if (!is_list(pattern)) {
+    return pattern;
+  }
+
+  // pattern is list, recurse on both sides
+
+  // if program isn't a list in the first place we definitely don't match
+  const lhs = unmatch(matches, car(pattern));
+  if (lhs === undefined) {
+    return lhs;
+  }
+  const rhs = unmatch(matches, cdr(pattern));
+  if (rhs === undefined) {
+    return rhs;
+  }
+  return scons(lhs, rhs);
+}

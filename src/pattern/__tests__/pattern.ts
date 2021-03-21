@@ -1,3 +1,5 @@
+import { print } from '../../printer';
+import { read } from '../../reader';
 import { JsonSExpr, JsonSExprT, jsonRead, SExpr, jsonPrint } from '../../sexpr';
 import { getOk } from '../../utils';
 import {
@@ -8,6 +10,7 @@ import {
   match,
   PatternLeaf,
   read_pattern,
+  unmatch,
 } from '../pattern';
 
 function expectJsonGoodPatternMatch(program: JsonSExpr, pattern: JsonSExprT<PatternLeaf>) {
@@ -195,15 +198,10 @@ describe('sexpr pattern parsing', () => {
         "d",
       ]
     `);
-    expect(jsonPrint(getOk(read_pattern("('a b 'c . 'd)")))).toMatchInlineSnapshot(`
+    expect(jsonPrint(getOk(read_pattern("('a 'b 'c . 'd)")))).toMatchInlineSnapshot(`
       Array [
         "a",
-        Object {
-          "boxed": Object {
-            "name": "b",
-            "variant": 0,
-          },
-        },
+        "b",
         "c",
         ".",
         "d",
@@ -274,5 +272,198 @@ describe('sexpr pattern parsing', () => {
     expect(getOk(read_pattern("('atleastone ['ayy value] ...+)"))).toEqual(
       jsonRead(['atleastone', '.', json_plus(['ayy', json_var('value')], [])])
     );
+  });
+});
+
+describe('pattern un-matching', () => {
+  test('literals', () => {
+    expect(jsonPrint(unmatch({}, getOk(read_pattern("('a 'b 'c 'd)")))!)).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(unmatch({}, getOk(read_pattern("('a 'b 'c . 'd)")))!)).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        ".",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(unmatch({}, getOk(read_pattern('(1 #t 3 . 55)')))!)).toMatchInlineSnapshot(`
+      Array [
+        1,
+        true,
+        3,
+        ".",
+        55,
+      ]
+    `);
+  });
+
+  test('vars', () => {
+    expect(jsonPrint(unmatch({ datum: [jsonRead(1)] }, getOk(read_pattern("('quote datum)")))!))
+      .toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        1,
+      ]
+    `);
+    expect(
+      jsonPrint(
+        unmatch(
+          { name: [jsonRead('x')], value: [jsonRead(1)] },
+          getOk(read_pattern("('define sym-name value)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "define",
+        "x",
+        1,
+      ]
+    `);
+  });
+
+  test('subpatterns', () => {
+    expect(
+      jsonPrint(
+        unmatch(
+          { params: [jsonRead('x'), jsonRead('y')], body: [jsonRead(['+', 'x', 'y'])] },
+          getOk(read_pattern("('lambda (sym-params ...) body ...)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "lambda",
+        Array [
+          "x",
+          "y",
+        ],
+        Array [
+          "+",
+          "x",
+          "y",
+        ],
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          { params: [], body: [jsonRead(1)] },
+          getOk(read_pattern("('lambda (sym-params ...) body ...)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "lambda",
+        Array [],
+        1,
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          {
+            name: [jsonRead('x'), jsonRead('y')],
+            value: [jsonRead(1), jsonRead(2)],
+            body: [jsonRead(['writeln', 'x']), jsonRead(['+', 'x', 'y'])],
+          },
+          getOk(read_pattern("('let [(sym-name value) ...] body ...)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "let",
+        Array [
+          Array [
+            "x",
+            1,
+          ],
+          Array [
+            "y",
+            2,
+          ],
+        ],
+        Array [
+          "writeln",
+          "x",
+        ],
+        Array [
+          "+",
+          "x",
+          "y",
+        ],
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          { value: [jsonRead(1), jsonRead(2)] },
+          getOk(read_pattern("('atleastone value ...+)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "atleastone",
+        1,
+        2,
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          { value: [jsonRead(1), jsonRead(2)] },
+          getOk(read_pattern("('atleastone ['ayy value] ...+)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "atleastone",
+        Array [
+          "ayy",
+          1,
+        ],
+        Array [
+          "ayy",
+          2,
+        ],
+      ]
+    `);
+  });
+});
+
+function expectGoodPatternTransform(program: string, from_pattern: string, to_pattern: string) {
+  const _program = getOk(read(program));
+  const _from_pattern = getOk(read_pattern(from_pattern));
+  const _to_pattern = getOk(read_pattern(to_pattern));
+  const match_result = match(_program, _from_pattern)!;
+  const transformed = unmatch(match_result, _to_pattern)!;
+  return expect(print(transformed));
+}
+
+describe('pattern transform', () => {
+  test('#%app to #%plain-app', () => {
+    expectGoodPatternTransform(
+      '(#%app f x y z)',
+      "('#%app f x ...)",
+      "('#%plain-app f x ...)"
+    ).toMatchInlineSnapshot(`"(#%plain-app f x y z)"`);
+  });
+
+  test('let* to let (2 variables only)', () => {
+    expectGoodPatternTransform(
+      '(let* [(x 1) (y x)] body1 body2 body3)',
+      "('let* [(name value) (name value)] body ...)",
+      "('let [(name value)] ('let [(name value)] body ...))"
+    ).toMatchInlineSnapshot(`"(let ((x 1)) (let ((y x)) body1 body2 body3))"`);
   });
 });
