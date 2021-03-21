@@ -243,6 +243,65 @@ describe('define and define-syntax in module form', () => {
   });
 });
 
+test('begin and begin0', () => {
+  expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        ; module level begin
+        (begin
+          (define x 1)
+          (define y 2))
+
+        ; expression level begin
+        (define z
+          (begin 1 2 3))
+
+        ; expression level begin0
+        (define z0
+          (begin0 1 2 3))
+      )
+    `).toMatchInlineSnapshot(
+    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1)) (define y (quote 2)) (define z (begin (quote 1) (quote 2) (quote 3))) (define z0 (begin0 (quote 1) (quote 2) (quote 3)))))"`
+  );
+});
+
+test('if', () => {
+  expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        ; module level if
+        (if #t 1 2)
+
+        ; expression level if
+        (define z
+          (if #t 1 2))
+      )
+    `).toMatchInlineSnapshot(
+    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (if (quote #t) (quote 1) (quote 2)) (define z (if (quote #t) (quote 1) (quote 2)))))"`
+  );
+});
+
+test('let and letrec', () => {
+  expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        ; module level begin
+        (define x
+          (let [
+            (y 1)
+            (z 2)
+          ]
+            (+ y z))
+        )
+
+        (let [
+          (y 1)
+          (z 2)
+        ]
+          (+ y z))
+      )
+    `).toMatchInlineSnapshot(
+    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))) (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))))"`
+  );
+});
+
 describe('compile fails', () => {
   test('nonexistent parent module', () => {
     expectReadCompileError(`

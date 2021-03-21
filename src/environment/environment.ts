@@ -4,7 +4,7 @@ import { SExprT } from '../sexpr';
 type MaybeSExpr = SExprT<unknown> | undefined;
 type StringSExprMap = Map<string, MaybeSExpr>;
 
-type CoreTransformer = CompileV2;
+export type CoreTransformer = CompileV2;
 
 export enum BindingType {
   Define,
