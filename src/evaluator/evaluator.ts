@@ -2,15 +2,17 @@ import {
   Bindings,
   Environment,
   find_env,
-  get_all_defines,
-  get_all_syntaxes,
+  get_core,
   get_define,
   get_syntax,
+  has_core,
   has_define,
   has_syntax,
+  install_bindings,
   make_empty_bindings,
   make_env,
   make_env_list,
+  set_core,
   set_define,
   set_syntax,
 } from '../environment';
@@ -471,6 +473,57 @@ export const fep_apply: Apply = (fun, ...args) => {
   return err();
 };
 
+export const fep_apply_syntax: ApplySyntax = (fun, stx, compile_env) => {
+  if (is_boxed(fun)) {
+    const v = fun.val;
+    if (v.variant === EvalDataType.FEPClosure) {
+      // v was a FEPClosure
+      const { env, formals, rest, body } = v;
+      let _body: SHomList<FEExpr> = body;
+      if (rest !== undefined) {
+        return err();
+      }
+      if (formals.length !== 1) {
+        return err();
+      }
+
+      const bindings: Bindings = make_empty_bindings();
+      set_define(bindings, formals[0], stx);
+
+      const inner_env = make_env(bindings, env);
+
+      let r: EvalResult;
+      while (is_list(_body)) {
+        r = evaluate_general_top_level(car(_body), inner_env);
+        if (isBadResult(r)) {
+          return r;
+        }
+        _body = cdr(_body);
+      }
+      return r!;
+    } else if (v.variant === EvalDataType.Primitive) {
+      // v is a Primitive
+      // You should have used a PrimitiveTransformer
+      return err();
+    } else {
+      // if (v.variant === EvalDataType.PrimitiveTransformer) {
+      return (v as PrimitiveTransformer).fun(stx, compile_env);
+    }
+  }
+
+  if (!is_list(fun)) {
+    return err();
+  }
+  const fun_type = car(fun);
+  if (!is_symbol(fun_type)) {
+    // not in the right format for a function
+    return err();
+  }
+
+  // unsupported function type
+  return err();
+};
+
 export const evaluate: Evaluate = (program, env) => {
   // Other values cannot be evaluated
   if (is_boxed(program)) {
@@ -858,12 +911,7 @@ export const evaluate_module: EvaluateModule = (
         }
 
         // Add its bindings to ours
-        for (const [name, value] of get_all_defines(required_module.provides)) {
-          set_define(env.bindings, name, value);
-        }
-        for (const [name, value] of get_all_syntaxes(required_module.provides)) {
-          set_syntax(env.bindings, name, value);
-        }
+        install_bindings(env.bindings, required_module.provides);
         break;
       }
       case 'begin-for-syntax': {
@@ -909,6 +957,8 @@ export const evaluate_module: EvaluateModule = (
       set_define(exported_bindings, name, get_define(name_env.bindings, name));
     } else if (has_syntax(name_env.bindings, name)) {
       set_syntax(exported_bindings, name, get_syntax(name_env.bindings, name)!);
+    } else if (has_core(name_env.bindings, name)) {
+      set_core(exported_bindings, name, get_core(name_env.bindings, name)!);
     }
   }
 

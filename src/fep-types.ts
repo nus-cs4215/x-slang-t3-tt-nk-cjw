@@ -1,5 +1,13 @@
 import { SCons, SExpr, SHomList, SNil, SNonemptyHomList, SSymbol } from './sexpr';
 
+// contains every possible FEP type
+export type FEPNode =
+  | TopLevelForm
+  | PlainModuleBeginForm
+  | GeneralTopLevelForm
+  | ModuleLevelForm
+  | FEExpr;
+
 // For now, let them be equal
 export type TopLevelModuleFormAst = TopLevelModuleForm;
 export type ModuleLevelFormAst = ModuleLevelForm;

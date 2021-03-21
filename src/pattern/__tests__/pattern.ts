@@ -1,5 +1,14 @@
 import { JsonSExpr, JsonSExprT, jsonRead, SExpr, jsonPrint } from '../../sexpr';
-import { json_plus, json_star, json_var, match, PatternLeaf } from '../pattern';
+import { getOk } from '../../utils';
+import {
+  json_plus,
+  json_star,
+  json_symvar,
+  json_var,
+  match,
+  PatternLeaf,
+  read_pattern,
+} from '../pattern';
 
 function expectJsonGoodPatternMatch(program: JsonSExpr, pattern: JsonSExprT<PatternLeaf>) {
   const matches = match(jsonRead(program), jsonRead(pattern));
@@ -172,6 +181,98 @@ describe('Basic pattern matching', () => {
         'c',
       ],
       let_pattern()
+    );
+  });
+});
+
+describe('sexpr pattern parsing', () => {
+  test('literals', () => {
+    expect(jsonPrint(getOk(read_pattern("('a 'b 'c 'd)")))).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(getOk(read_pattern("('a b 'c . 'd)")))).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        Object {
+          "boxed": Object {
+            "name": "b",
+            "variant": 0,
+          },
+        },
+        "c",
+        ".",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(getOk(read_pattern('(1 #t 3 . 55)')))).toMatchInlineSnapshot(`
+      Array [
+        1,
+        true,
+        3,
+        ".",
+        55,
+      ]
+    `);
+  });
+
+  test('vars', () => {
+    expect(jsonPrint(getOk(read_pattern("('quote datum)")))).toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Object {
+          "boxed": Object {
+            "name": "datum",
+            "variant": 0,
+          },
+        },
+      ]
+    `);
+    expect(jsonPrint(getOk(read_pattern("('define sym-name value)")))).toMatchInlineSnapshot(`
+      Array [
+        "define",
+        Object {
+          "boxed": Object {
+            "name": "name",
+            "variant": 1,
+          },
+        },
+        Object {
+          "boxed": Object {
+            "name": "value",
+            "variant": 0,
+          },
+        },
+      ]
+    `);
+  });
+
+  test('subpatterns', () => {
+    expect(getOk(read_pattern("('lambda (sym-params ...) body ...)"))).toEqual(
+      jsonRead([
+        'lambda',
+        json_star(json_symvar('params'), []),
+        '.',
+        json_star(json_var('body'), []),
+      ])
+    );
+    expect(getOk(read_pattern("('let [(sym-name value) ...] body ...)"))).toEqual(
+      jsonRead([
+        'let',
+        json_star([json_symvar('name'), json_var('value')], []),
+        '.',
+        json_star(json_var('body'), []),
+      ])
+    );
+    expect(getOk(read_pattern("('atleastone value ...+)"))).toEqual(
+      jsonRead(['atleastone', '.', json_plus(json_var('value'), [])])
+    );
+    expect(getOk(read_pattern("('atleastone ['ayy value] ...+)"))).toEqual(
+      jsonRead(['atleastone', '.', json_plus(['ayy', json_var('value')], [])])
     );
   });
 });
