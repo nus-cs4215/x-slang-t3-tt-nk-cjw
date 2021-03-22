@@ -1,30 +1,35 @@
-import { Environment, make_env_list } from '../environment';
-import { evaluate } from '../evaluator';
-import { primitives_module } from '../modules';
 import { print } from '../printer';
-import { read } from '../reader';
 import { JsonSExpr, jsonRead, jsonPrint } from '../sexpr';
 import { cases, formatTable, getOk, getErr } from '../utils';
-
-const the_global_environment = make_env_list(primitives_module.provides);
+import { exprCompileEvaluate, readExprCompileEvaluate } from '../utils/compile-and-eval';
 
 function expectOpTable(ops: string[], tests: string[]) {
+  const errorMap: Map<string, number> = new Map();
+  const errors: string[] = [];
+  const table = [
+    ...tests.map((test) => [
+      test,
+      ...ops.map((op) =>
+        cases(readExprCompileEvaluate(test.replace(/op/g, op)), print, (e) => {
+          const e_str = JSON.stringify(e);
+          if (errorMap.has(e_str)) {
+            return 'ERR #' + errorMap.get(e_str)!.toString();
+          } else {
+            errorMap.set(e_str, errors.length);
+            errors.push(e_str);
+            return 'ERR #' + (errors.length - 1).toString();
+          }
+        })
+      ),
+    ]),
+  ];
+
+  const errorTable = errors.map((e, i) => [i.toString(), e]);
+
   return expect(
-    formatTable(
-      [
-        ...tests.map((test) => [
-          test,
-          ...ops.map((op) =>
-            cases(
-              evaluate(getOk(read(test.replace(/op/g, op))), the_global_environment),
-              print,
-              (e) => (e === undefined ? 'ERR' : JSON.stringify(e))
-            )
-          ),
-        ]),
-      ],
-      { headers: ['test', ...ops], sep: ' | ', prefix: '\n' }
-    )
+    formatTable(table, { headers: ['test', ...ops], sep: ' | ', prefix: '\n' }) +
+      '\n' +
+      formatTable(errorTable, { headers: ['#', 'error message'], sep: ' | ', prefix: '\n' })
   );
 }
 
@@ -190,49 +195,54 @@ test('type predicates', () => {
     ]
   ).toMatchInlineSnapshot(`
     "
-    test                            | symbol? | number? | boolean? | null? | cons? | function? | nan? | infinite?
-    -------------------------------------------------------------------------------------------------------------
-    (op)                            | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 0)                          | #f      | #t      | #f       | #f    | #f    | #f        | #f   | #f
-    (op +inf.0)                     | #f      | #t      | #f       | #f    | #f    | #f        | #f   | #t
-    (op -inf.0)                     | #f      | #t      | #f       | #f    | #f    | #f        | #f   | #t
-    (op +nan.0)                     | #f      | #t      | #f       | #f    | #f    | #f        | #t   | #f
-    (op #f)                         | #f      | #f      | #t       | #f    | #f    | #f        | ERR  | ERR
-    (op #t)                         | #f      | #f      | #t       | #f    | #f    | #f        | ERR  | ERR
-    (op 'a)                         | #t      | #f      | #f       | #f    | #f    | #f        | ERR  | ERR
-    (op 0 0)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 1 0)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 3 3)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op -1 3)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 3 5)                        | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #f #f)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #t #f)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #f #t)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #t #t)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 'a 'a)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 'a 'b)                      | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #f 0)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 'a 0)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 0 'a)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 1 #t)                       | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 1 1 1 1)                    | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 1 2 3 4)                    | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #f #f #f)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #f #f #f #f)                | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #t #t #t)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op #t #f #t)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 'a 'a 'a)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 'a 'b 'b)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 'a 'b 'c)                   | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op 1 2 #t 1 'a)                | ERR     | ERR     | ERR      | ERR   | ERR   | ERR       | ERR  | ERR
-    (op '())                        | #f      | #f      | #f       | #t    | #f    | #f        | ERR  | ERR
-    (op '(1))                       | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
-    (op '(1 2))                     | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
-    (op '(1 2 3 4 5))               | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
-    (op '(1 #t))                    | #f      | #f      | #f       | #f    | #t    | #f        | ERR  | ERR
-    (op eq?)                        | #f      | #f      | #f       | #f    | #f    | #t        | ERR  | ERR
-    (op function?)                  | #f      | #f      | #f       | #f    | #f    | #t        | ERR  | ERR
-    (op (lambda (x) (f (f (f x))))) | #f      | #f      | #f       | #f    | #f    | #t        | ERR  | ERR
+    test                            | symbol? | number? | boolean? | null?  | cons?  | function? | nan?   | infinite?
+    -----------------------------------------------------------------------------------------------------------------
+    (op)                            | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 0)                          | #f      | #t      | #f       | #f     | #f     | #f        | #f     | #f
+    (op +inf.0)                     | #f      | #t      | #f       | #f     | #f     | #f        | #f     | #t
+    (op -inf.0)                     | #f      | #t      | #f       | #f     | #f     | #f        | #f     | #t
+    (op +nan.0)                     | #f      | #t      | #f       | #f     | #f     | #f        | #t     | #f
+    (op #f)                         | #f      | #f      | #t       | #f     | #f     | #f        | ERR #0 | ERR #0
+    (op #t)                         | #f      | #f      | #t       | #f     | #f     | #f        | ERR #0 | ERR #0
+    (op 'a)                         | #t      | #f      | #f       | #f     | #f     | #f        | ERR #0 | ERR #0
+    (op 0 0)                        | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 1 0)                        | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 3 3)                        | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op -1 3)                       | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 3 5)                        | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #f #f)                      | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #t #f)                      | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #f #t)                      | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #t #t)                      | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'a)                      | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'b)                      | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #f 0)                       | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 'a 0)                       | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 0 'a)                       | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 1 #t)                       | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 1 1 1 1)                    | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 1 2 3 4)                    | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #f #f #f)                   | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #f #f #f #f)                | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #t #t #t)                   | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op #t #f #t)                   | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'a 'a)                   | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'b 'b)                   | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'b 'c)                   | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op 1 2 #t 1 'a)                | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+    (op '())                        | #f      | #f      | #f       | #t     | #f     | #f        | ERR #0 | ERR #0
+    (op '(1))                       | #f      | #f      | #f       | #f     | #t     | #f        | ERR #0 | ERR #0
+    (op '(1 2))                     | #f      | #f      | #f       | #f     | #t     | #f        | ERR #0 | ERR #0
+    (op '(1 2 3 4 5))               | #f      | #f      | #f       | #f     | #t     | #f        | ERR #0 | ERR #0
+    (op '(1 #t))                    | #f      | #f      | #f       | #f     | #t     | #f        | ERR #0 | ERR #0
+    (op eq?)                        | #f      | #f      | #f       | #f     | #f     | #t        | ERR #0 | ERR #0
+    (op function?)                  | #f      | #f      | #f       | #f     | #f     | #t        | ERR #0 | ERR #0
+    (op (lambda (x) (f (f (f x))))) | ERR #0  | ERR #0  | ERR #0   | ERR #0 | ERR #0 | ERR #0    | ERR #0 | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
@@ -263,66 +273,98 @@ test('unary arithmetic ops', () => {
     ]
   ).toMatchInlineSnapshot(`
     "
-    test              | zero? | positive? | negative? | round  | floor  | ceiling | truncate | sgn    | abs    | add1   | sub1   | exp                 | log
-    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    (op)              | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 0)            | #t    | #f        | #f        | 0      | 0      | 0       | 0        | 0      | 0      | 1      | -1     | 1                   | ERR
-    (op 1)            | #f    | #t        | #f        | 1      | 1      | 1       | 1        | 1      | 1      | 2      | 0      | 2.718281828459045   | 0
-    (op 2)            | #f    | #t        | #f        | 2      | 2      | 2       | 2        | 1      | 2      | 3      | 1      | 7.38905609893065    | 0.6931471805599453
-    (op 0.1)          | #f    | #t        | #f        | 0      | 0      | 1       | 0        | 1      | 0.1    | 1.1    | -0.9   | 1.1051709180756477  | -2.3025850929940455
-    (op 2.4)          | #f    | #t        | #f        | 2      | 2      | 3       | 2        | 1      | 2.4    | 3.4    | 1.4    | 11.023176380641601  | 0.8754687373538999
-    (op 2.5)          | #f    | #t        | #f        | 3      | 2      | 3       | 2        | 1      | 2.5    | 3.5    | 1.5    | 12.182493960703473  | 0.9162907318741551
-    (op 2.6)          | #f    | #t        | #f        | 3      | 2      | 3       | 2        | 1      | 2.6    | 3.6    | 1.6    | 13.463738035001692  | 0.9555114450274365
-    (op -2.4)         | #f    | #f        | #t        | -2     | -3     | -2      | -2       | -1     | 2.4    | -1.4   | -3.4   | 0.09071795328941251 | +nan.0
-    (op -2.5)         | #f    | #f        | #t        | -2     | -3     | -2      | -2       | -1     | 2.5    | -1.5   | -3.5   | 0.0820849986238988  | +nan.0
-    (op -2.6)         | #f    | #f        | #t        | -3     | -3     | -2      | -2       | -1     | 2.6    | -1.6   | -3.6   | 0.07427357821433388 | +nan.0
-    (op -1)           | #f    | #f        | #t        | -1     | -1     | -1      | -1       | -1     | 1      | 0      | -2     | 0.36787944117144233 | +nan.0
-    (op -2)           | #f    | #f        | #t        | -2     | -2     | -2      | -2       | -1     | 2      | -1     | -3     | 0.1353352832366127  | +nan.0
-    (op +inf.0)       | #f    | #t        | #f        | +inf.0 | +inf.0 | +inf.0  | +inf.0   | 1      | +inf.0 | +inf.0 | +inf.0 | +inf.0              | +inf.0
-    (op -inf.0)       | #f    | #f        | #t        | -inf.0 | -inf.0 | -inf.0  | -inf.0   | -1     | +inf.0 | -inf.0 | -inf.0 | 0                   | +nan.0
-    (op +nan.0)       | #f    | #f        | #f        | +nan.0 | +nan.0 | +nan.0  | +nan.0   | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0              | +nan.0
-    (op 0)            | #t    | #f        | #f        | 0      | 0      | 0       | 0        | 0      | 0      | 1      | -1     | 1                   | ERR
-    (op +inf.0)       | #f    | #t        | #f        | +inf.0 | +inf.0 | +inf.0  | +inf.0   | 1      | +inf.0 | +inf.0 | +inf.0 | +inf.0              | +inf.0
-    (op -inf.0)       | #f    | #f        | #t        | -inf.0 | -inf.0 | -inf.0  | -inf.0   | -1     | +inf.0 | -inf.0 | -inf.0 | 0                   | +nan.0
-    (op +nan.0)       | #f    | #f        | #f        | +nan.0 | +nan.0 | +nan.0  | +nan.0   | +nan.0 | +nan.0 | +nan.0 | +nan.0 | +nan.0              | +nan.0
-    (op #f)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #t)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a)           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 0 0)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 1 0)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 3 3)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | 1
-    (op -1 3)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | +nan.0
-    (op 3 5)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | 0.6826061944859853
-    (op #f #f)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #t #f)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #f #t)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #t #t)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a 'a)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a 'b)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #f 0)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a 0)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 0 'a)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 1 #t)         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 1 1 1 1)      | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 1 2 3 4)      | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #f #f #f)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #f #f #f #f)  | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #t #t #t)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op #t #f #t)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a 'a 'a)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a 'b 'b)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 'a 'b 'c)     | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 1 2 #t 1 'a)  | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op 1 . 2)        | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op . 1)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op a)            | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op a a)          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op ())           | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op '())          | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op '(1))         | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op '(1 2))       | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op '(1 2 3 4 5)) | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
-    (op '(1 #t))      | ERR   | ERR       | ERR       | ERR    | ERR    | ERR     | ERR      | ERR    | ERR    | ERR    | ERR    | ERR                 | ERR
+    test              | zero?   | positive? | negative? | round   | floor   | ceiling | truncate | sgn     | abs     | add1    | sub1    | exp                 | log
+    --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    (op)              | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 0)            | #t      | #f        | #f        | 0       | 0       | 0       | 0        | 0       | 0       | 1       | -1      | 1                   | ERR #0
+    (op 1)            | #f      | #t        | #f        | 1       | 1       | 1       | 1        | 1       | 1       | 2       | 0       | 2.718281828459045   | 0
+    (op 2)            | #f      | #t        | #f        | 2       | 2       | 2       | 2        | 1       | 2       | 3       | 1       | 7.38905609893065    | 0.6931471805599453
+    (op 0.1)          | #f      | #t        | #f        | 0       | 0       | 1       | 0        | 1       | 0.1     | 1.1     | -0.9    | 1.1051709180756477  | -2.3025850929940455
+    (op 2.4)          | #f      | #t        | #f        | 2       | 2       | 3       | 2        | 1       | 2.4     | 3.4     | 1.4     | 11.023176380641601  | 0.8754687373538999
+    (op 2.5)          | #f      | #t        | #f        | 3       | 2       | 3       | 2        | 1       | 2.5     | 3.5     | 1.5     | 12.182493960703473  | 0.9162907318741551
+    (op 2.6)          | #f      | #t        | #f        | 3       | 2       | 3       | 2        | 1       | 2.6     | 3.6     | 1.6     | 13.463738035001692  | 0.9555114450274365
+    (op -2.4)         | #f      | #f        | #t        | -2      | -3      | -2      | -2       | -1      | 2.4     | -1.4    | -3.4    | 0.09071795328941251 | +nan.0
+    (op -2.5)         | #f      | #f        | #t        | -2      | -3      | -2      | -2       | -1      | 2.5     | -1.5    | -3.5    | 0.0820849986238988  | +nan.0
+    (op -2.6)         | #f      | #f        | #t        | -3      | -3      | -2      | -2       | -1      | 2.6     | -1.6    | -3.6    | 0.07427357821433388 | +nan.0
+    (op -1)           | #f      | #f        | #t        | -1      | -1      | -1      | -1       | -1      | 1       | 0       | -2      | 0.36787944117144233 | +nan.0
+    (op -2)           | #f      | #f        | #t        | -2      | -2      | -2      | -2       | -1      | 2       | -1      | -3      | 0.1353352832366127  | +nan.0
+    (op +inf.0)       | #f      | #t        | #f        | +inf.0  | +inf.0  | +inf.0  | +inf.0   | 1       | +inf.0  | +inf.0  | +inf.0  | +inf.0              | +inf.0
+    (op -inf.0)       | #f      | #f        | #t        | -inf.0  | -inf.0  | -inf.0  | -inf.0   | -1      | +inf.0  | -inf.0  | -inf.0  | 0                   | +nan.0
+    (op +nan.0)       | #f      | #f        | #f        | +nan.0  | +nan.0  | +nan.0  | +nan.0   | +nan.0  | +nan.0  | +nan.0  | +nan.0  | +nan.0              | +nan.0
+    (op 0)            | #t      | #f        | #f        | 0       | 0       | 0       | 0        | 0       | 0       | 1       | -1      | 1                   | ERR #0
+    (op +inf.0)       | #f      | #t        | #f        | +inf.0  | +inf.0  | +inf.0  | +inf.0   | 1       | +inf.0  | +inf.0  | +inf.0  | +inf.0              | +inf.0
+    (op -inf.0)       | #f      | #f        | #t        | -inf.0  | -inf.0  | -inf.0  | -inf.0   | -1      | +inf.0  | -inf.0  | -inf.0  | 0                   | +nan.0
+    (op +nan.0)       | #f      | #f        | #f        | +nan.0  | +nan.0  | +nan.0  | +nan.0   | +nan.0  | +nan.0  | +nan.0  | +nan.0  | +nan.0              | +nan.0
+    (op #f)           | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #t)           | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a)           | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 0 0)          | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 1 0)          | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 3 3)          | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | 1
+    (op -1 3)         | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | +nan.0
+    (op 3 5)          | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | 0.6826061944859853
+    (op #f #f)        | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #t #f)        | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #f #t)        | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #t #t)        | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a 'a)        | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a 'b)        | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #f 0)         | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a 0)         | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 0 'a)         | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 1 #t)         | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 1 1 1 1)      | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 1 2 3 4)      | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #f #f #f)     | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #f #f #f #f)  | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #t #t #t)     | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op #t #f #t)     | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a 'a 'a)     | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a 'b 'b)     | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 'a 'b 'c)     | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 1 2 #t 1 'a)  | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op 1 . 2)        | ERR #1  | ERR #2    | ERR #3    | ERR #4  | ERR #5  | ERR #6  | ERR #7   | ERR #8  | ERR #9  | ERR #10 | ERR #11 | ERR #12             | ERR #13
+    (op . 1)          | ERR #14 | ERR #15   | ERR #16   | ERR #17 | ERR #18 | ERR #19 | ERR #20  | ERR #21 | ERR #22 | ERR #23 | ERR #24 | ERR #25             | ERR #26
+    (op a)            | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op a a)          | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op ())           | ERR #27 | ERR #27   | ERR #27   | ERR #27 | ERR #27 | ERR #27 | ERR #27  | ERR #27 | ERR #27 | ERR #27 | ERR #27 | ERR #27             | ERR #27
+    (op '())          | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op '(1))         | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op '(1 2))       | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op '(1 2 3 4 5)) | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+    (op '(1 #t))      | ERR #0  | ERR #0    | ERR #0    | ERR #0  | ERR #0  | ERR #0  | ERR #0   | ERR #0  | ERR #0  | ERR #0  | ERR #0  | ERR #0              | ERR #0
+
+
+    #  | error message
+    ---------------------------------------------------------------------------
+    0  | \\"error when evaluating precompiled fep: undefined\\"
+    1  | \\"did not match pattern for #%plain-app: (#%plain-app zero? 1 . 2)\\"
+    2  | \\"did not match pattern for #%plain-app: (#%plain-app positive? 1 . 2)\\"
+    3  | \\"did not match pattern for #%plain-app: (#%plain-app negative? 1 . 2)\\"
+    4  | \\"did not match pattern for #%plain-app: (#%plain-app round 1 . 2)\\"
+    5  | \\"did not match pattern for #%plain-app: (#%plain-app floor 1 . 2)\\"
+    6  | \\"did not match pattern for #%plain-app: (#%plain-app ceiling 1 . 2)\\"
+    7  | \\"did not match pattern for #%plain-app: (#%plain-app truncate 1 . 2)\\"
+    8  | \\"did not match pattern for #%plain-app: (#%plain-app sgn 1 . 2)\\"
+    9  | \\"did not match pattern for #%plain-app: (#%plain-app abs 1 . 2)\\"
+    10 | \\"did not match pattern for #%plain-app: (#%plain-app add1 1 . 2)\\"
+    11 | \\"did not match pattern for #%plain-app: (#%plain-app sub1 1 . 2)\\"
+    12 | \\"did not match pattern for #%plain-app: (#%plain-app exp 1 . 2)\\"
+    13 | \\"did not match pattern for #%plain-app: (#%plain-app log 1 . 2)\\"
+    14 | \\"did not match pattern for #%plain-app: (#%plain-app zero? . 1)\\"
+    15 | \\"did not match pattern for #%plain-app: (#%plain-app positive? . 1)\\"
+    16 | \\"did not match pattern for #%plain-app: (#%plain-app negative? . 1)\\"
+    17 | \\"did not match pattern for #%plain-app: (#%plain-app round . 1)\\"
+    18 | \\"did not match pattern for #%plain-app: (#%plain-app floor . 1)\\"
+    19 | \\"did not match pattern for #%plain-app: (#%plain-app ceiling . 1)\\"
+    20 | \\"did not match pattern for #%plain-app: (#%plain-app truncate . 1)\\"
+    21 | \\"did not match pattern for #%plain-app: (#%plain-app sgn . 1)\\"
+    22 | \\"did not match pattern for #%plain-app: (#%plain-app abs . 1)\\"
+    23 | \\"did not match pattern for #%plain-app: (#%plain-app add1 . 1)\\"
+    24 | \\"did not match pattern for #%plain-app: (#%plain-app sub1 . 1)\\"
+    25 | \\"did not match pattern for #%plain-app: (#%plain-app exp . 1)\\"
+    26 | \\"did not match pattern for #%plain-app: (#%plain-app log . 1)\\"
+    27 | \\"did not match pattern for #%plain-app: (#%plain-app)\\"
     "
   `);
 });
@@ -332,21 +374,21 @@ test('2 args log', () => {
     "
     test               | log
     ---------------------------------------
-    (op 0 0)           | ERR
-    (op 1 0)           | ERR
-    (op 0 1)           | ERR
-    (op 1 1)           | ERR
+    (op 0 0)           | ERR #0
+    (op 1 0)           | ERR #0
+    (op 0 1)           | ERR #0
+    (op 1 1)           | ERR #0
     (op 3 5)           | 0.6826061944859853
     (op 5 3)           | 1.4649735207179273
-    (op 0 +inf.0)      | ERR
+    (op 0 +inf.0)      | ERR #0
     (op 1 +inf.0)      | 0
     (op 2 +inf.0)      | 0
-    (op +inf.0 0)      | ERR
-    (op +inf.0 1)      | ERR
+    (op +inf.0 0)      | ERR #0
+    (op +inf.0 1)      | ERR #0
     (op +inf.0 2)      | +inf.0
     (op +inf.0 +inf.0) | +nan.0
-    (op 0.1 0)         | ERR
-    (op 0 0.1)         | ERR
+    (op 0.1 0)         | ERR #0
+    (op 0 0.1)         | ERR #0
     (op 0.1 0.1)       | 1
     (op 0.3 0.5)       | 1.7369655941662063
     (op 0.5 0.3)       | 0.5757166424934449
@@ -354,6 +396,11 @@ test('2 args log', () => {
     (op -3 5)          | +nan.0
     (op 3 -5)          | +nan.0
     (op -3 -5)         | +nan.0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
@@ -363,39 +410,44 @@ test('exactly binary numeric ops', () => {
     .toMatchInlineSnapshot(`
     "
     test             | quotient | remainder | modulo | expt
-    -------------------------------------------------------
-    (op 0)           | ERR      | ERR       | ERR    | ERR
-    (op +inf.0)      | ERR      | ERR       | ERR    | ERR
-    (op -inf.0)      | ERR      | ERR       | ERR    | ERR
-    (op +nan.0)      | ERR      | ERR       | ERR    | ERR
-    (op #f)          | ERR      | ERR       | ERR    | ERR
-    (op #t)          | ERR      | ERR       | ERR    | ERR
-    (op 'a)          | ERR      | ERR       | ERR    | ERR
-    (op 0 0)         | ERR      | ERR       | ERR    | 1
-    (op 1 0)         | ERR      | ERR       | ERR    | 1
+    ---------------------------------------------------------
+    (op 0)           | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op +inf.0)      | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op -inf.0)      | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op +nan.0)      | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #f)          | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #t)          | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a)          | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 0 0)         | ERR #0   | ERR #0    | ERR #0 | 1
+    (op 1 0)         | ERR #0   | ERR #0    | ERR #0 | 1
     (op 3 3)         | 1        | 0         | 0      | 27
     (op -1 3)        | 0        | -1        | 2      | -1
     (op 3 5)         | 0        | 3         | 3      | 243
-    (op #f #f)       | ERR      | ERR       | ERR    | ERR
-    (op #t #f)       | ERR      | ERR       | ERR    | ERR
-    (op #f #t)       | ERR      | ERR       | ERR    | ERR
-    (op #t #t)       | ERR      | ERR       | ERR    | ERR
-    (op 'a 'a)       | ERR      | ERR       | ERR    | ERR
-    (op 'a 'b)       | ERR      | ERR       | ERR    | ERR
-    (op #f 0)        | ERR      | ERR       | ERR    | ERR
-    (op 'a 0)        | ERR      | ERR       | ERR    | ERR
-    (op 0 'a)        | ERR      | ERR       | ERR    | ERR
-    (op 1 #t)        | ERR      | ERR       | ERR    | ERR
-    (op 1 1 1 1)     | ERR      | ERR       | ERR    | ERR
-    (op 1 2 3 4)     | ERR      | ERR       | ERR    | ERR
-    (op #f #f #f)    | ERR      | ERR       | ERR    | ERR
-    (op #f #f #f #f) | ERR      | ERR       | ERR    | ERR
-    (op #t #t #t)    | ERR      | ERR       | ERR    | ERR
-    (op #t #f #t)    | ERR      | ERR       | ERR    | ERR
-    (op 'a 'a 'a)    | ERR      | ERR       | ERR    | ERR
-    (op 'a 'b 'b)    | ERR      | ERR       | ERR    | ERR
-    (op 'a 'b 'c)    | ERR      | ERR       | ERR    | ERR
-    (op 1 2 #t 1 'a) | ERR      | ERR       | ERR    | ERR
+    (op #f #f)       | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #t #f)       | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #f #t)       | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #t #t)       | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'a)       | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'b)       | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #f 0)        | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a 0)        | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 0 'a)        | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 1 #t)        | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 1 1 1 1)     | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 1 2 3 4)     | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #f #f #f)    | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #f #f #f #f) | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #t #t #t)    | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op #t #f #t)    | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'a 'a)    | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'b 'b)    | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 'a 'b 'c)    | ERR #0   | ERR #0    | ERR #0 | ERR #0
+    (op 1 2 #t 1 'a) | ERR #0   | ERR #0    | ERR #0 | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
@@ -416,94 +468,112 @@ test('variable arity arithmetic ops', () => {
     ]
   ).toMatchInlineSnapshot(`
     "
-    test               | +      | -      | *                    | /                    | max    | min
-    ----------------------------------------------------------------------------------------------------
-    (op)               | 0      | ERR    | 1                    | ERR                  | -inf.0 | +inf.0
-    (op 0)             | 0      | 0      | 0                    | ERR                  | 0      | 0
-    (op 1)             | 1      | -1     | 1                    | 1                    | 1      | 1
-    (op 2)             | 2      | -2     | 2                    | 0.5                  | 2      | 2
-    (op 0.1)           | 0.1    | -0.1   | 0.1                  | 10                   | 0.1    | 0.1
-    (op 2.4)           | 2.4    | -2.4   | 2.4                  | 0.4166666666666667   | 2.4    | 2.4
-    (op 2.5)           | 2.5    | -2.5   | 2.5                  | 0.4                  | 2.5    | 2.5
-    (op 2.6)           | 2.6    | -2.6   | 2.6                  | 0.3846153846153846   | 2.6    | 2.6
-    (op -2.4)          | -2.4   | 2.4    | -2.4                 | -0.4166666666666667  | -2.4   | -2.4
-    (op -2.5)          | -2.5   | 2.5    | -2.5                 | -0.4                 | -2.5   | -2.5
-    (op -2.6)          | -2.6   | 2.6    | -2.6                 | -0.3846153846153846  | -2.6   | -2.6
-    (op -1)            | -1     | 1      | -1                   | -1                   | -1     | -1
-    (op -2)            | -2     | 2      | -2                   | -0.5                 | -2     | -2
-    (op +inf.0)        | +inf.0 | -inf.0 | +inf.0               | 0                    | +inf.0 | +inf.0
-    (op -inf.0)        | -inf.0 | +inf.0 | -inf.0               | 0                    | -inf.0 | -inf.0
-    (op +nan.0)        | +nan.0 | +nan.0 | +nan.0               | +nan.0               | +nan.0 | +nan.0
-    (op 0 0)           | 0      | 0      | 0                    | ERR                  | 0      | 0
-    (op 1 0)           | 1      | 1      | 0                    | ERR                  | 1      | 0
-    (op 0 1)           | 1      | -1     | 0                    | 0                    | 1      | 0
-    (op 1 1)           | 2      | 0      | 1                    | 1                    | 1      | 1
-    (op 3 5)           | 8      | -2     | 15                   | 0.6                  | 5      | 3
-    (op 5 3)           | 8      | 2      | 15                   | 1.6666666666666667   | 5      | 3
-    (op 0 +inf.0)      | +inf.0 | -inf.0 | +nan.0               | 0                    | +inf.0 | 0
-    (op 1 +inf.0)      | +inf.0 | -inf.0 | +inf.0               | 0                    | +inf.0 | 1
-    (op 2 +inf.0)      | +inf.0 | -inf.0 | +inf.0               | 0                    | +inf.0 | 2
-    (op +inf.0 0)      | +inf.0 | +inf.0 | +nan.0               | ERR                  | +inf.0 | 0
-    (op +inf.0 1)      | +inf.0 | +inf.0 | +inf.0               | +inf.0               | +inf.0 | 1
-    (op +inf.0 2)      | +inf.0 | +inf.0 | +inf.0               | +inf.0               | +inf.0 | 2
-    (op +inf.0 +inf.0) | +inf.0 | +nan.0 | +inf.0               | +nan.0               | +inf.0 | +inf.0
-    (op 0.1 0)         | 0.1    | 0.1    | 0                    | ERR                  | 0.1    | 0
-    (op 0 0.1)         | 0.1    | -0.1   | 0                    | 0                    | 0.1    | 0
-    (op 0.1 0.1)       | 0.2    | 0      | 0.010000000000000002 | 1                    | 0.1    | 0.1
-    (op 0.3 0.5)       | 0.8    | -0.2   | 0.15                 | 0.6                  | 0.5    | 0.3
-    (op 0.5 0.3)       | 0.8    | 0.2    | 0.15                 | 1.6666666666666667   | 0.5    | 0.3
-    (op 3 5)           | 8      | -2     | 15                   | 0.6                  | 5      | 3
-    (op -3 5)          | 2      | -8     | -15                  | -0.6                 | 5      | -3
-    (op 3 -5)          | -2     | 8      | -15                  | -0.6                 | 3      | -5
-    (op -3 -5)         | -8     | 2      | 15                   | 0.6                  | -3     | -5
-    (op 1 1 1 1 1)     | 5      | -3     | 1                    | 1                    | 1      | 1
-    (op 2 2 2 1 1)     | 8      | -4     | 8                    | 0.5                  | 2      | 1
-    (op 1 1 1 2 2)     | 7      | -5     | 4                    | 0.25                 | 2      | 1
-    (op 1 4 3 5 2)     | 15     | -13    | 120                  | 0.008333333333333333 | 5      | 1
-    (op 1 2 3 4 4)     | 14     | -12    | 96                   | 0.010416666666666666 | 4      | 1
-    (op 4 4 3 2 1)     | 14     | -6     | 96                   | 0.16666666666666666  | 4      | 1
-    (op 11 13 17)      | 41     | -19    | 2431                 | 0.049773755656108594 | 17     | 11
-    (op 1 2 3 4 5)     | 15     | -13    | 120                  | 0.008333333333333333 | 5      | 1
-    (op 5 4 3 2 1)     | 15     | -5     | 120                  | 0.20833333333333334  | 5      | 1
-    (op 0)             | 0      | 0      | 0                    | ERR                  | 0      | 0
-    (op +inf.0)        | +inf.0 | -inf.0 | +inf.0               | 0                    | +inf.0 | +inf.0
-    (op -inf.0)        | -inf.0 | +inf.0 | -inf.0               | 0                    | -inf.0 | -inf.0
-    (op +nan.0)        | +nan.0 | +nan.0 | +nan.0               | +nan.0               | +nan.0 | +nan.0
-    (op #f)            | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #t)            | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a)            | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 0 0)           | 0      | 0      | 0                    | ERR                  | 0      | 0
-    (op 1 0)           | 1      | 1      | 0                    | ERR                  | 1      | 0
-    (op 3 3)           | 6      | 0      | 9                    | 1                    | 3      | 3
-    (op -1 3)          | 2      | -4     | -3                   | -0.3333333333333333  | 3      | -1
-    (op 3 5)           | 8      | -2     | 15                   | 0.6                  | 5      | 3
-    (op #f #f)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #t #f)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #f #t)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #t #t)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a 'a)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a 'b)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #f 0)          | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a 0)          | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 0 'a)          | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 1 #t)          | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 1 1 1 1)       | 4      | -2     | 1                    | 1                    | 1      | 1
-    (op 1 2 3 4)       | 10     | -8     | 24                   | 0.041666666666666664 | 4      | 1
-    (op #f #f #f)      | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #f #f #f #f)   | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #t #t #t)      | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op #t #f #t)      | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a 'a 'a)      | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a 'b 'b)      | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 'a 'b 'c)      | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 1 2 #t 1 'a)   | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op 1 . 2)         | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op . 1)           | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op a)             | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op a a)           | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op ())            | ERR    | ERR    | ERR                  | ERR                  | ERR    | ERR
-    (op (op 1 2) 3)    | 6      | -4     | 6                    | 0.16666666666666666  | 3      | 1
-    (op 1 (op 2 3))    | 6      | 2      | 6                    | 1.5                  | 3      | 1
+    test               | +       | -       | *                    | /                    | max     | min
+    --------------------------------------------------------------------------------------------------------
+    (op)               | 0       | ERR #0  | 1                    | ERR #0               | -inf.0  | +inf.0
+    (op 0)             | 0       | 0       | 0                    | ERR #0               | 0       | 0
+    (op 1)             | 1       | -1      | 1                    | 1                    | 1       | 1
+    (op 2)             | 2       | -2      | 2                    | 0.5                  | 2       | 2
+    (op 0.1)           | 0.1     | -0.1    | 0.1                  | 10                   | 0.1     | 0.1
+    (op 2.4)           | 2.4     | -2.4    | 2.4                  | 0.4166666666666667   | 2.4     | 2.4
+    (op 2.5)           | 2.5     | -2.5    | 2.5                  | 0.4                  | 2.5     | 2.5
+    (op 2.6)           | 2.6     | -2.6    | 2.6                  | 0.3846153846153846   | 2.6     | 2.6
+    (op -2.4)          | -2.4    | 2.4     | -2.4                 | -0.4166666666666667  | -2.4    | -2.4
+    (op -2.5)          | -2.5    | 2.5     | -2.5                 | -0.4                 | -2.5    | -2.5
+    (op -2.6)          | -2.6    | 2.6     | -2.6                 | -0.3846153846153846  | -2.6    | -2.6
+    (op -1)            | -1      | 1       | -1                   | -1                   | -1      | -1
+    (op -2)            | -2      | 2       | -2                   | -0.5                 | -2      | -2
+    (op +inf.0)        | +inf.0  | -inf.0  | +inf.0               | 0                    | +inf.0  | +inf.0
+    (op -inf.0)        | -inf.0  | +inf.0  | -inf.0               | 0                    | -inf.0  | -inf.0
+    (op +nan.0)        | +nan.0  | +nan.0  | +nan.0               | +nan.0               | +nan.0  | +nan.0
+    (op 0 0)           | 0       | 0       | 0                    | ERR #0               | 0       | 0
+    (op 1 0)           | 1       | 1       | 0                    | ERR #0               | 1       | 0
+    (op 0 1)           | 1       | -1      | 0                    | 0                    | 1       | 0
+    (op 1 1)           | 2       | 0       | 1                    | 1                    | 1       | 1
+    (op 3 5)           | 8       | -2      | 15                   | 0.6                  | 5       | 3
+    (op 5 3)           | 8       | 2       | 15                   | 1.6666666666666667   | 5       | 3
+    (op 0 +inf.0)      | +inf.0  | -inf.0  | +nan.0               | 0                    | +inf.0  | 0
+    (op 1 +inf.0)      | +inf.0  | -inf.0  | +inf.0               | 0                    | +inf.0  | 1
+    (op 2 +inf.0)      | +inf.0  | -inf.0  | +inf.0               | 0                    | +inf.0  | 2
+    (op +inf.0 0)      | +inf.0  | +inf.0  | +nan.0               | ERR #0               | +inf.0  | 0
+    (op +inf.0 1)      | +inf.0  | +inf.0  | +inf.0               | +inf.0               | +inf.0  | 1
+    (op +inf.0 2)      | +inf.0  | +inf.0  | +inf.0               | +inf.0               | +inf.0  | 2
+    (op +inf.0 +inf.0) | +inf.0  | +nan.0  | +inf.0               | +nan.0               | +inf.0  | +inf.0
+    (op 0.1 0)         | 0.1     | 0.1     | 0                    | ERR #0               | 0.1     | 0
+    (op 0 0.1)         | 0.1     | -0.1    | 0                    | 0                    | 0.1     | 0
+    (op 0.1 0.1)       | 0.2     | 0       | 0.010000000000000002 | 1                    | 0.1     | 0.1
+    (op 0.3 0.5)       | 0.8     | -0.2    | 0.15                 | 0.6                  | 0.5     | 0.3
+    (op 0.5 0.3)       | 0.8     | 0.2     | 0.15                 | 1.6666666666666667   | 0.5     | 0.3
+    (op 3 5)           | 8       | -2      | 15                   | 0.6                  | 5       | 3
+    (op -3 5)          | 2       | -8      | -15                  | -0.6                 | 5       | -3
+    (op 3 -5)          | -2      | 8       | -15                  | -0.6                 | 3       | -5
+    (op -3 -5)         | -8      | 2       | 15                   | 0.6                  | -3      | -5
+    (op 1 1 1 1 1)     | 5       | -3      | 1                    | 1                    | 1       | 1
+    (op 2 2 2 1 1)     | 8       | -4      | 8                    | 0.5                  | 2       | 1
+    (op 1 1 1 2 2)     | 7       | -5      | 4                    | 0.25                 | 2       | 1
+    (op 1 4 3 5 2)     | 15      | -13     | 120                  | 0.008333333333333333 | 5       | 1
+    (op 1 2 3 4 4)     | 14      | -12     | 96                   | 0.010416666666666666 | 4       | 1
+    (op 4 4 3 2 1)     | 14      | -6      | 96                   | 0.16666666666666666  | 4       | 1
+    (op 11 13 17)      | 41      | -19     | 2431                 | 0.049773755656108594 | 17      | 11
+    (op 1 2 3 4 5)     | 15      | -13     | 120                  | 0.008333333333333333 | 5       | 1
+    (op 5 4 3 2 1)     | 15      | -5      | 120                  | 0.20833333333333334  | 5       | 1
+    (op 0)             | 0       | 0       | 0                    | ERR #0               | 0       | 0
+    (op +inf.0)        | +inf.0  | -inf.0  | +inf.0               | 0                    | +inf.0  | +inf.0
+    (op -inf.0)        | -inf.0  | +inf.0  | -inf.0               | 0                    | -inf.0  | -inf.0
+    (op +nan.0)        | +nan.0  | +nan.0  | +nan.0               | +nan.0               | +nan.0  | +nan.0
+    (op #f)            | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #t)            | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a)            | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 0 0)           | 0       | 0       | 0                    | ERR #0               | 0       | 0
+    (op 1 0)           | 1       | 1       | 0                    | ERR #0               | 1       | 0
+    (op 3 3)           | 6       | 0       | 9                    | 1                    | 3       | 3
+    (op -1 3)          | 2       | -4      | -3                   | -0.3333333333333333  | 3       | -1
+    (op 3 5)           | 8       | -2      | 15                   | 0.6                  | 5       | 3
+    (op #f #f)         | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #t #f)         | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #f #t)         | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #t #t)         | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a 'a)         | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a 'b)         | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #f 0)          | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a 0)          | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 0 'a)          | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 1 #t)          | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 1 1 1 1)       | 4       | -2      | 1                    | 1                    | 1       | 1
+    (op 1 2 3 4)       | 10      | -8      | 24                   | 0.041666666666666664 | 4       | 1
+    (op #f #f #f)      | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #f #f #f #f)   | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #t #t #t)      | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op #t #f #t)      | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a 'a 'a)      | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a 'b 'b)      | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 'a 'b 'c)      | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 1 2 #t 1 'a)   | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op 1 . 2)         | ERR #1  | ERR #2  | ERR #3               | ERR #4               | ERR #5  | ERR #6
+    (op . 1)           | ERR #7  | ERR #8  | ERR #9               | ERR #10              | ERR #11 | ERR #12
+    (op a)             | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op a a)           | ERR #0  | ERR #0  | ERR #0               | ERR #0               | ERR #0  | ERR #0
+    (op ())            | ERR #13 | ERR #13 | ERR #13              | ERR #13              | ERR #13 | ERR #13
+    (op (op 1 2) 3)    | 6       | -4      | 6                    | 0.16666666666666666  | 3       | 1
+    (op 1 (op 2 3))    | 6       | 2       | 6                    | 1.5                  | 3       | 1
+
+
+    #  | error message
+    ---------------------------------------------------------------------
+    0  | \\"error when evaluating precompiled fep: undefined\\"
+    1  | \\"did not match pattern for #%plain-app: (#%plain-app + 1 . 2)\\"
+    2  | \\"did not match pattern for #%plain-app: (#%plain-app - 1 . 2)\\"
+    3  | \\"did not match pattern for #%plain-app: (#%plain-app * 1 . 2)\\"
+    4  | \\"did not match pattern for #%plain-app: (#%plain-app / 1 . 2)\\"
+    5  | \\"did not match pattern for #%plain-app: (#%plain-app max 1 . 2)\\"
+    6  | \\"did not match pattern for #%plain-app: (#%plain-app min 1 . 2)\\"
+    7  | \\"did not match pattern for #%plain-app: (#%plain-app + . 1)\\"
+    8  | \\"did not match pattern for #%plain-app: (#%plain-app - . 1)\\"
+    9  | \\"did not match pattern for #%plain-app: (#%plain-app * . 1)\\"
+    10 | \\"did not match pattern for #%plain-app: (#%plain-app / . 1)\\"
+    11 | \\"did not match pattern for #%plain-app: (#%plain-app max . 1)\\"
+    12 | \\"did not match pattern for #%plain-app: (#%plain-app min . 1)\\"
+    13 | \\"did not match pattern for #%plain-app: (#%plain-app)\\"
     "
   `);
 });
@@ -514,73 +584,78 @@ test('numeric comparsion ops', () => {
     [...zeroArgTests, '(op 0)', ...twoNumArgTests, ...manyNumArgTests, ...mixedTypesArgTests]
   ).toMatchInlineSnapshot(`
     "
-    test               | =   | <   | >   | <=  | >=
-    ------------------------------------------------
-    (op)               | ERR | ERR | ERR | ERR | ERR
-    (op 0)             | #t  | #t  | #t  | #t  | #t
-    (op 0 0)           | #t  | #f  | #f  | #t  | #t
-    (op 1 0)           | #f  | #f  | #t  | #f  | #t
-    (op 0 1)           | #f  | #t  | #f  | #t  | #f
-    (op 1 1)           | #t  | #f  | #f  | #t  | #t
-    (op 3 5)           | #f  | #t  | #f  | #t  | #f
-    (op 5 3)           | #f  | #f  | #t  | #f  | #t
-    (op 0 +inf.0)      | #f  | #t  | #f  | #t  | #f
-    (op 1 +inf.0)      | #f  | #t  | #f  | #t  | #f
-    (op 2 +inf.0)      | #f  | #t  | #f  | #t  | #f
-    (op +inf.0 0)      | #f  | #f  | #t  | #f  | #t
-    (op +inf.0 1)      | #f  | #f  | #t  | #f  | #t
-    (op +inf.0 2)      | #f  | #f  | #t  | #f  | #t
-    (op +inf.0 +inf.0) | #t  | #f  | #f  | #t  | #t
-    (op 0.1 0)         | #f  | #f  | #t  | #f  | #t
-    (op 0 0.1)         | #f  | #t  | #f  | #t  | #f
-    (op 0.1 0.1)       | #t  | #f  | #f  | #t  | #t
-    (op 0.3 0.5)       | #f  | #t  | #f  | #t  | #f
-    (op 0.5 0.3)       | #f  | #f  | #t  | #f  | #t
-    (op 3 5)           | #f  | #t  | #f  | #t  | #f
-    (op -3 5)          | #f  | #t  | #f  | #t  | #f
-    (op 3 -5)          | #f  | #f  | #t  | #f  | #t
-    (op -3 -5)         | #f  | #f  | #t  | #f  | #t
-    (op 1 1 1 1 1)     | #t  | #f  | #f  | #t  | #t
-    (op 2 2 2 1 1)     | #f  | #f  | #f  | #f  | #t
-    (op 1 1 1 2 2)     | #f  | #f  | #f  | #t  | #f
-    (op 1 4 3 5 2)     | #f  | #f  | #f  | #f  | #f
-    (op 1 2 3 4 4)     | #f  | #f  | #f  | #t  | #f
-    (op 4 4 3 2 1)     | #f  | #f  | #f  | #f  | #t
-    (op 11 13 17)      | #f  | #t  | #f  | #t  | #f
-    (op 1 2 3 4 5)     | #f  | #t  | #f  | #t  | #f
-    (op 5 4 3 2 1)     | #f  | #f  | #t  | #f  | #t
-    (op 0)             | #t  | #t  | #t  | #t  | #t
-    (op +inf.0)        | #t  | #t  | #t  | #t  | #t
-    (op -inf.0)        | #t  | #t  | #t  | #t  | #t
-    (op +nan.0)        | #t  | #t  | #t  | #t  | #t
-    (op #f)            | ERR | ERR | ERR | ERR | ERR
-    (op #t)            | ERR | ERR | ERR | ERR | ERR
-    (op 'a)            | ERR | ERR | ERR | ERR | ERR
-    (op 0 0)           | #t  | #f  | #f  | #t  | #t
-    (op 1 0)           | #f  | #f  | #t  | #f  | #t
-    (op 3 3)           | #t  | #f  | #f  | #t  | #t
-    (op -1 3)          | #f  | #t  | #f  | #t  | #f
-    (op 3 5)           | #f  | #t  | #f  | #t  | #f
-    (op #f #f)         | ERR | ERR | ERR | ERR | ERR
-    (op #t #f)         | ERR | ERR | ERR | ERR | ERR
-    (op #f #t)         | ERR | ERR | ERR | ERR | ERR
-    (op #t #t)         | ERR | ERR | ERR | ERR | ERR
-    (op 'a 'a)         | ERR | ERR | ERR | ERR | ERR
-    (op 'a 'b)         | ERR | ERR | ERR | ERR | ERR
-    (op #f 0)          | ERR | ERR | ERR | ERR | ERR
-    (op 'a 0)          | ERR | ERR | ERR | ERR | ERR
-    (op 0 'a)          | ERR | ERR | ERR | ERR | ERR
-    (op 1 #t)          | ERR | ERR | ERR | ERR | ERR
-    (op 1 1 1 1)       | #t  | #f  | #f  | #t  | #t
-    (op 1 2 3 4)       | #f  | #t  | #f  | #t  | #f
-    (op #f #f #f)      | ERR | ERR | ERR | ERR | ERR
-    (op #f #f #f #f)   | ERR | ERR | ERR | ERR | ERR
-    (op #t #t #t)      | ERR | ERR | ERR | ERR | ERR
-    (op #t #f #t)      | ERR | ERR | ERR | ERR | ERR
-    (op 'a 'a 'a)      | ERR | ERR | ERR | ERR | ERR
-    (op 'a 'b 'b)      | ERR | ERR | ERR | ERR | ERR
-    (op 'a 'b 'c)      | ERR | ERR | ERR | ERR | ERR
-    (op 1 2 #t 1 'a)   | ERR | ERR | ERR | ERR | ERR
+    test               | =      | <      | >      | <=     | >=
+    ---------------------------------------------------------------
+    (op)               | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 0)             | #t     | #t     | #t     | #t     | #t
+    (op 0 0)           | #t     | #f     | #f     | #t     | #t
+    (op 1 0)           | #f     | #f     | #t     | #f     | #t
+    (op 0 1)           | #f     | #t     | #f     | #t     | #f
+    (op 1 1)           | #t     | #f     | #f     | #t     | #t
+    (op 3 5)           | #f     | #t     | #f     | #t     | #f
+    (op 5 3)           | #f     | #f     | #t     | #f     | #t
+    (op 0 +inf.0)      | #f     | #t     | #f     | #t     | #f
+    (op 1 +inf.0)      | #f     | #t     | #f     | #t     | #f
+    (op 2 +inf.0)      | #f     | #t     | #f     | #t     | #f
+    (op +inf.0 0)      | #f     | #f     | #t     | #f     | #t
+    (op +inf.0 1)      | #f     | #f     | #t     | #f     | #t
+    (op +inf.0 2)      | #f     | #f     | #t     | #f     | #t
+    (op +inf.0 +inf.0) | #t     | #f     | #f     | #t     | #t
+    (op 0.1 0)         | #f     | #f     | #t     | #f     | #t
+    (op 0 0.1)         | #f     | #t     | #f     | #t     | #f
+    (op 0.1 0.1)       | #t     | #f     | #f     | #t     | #t
+    (op 0.3 0.5)       | #f     | #t     | #f     | #t     | #f
+    (op 0.5 0.3)       | #f     | #f     | #t     | #f     | #t
+    (op 3 5)           | #f     | #t     | #f     | #t     | #f
+    (op -3 5)          | #f     | #t     | #f     | #t     | #f
+    (op 3 -5)          | #f     | #f     | #t     | #f     | #t
+    (op -3 -5)         | #f     | #f     | #t     | #f     | #t
+    (op 1 1 1 1 1)     | #t     | #f     | #f     | #t     | #t
+    (op 2 2 2 1 1)     | #f     | #f     | #f     | #f     | #t
+    (op 1 1 1 2 2)     | #f     | #f     | #f     | #t     | #f
+    (op 1 4 3 5 2)     | #f     | #f     | #f     | #f     | #f
+    (op 1 2 3 4 4)     | #f     | #f     | #f     | #t     | #f
+    (op 4 4 3 2 1)     | #f     | #f     | #f     | #f     | #t
+    (op 11 13 17)      | #f     | #t     | #f     | #t     | #f
+    (op 1 2 3 4 5)     | #f     | #t     | #f     | #t     | #f
+    (op 5 4 3 2 1)     | #f     | #f     | #t     | #f     | #t
+    (op 0)             | #t     | #t     | #t     | #t     | #t
+    (op +inf.0)        | #t     | #t     | #t     | #t     | #t
+    (op -inf.0)        | #t     | #t     | #t     | #t     | #t
+    (op +nan.0)        | #t     | #t     | #t     | #t     | #t
+    (op #f)            | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #t)            | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a)            | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 0 0)           | #t     | #f     | #f     | #t     | #t
+    (op 1 0)           | #f     | #f     | #t     | #f     | #t
+    (op 3 3)           | #t     | #f     | #f     | #t     | #t
+    (op -1 3)          | #f     | #t     | #f     | #t     | #f
+    (op 3 5)           | #f     | #t     | #f     | #t     | #f
+    (op #f #f)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #t #f)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #f #t)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #t #t)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'a)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'b)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #f 0)          | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 0)          | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 0 'a)          | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 #t)          | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 1 1 1)       | #t     | #f     | #f     | #t     | #t
+    (op 1 2 3 4)       | #f     | #t     | #f     | #t     | #f
+    (op #f #f #f)      | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #f #f #f #f)   | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #t #t #t)      | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #t #f #t)      | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'a 'a)      | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'b 'b)      | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'b 'c)      | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 2 #t 1 'a)   | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
@@ -610,7 +685,7 @@ test('trigonometric ops', () => {
     "
     test                 | sin                     | cos                   | tan
     ------------------------------------------------------------------------------------------------
-    (op)                 | ERR                     | ERR                   | ERR
+    (op)                 | ERR #0                  | ERR #0                | ERR #0
     (op (* (/ -2 1) pi)) | 2.4492935982947064e-16  | 1                     | 2.4492935982947064e-16
     (op (* (/ -1 1) pi)) | -1.2246467991473532e-16 | -1                    | 1.2246467991473532e-16
     (op (* (/ -1 2) pi)) | -1                      | 6.123233995736766e-17 | -16331239353195370
@@ -628,34 +703,39 @@ test('trigonometric ops', () => {
     (op +inf.0)          | +nan.0                  | +nan.0                | +nan.0
     (op -inf.0)          | +nan.0                  | +nan.0                | +nan.0
     (op +nan.0)          | +nan.0                  | +nan.0                | +nan.0
-    (op #f)              | ERR                     | ERR                   | ERR
-    (op #t)              | ERR                     | ERR                   | ERR
-    (op 'a)              | ERR                     | ERR                   | ERR
-    (op 0 0)             | ERR                     | ERR                   | ERR
-    (op 1 0)             | ERR                     | ERR                   | ERR
-    (op 3 3)             | ERR                     | ERR                   | ERR
-    (op -1 3)            | ERR                     | ERR                   | ERR
-    (op 3 5)             | ERR                     | ERR                   | ERR
-    (op #f #f)           | ERR                     | ERR                   | ERR
-    (op #t #f)           | ERR                     | ERR                   | ERR
-    (op #f #t)           | ERR                     | ERR                   | ERR
-    (op #t #t)           | ERR                     | ERR                   | ERR
-    (op 'a 'a)           | ERR                     | ERR                   | ERR
-    (op 'a 'b)           | ERR                     | ERR                   | ERR
-    (op #f 0)            | ERR                     | ERR                   | ERR
-    (op 'a 0)            | ERR                     | ERR                   | ERR
-    (op 0 'a)            | ERR                     | ERR                   | ERR
-    (op 1 #t)            | ERR                     | ERR                   | ERR
-    (op 1 1 1 1)         | ERR                     | ERR                   | ERR
-    (op 1 2 3 4)         | ERR                     | ERR                   | ERR
-    (op #f #f #f)        | ERR                     | ERR                   | ERR
-    (op #f #f #f #f)     | ERR                     | ERR                   | ERR
-    (op #t #t #t)        | ERR                     | ERR                   | ERR
-    (op #t #f #t)        | ERR                     | ERR                   | ERR
-    (op 'a 'a 'a)        | ERR                     | ERR                   | ERR
-    (op 'a 'b 'b)        | ERR                     | ERR                   | ERR
-    (op 'a 'b 'c)        | ERR                     | ERR                   | ERR
-    (op 1 2 #t 1 'a)     | ERR                     | ERR                   | ERR
+    (op #f)              | ERR #0                  | ERR #0                | ERR #0
+    (op #t)              | ERR #0                  | ERR #0                | ERR #0
+    (op 'a)              | ERR #0                  | ERR #0                | ERR #0
+    (op 0 0)             | ERR #0                  | ERR #0                | ERR #0
+    (op 1 0)             | ERR #0                  | ERR #0                | ERR #0
+    (op 3 3)             | ERR #0                  | ERR #0                | ERR #0
+    (op -1 3)            | ERR #0                  | ERR #0                | ERR #0
+    (op 3 5)             | ERR #0                  | ERR #0                | ERR #0
+    (op #f #f)           | ERR #0                  | ERR #0                | ERR #0
+    (op #t #f)           | ERR #0                  | ERR #0                | ERR #0
+    (op #f #t)           | ERR #0                  | ERR #0                | ERR #0
+    (op #t #t)           | ERR #0                  | ERR #0                | ERR #0
+    (op 'a 'a)           | ERR #0                  | ERR #0                | ERR #0
+    (op 'a 'b)           | ERR #0                  | ERR #0                | ERR #0
+    (op #f 0)            | ERR #0                  | ERR #0                | ERR #0
+    (op 'a 0)            | ERR #0                  | ERR #0                | ERR #0
+    (op 0 'a)            | ERR #0                  | ERR #0                | ERR #0
+    (op 1 #t)            | ERR #0                  | ERR #0                | ERR #0
+    (op 1 1 1 1)         | ERR #0                  | ERR #0                | ERR #0
+    (op 1 2 3 4)         | ERR #0                  | ERR #0                | ERR #0
+    (op #f #f #f)        | ERR #0                  | ERR #0                | ERR #0
+    (op #f #f #f #f)     | ERR #0                  | ERR #0                | ERR #0
+    (op #t #t #t)        | ERR #0                  | ERR #0                | ERR #0
+    (op #t #f #t)        | ERR #0                  | ERR #0                | ERR #0
+    (op 'a 'a 'a)        | ERR #0                  | ERR #0                | ERR #0
+    (op 'a 'b 'b)        | ERR #0                  | ERR #0                | ERR #0
+    (op 'a 'b 'c)        | ERR #0                  | ERR #0                | ERR #0
+    (op 1 2 #t 1 'a)     | ERR #0                  | ERR #0                | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 
@@ -679,7 +759,7 @@ test('trigonometric ops', () => {
     "
     test                            | asin                 | acos               | atan
     --------------------------------------------------------------------------------------------------
-    (op)                            | ERR                  | ERR                | ERR
+    (op)                            | ERR #0               | ERR #0             | ERR #0
     (/ (op -2) pi)                  | +nan.0               | +nan.0             | -0.35241638234956674
     (/ (op -1) pi)                  | -0.5                 | 1                  | -0.25
     (/ (op -0.8660254037844387) pi) | -0.33333333333333337 | 0.8333333333333334 | -0.22718552582850507
@@ -694,34 +774,39 @@ test('trigonometric ops', () => {
     (op +inf.0)                     | +nan.0               | +nan.0             | 1.5707963267948966
     (op -inf.0)                     | +nan.0               | +nan.0             | -1.5707963267948966
     (op +nan.0)                     | +nan.0               | +nan.0             | +nan.0
-    (op #f)                         | ERR                  | ERR                | ERR
-    (op #t)                         | ERR                  | ERR                | ERR
-    (op 'a)                         | ERR                  | ERR                | ERR
-    (op 0 0)                        | ERR                  | ERR                | 0
-    (op 1 0)                        | ERR                  | ERR                | 1.5707963267948966
-    (op 3 3)                        | ERR                  | ERR                | 0.7853981633974483
-    (op -1 3)                       | ERR                  | ERR                | -0.3217505543966422
-    (op 3 5)                        | ERR                  | ERR                | 0.5404195002705842
-    (op #f #f)                      | ERR                  | ERR                | ERR
-    (op #t #f)                      | ERR                  | ERR                | ERR
-    (op #f #t)                      | ERR                  | ERR                | ERR
-    (op #t #t)                      | ERR                  | ERR                | ERR
-    (op 'a 'a)                      | ERR                  | ERR                | ERR
-    (op 'a 'b)                      | ERR                  | ERR                | ERR
-    (op #f 0)                       | ERR                  | ERR                | ERR
-    (op 'a 0)                       | ERR                  | ERR                | ERR
-    (op 0 'a)                       | ERR                  | ERR                | ERR
-    (op 1 #t)                       | ERR                  | ERR                | ERR
-    (op 1 1 1 1)                    | ERR                  | ERR                | ERR
-    (op 1 2 3 4)                    | ERR                  | ERR                | ERR
-    (op #f #f #f)                   | ERR                  | ERR                | ERR
-    (op #f #f #f #f)                | ERR                  | ERR                | ERR
-    (op #t #t #t)                   | ERR                  | ERR                | ERR
-    (op #t #f #t)                   | ERR                  | ERR                | ERR
-    (op 'a 'a 'a)                   | ERR                  | ERR                | ERR
-    (op 'a 'b 'b)                   | ERR                  | ERR                | ERR
-    (op 'a 'b 'c)                   | ERR                  | ERR                | ERR
-    (op 1 2 #t 1 'a)                | ERR                  | ERR                | ERR
+    (op #f)                         | ERR #0               | ERR #0             | ERR #0
+    (op #t)                         | ERR #0               | ERR #0             | ERR #0
+    (op 'a)                         | ERR #0               | ERR #0             | ERR #0
+    (op 0 0)                        | ERR #0               | ERR #0             | 0
+    (op 1 0)                        | ERR #0               | ERR #0             | 1.5707963267948966
+    (op 3 3)                        | ERR #0               | ERR #0             | 0.7853981633974483
+    (op -1 3)                       | ERR #0               | ERR #0             | -0.3217505543966422
+    (op 3 5)                        | ERR #0               | ERR #0             | 0.5404195002705842
+    (op #f #f)                      | ERR #0               | ERR #0             | ERR #0
+    (op #t #f)                      | ERR #0               | ERR #0             | ERR #0
+    (op #f #t)                      | ERR #0               | ERR #0             | ERR #0
+    (op #t #t)                      | ERR #0               | ERR #0             | ERR #0
+    (op 'a 'a)                      | ERR #0               | ERR #0             | ERR #0
+    (op 'a 'b)                      | ERR #0               | ERR #0             | ERR #0
+    (op #f 0)                       | ERR #0               | ERR #0             | ERR #0
+    (op 'a 0)                       | ERR #0               | ERR #0             | ERR #0
+    (op 0 'a)                       | ERR #0               | ERR #0             | ERR #0
+    (op 1 #t)                       | ERR #0               | ERR #0             | ERR #0
+    (op 1 1 1 1)                    | ERR #0               | ERR #0             | ERR #0
+    (op 1 2 3 4)                    | ERR #0               | ERR #0             | ERR #0
+    (op #f #f #f)                   | ERR #0               | ERR #0             | ERR #0
+    (op #f #f #f #f)                | ERR #0               | ERR #0             | ERR #0
+    (op #t #t #t)                   | ERR #0               | ERR #0             | ERR #0
+    (op #t #f #t)                   | ERR #0               | ERR #0             | ERR #0
+    (op 'a 'a 'a)                   | ERR #0               | ERR #0             | ERR #0
+    (op 'a 'b 'b)                   | ERR #0               | ERR #0             | ERR #0
+    (op 'a 'b 'c)                   | ERR #0               | ERR #0             | ERR #0
+    (op 1 2 #t 1 'a)                | ERR #0               | ERR #0             | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 
@@ -740,7 +825,7 @@ test('trigonometric ops', () => {
     "
     test                                          | sinh               | cosh               | tanh
     ------------------------------------------------------------------------------------------------------------
-    (op)                                          | ERR                | ERR                | ERR
+    (op)                                          | ERR #0             | ERR #0             | ERR #0
     (op 0)                                        | 0                  | 1                  | 0
     (op 1)                                        | 1.1752011936438014 | 1.5430806348152437 | 0.7615941559557649
     (* 0.5 (- (exp 1) (exp -1)))                  | 1.1752011936438014 | 1.1752011936438014 | 1.1752011936438014
@@ -750,34 +835,39 @@ test('trigonometric ops', () => {
     (op +inf.0)                                   | +inf.0             | +inf.0             | 1
     (op -inf.0)                                   | -inf.0             | +inf.0             | -1
     (op +nan.0)                                   | +nan.0             | +nan.0             | +nan.0
-    (op #f)                                       | ERR                | ERR                | ERR
-    (op #t)                                       | ERR                | ERR                | ERR
-    (op 'a)                                       | ERR                | ERR                | ERR
-    (op 0 0)                                      | ERR                | ERR                | ERR
-    (op 1 0)                                      | ERR                | ERR                | ERR
-    (op 3 3)                                      | ERR                | ERR                | ERR
-    (op -1 3)                                     | ERR                | ERR                | ERR
-    (op 3 5)                                      | ERR                | ERR                | ERR
-    (op #f #f)                                    | ERR                | ERR                | ERR
-    (op #t #f)                                    | ERR                | ERR                | ERR
-    (op #f #t)                                    | ERR                | ERR                | ERR
-    (op #t #t)                                    | ERR                | ERR                | ERR
-    (op 'a 'a)                                    | ERR                | ERR                | ERR
-    (op 'a 'b)                                    | ERR                | ERR                | ERR
-    (op #f 0)                                     | ERR                | ERR                | ERR
-    (op 'a 0)                                     | ERR                | ERR                | ERR
-    (op 0 'a)                                     | ERR                | ERR                | ERR
-    (op 1 #t)                                     | ERR                | ERR                | ERR
-    (op 1 1 1 1)                                  | ERR                | ERR                | ERR
-    (op 1 2 3 4)                                  | ERR                | ERR                | ERR
-    (op #f #f #f)                                 | ERR                | ERR                | ERR
-    (op #f #f #f #f)                              | ERR                | ERR                | ERR
-    (op #t #t #t)                                 | ERR                | ERR                | ERR
-    (op #t #f #t)                                 | ERR                | ERR                | ERR
-    (op 'a 'a 'a)                                 | ERR                | ERR                | ERR
-    (op 'a 'b 'b)                                 | ERR                | ERR                | ERR
-    (op 'a 'b 'c)                                 | ERR                | ERR                | ERR
-    (op 1 2 #t 1 'a)                              | ERR                | ERR                | ERR
+    (op #f)                                       | ERR #0             | ERR #0             | ERR #0
+    (op #t)                                       | ERR #0             | ERR #0             | ERR #0
+    (op 'a)                                       | ERR #0             | ERR #0             | ERR #0
+    (op 0 0)                                      | ERR #0             | ERR #0             | ERR #0
+    (op 1 0)                                      | ERR #0             | ERR #0             | ERR #0
+    (op 3 3)                                      | ERR #0             | ERR #0             | ERR #0
+    (op -1 3)                                     | ERR #0             | ERR #0             | ERR #0
+    (op 3 5)                                      | ERR #0             | ERR #0             | ERR #0
+    (op #f #f)                                    | ERR #0             | ERR #0             | ERR #0
+    (op #t #f)                                    | ERR #0             | ERR #0             | ERR #0
+    (op #f #t)                                    | ERR #0             | ERR #0             | ERR #0
+    (op #t #t)                                    | ERR #0             | ERR #0             | ERR #0
+    (op 'a 'a)                                    | ERR #0             | ERR #0             | ERR #0
+    (op 'a 'b)                                    | ERR #0             | ERR #0             | ERR #0
+    (op #f 0)                                     | ERR #0             | ERR #0             | ERR #0
+    (op 'a 0)                                     | ERR #0             | ERR #0             | ERR #0
+    (op 0 'a)                                     | ERR #0             | ERR #0             | ERR #0
+    (op 1 #t)                                     | ERR #0             | ERR #0             | ERR #0
+    (op 1 1 1 1)                                  | ERR #0             | ERR #0             | ERR #0
+    (op 1 2 3 4)                                  | ERR #0             | ERR #0             | ERR #0
+    (op #f #f #f)                                 | ERR #0             | ERR #0             | ERR #0
+    (op #f #f #f #f)                              | ERR #0             | ERR #0             | ERR #0
+    (op #t #t #t)                                 | ERR #0             | ERR #0             | ERR #0
+    (op #t #f #t)                                 | ERR #0             | ERR #0             | ERR #0
+    (op 'a 'a 'a)                                 | ERR #0             | ERR #0             | ERR #0
+    (op 'a 'b 'b)                                 | ERR #0             | ERR #0             | ERR #0
+    (op 'a 'b 'c)                                 | ERR #0             | ERR #0             | ERR #0
+    (op 1 2 #t 1 'a)                              | ERR #0             | ERR #0             | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
@@ -802,7 +892,7 @@ test('2 arg atan', () => {
     "
     test              | atan
     ---------------------------------------
-    (op)              | ERR
+    (op)              | ERR #0
     (/ (op 0 0) pi)   | 0
     (/ (op 0 1) pi)   | 0
     (/ (op 1 1) pi)   | 0.25
@@ -816,76 +906,87 @@ test('2 arg atan', () => {
     (op +inf.0)       | 1.5707963267948966
     (op -inf.0)       | -1.5707963267948966
     (op +nan.0)       | +nan.0
-    (op #f)           | ERR
-    (op #t)           | ERR
-    (op 'a)           | ERR
+    (op #f)           | ERR #0
+    (op #t)           | ERR #0
+    (op 'a)           | ERR #0
     (op 0 0)          | 0
     (op 1 0)          | 1.5707963267948966
     (op 3 3)          | 0.7853981633974483
     (op -1 3)         | -0.3217505543966422
     (op 3 5)          | 0.5404195002705842
-    (op #f #f)        | ERR
-    (op #t #f)        | ERR
-    (op #f #t)        | ERR
-    (op #t #t)        | ERR
-    (op 'a 'a)        | ERR
-    (op 'a 'b)        | ERR
-    (op #f 0)         | ERR
-    (op 'a 0)         | ERR
-    (op 0 'a)         | ERR
-    (op 1 #t)         | ERR
-    (op 1 1 1 1)      | ERR
-    (op 1 2 3 4)      | ERR
-    (op #f #f #f)     | ERR
-    (op #f #f #f #f)  | ERR
-    (op #t #t #t)     | ERR
-    (op #t #f #t)     | ERR
-    (op 'a 'a 'a)     | ERR
-    (op 'a 'b 'b)     | ERR
-    (op 'a 'b 'c)     | ERR
-    (op 1 2 #t 1 'a)  | ERR
+    (op #f #f)        | ERR #0
+    (op #t #f)        | ERR #0
+    (op #f #t)        | ERR #0
+    (op #t #t)        | ERR #0
+    (op 'a 'a)        | ERR #0
+    (op 'a 'b)        | ERR #0
+    (op #f 0)         | ERR #0
+    (op 'a 0)         | ERR #0
+    (op 0 'a)         | ERR #0
+    (op 1 #t)         | ERR #0
+    (op 1 1 1 1)      | ERR #0
+    (op 1 2 3 4)      | ERR #0
+    (op #f #f #f)     | ERR #0
+    (op #f #f #f #f)  | ERR #0
+    (op #t #t #t)     | ERR #0
+    (op #t #f #t)     | ERR #0
+    (op 'a 'a 'a)     | ERR #0
+    (op 'a 'b 'b)     | ERR #0
+    (op 'a 'b 'c)     | ERR #0
+    (op 1 2 #t 1 'a)  | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
 
+// TODO: Implement and/or properly
 test('boolean ops', () => {
   expectOpTable(['and', 'or', 'xor', 'not', 'false?'], [...mixedTypesArgTests])
     .toMatchInlineSnapshot(`
     "
-    test             | and    | or     | xor | not | false?
-    -------------------------------------------------------
-    (op 0)           | 0      | 0      | ERR | #f  | #f
-    (op +inf.0)      | +inf.0 | +inf.0 | ERR | #f  | #f
-    (op -inf.0)      | -inf.0 | -inf.0 | ERR | #f  | #f
-    (op +nan.0)      | +nan.0 | +nan.0 | ERR | #f  | #f
-    (op #f)          | #f     | #f     | #f  | #t  | #t
-    (op #t)          | #t     | #t     | #t  | #f  | #f
-    (op 'a)          | a      | a      | ERR | #f  | #f
-    (op 0 0)         | 0      | 0      | ERR | ERR | ERR
-    (op 1 0)         | 0      | 1      | ERR | ERR | ERR
-    (op 3 3)         | 3      | 3      | ERR | ERR | ERR
-    (op -1 3)        | 3      | -1     | ERR | ERR | ERR
-    (op 3 5)         | 5      | 3      | ERR | ERR | ERR
-    (op #f #f)       | #f     | #f     | #f  | ERR | ERR
-    (op #t #f)       | #f     | #t     | #t  | ERR | ERR
-    (op #f #t)       | #f     | #t     | #t  | ERR | ERR
-    (op #t #t)       | #t     | #t     | #f  | ERR | ERR
-    (op 'a 'a)       | a      | a      | ERR | ERR | ERR
-    (op 'a 'b)       | b      | a      | ERR | ERR | ERR
-    (op #f 0)        | #f     | 0      | ERR | ERR | ERR
-    (op 'a 0)        | 0      | a      | ERR | ERR | ERR
-    (op 0 'a)        | a      | 0      | ERR | ERR | ERR
-    (op 1 #t)        | #t     | 1      | ERR | ERR | ERR
-    (op 1 1 1 1)     | 1      | 1      | ERR | ERR | ERR
-    (op 1 2 3 4)     | 4      | 1      | ERR | ERR | ERR
-    (op #f #f #f)    | #f     | #f     | #f  | ERR | ERR
-    (op #f #f #f #f) | #f     | #f     | #f  | ERR | ERR
-    (op #t #t #t)    | #t     | #t     | #t  | ERR | ERR
-    (op #t #f #t)    | #f     | #t     | #f  | ERR | ERR
-    (op 'a 'a 'a)    | a      | a      | ERR | ERR | ERR
-    (op 'a 'b 'b)    | b      | a      | ERR | ERR | ERR
-    (op 'a 'b 'c)    | c      | a      | ERR | ERR | ERR
-    (op 1 2 #t 1 'a) | a      | 1      | ERR | ERR | ERR
+    test             | and    | or     | xor    | not    | false?
+    -------------------------------------------------------------
+    (op 0)           | ERR #0 | ERR #0 | ERR #0 | #f     | #f
+    (op +inf.0)      | ERR #0 | ERR #0 | ERR #0 | #f     | #f
+    (op -inf.0)      | ERR #0 | ERR #0 | ERR #0 | #f     | #f
+    (op +nan.0)      | ERR #0 | ERR #0 | ERR #0 | #f     | #f
+    (op #f)          | ERR #0 | ERR #0 | #f     | #t     | #t
+    (op #t)          | ERR #0 | ERR #0 | #t     | #f     | #f
+    (op 'a)          | ERR #0 | ERR #0 | ERR #0 | #f     | #f
+    (op 0 0)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 0)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 3 3)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op -1 3)        | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 3 5)         | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #f #f)       | ERR #0 | ERR #0 | #f     | ERR #0 | ERR #0
+    (op #t #f)       | ERR #0 | ERR #0 | #t     | ERR #0 | ERR #0
+    (op #f #t)       | ERR #0 | ERR #0 | #t     | ERR #0 | ERR #0
+    (op #t #t)       | ERR #0 | ERR #0 | #f     | ERR #0 | ERR #0
+    (op 'a 'a)       | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'b)       | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #f 0)        | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 0)        | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 0 'a)        | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 #t)        | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 1 1 1)     | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 2 3 4)     | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op #f #f #f)    | ERR #0 | ERR #0 | #f     | ERR #0 | ERR #0
+    (op #f #f #f #f) | ERR #0 | ERR #0 | #f     | ERR #0 | ERR #0
+    (op #t #t #t)    | ERR #0 | ERR #0 | #t     | ERR #0 | ERR #0
+    (op #t #f #t)    | ERR #0 | ERR #0 | #f     | ERR #0 | ERR #0
+    (op 'a 'a 'a)    | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'b 'b)    | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 'a 'b 'c)    | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+    (op 1 2 #t 1 'a) | ERR #0 | ERR #0 | ERR #0 | ERR #0 | ERR #0
+
+
+    # | error message
+    ------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: undefined\\"
     "
   `);
 });
@@ -893,18 +994,18 @@ test('boolean ops', () => {
 /// MANUAL TESTS ///
 
 // Test utils
-function expectJsonReadEvalPrint(j: JsonSExpr, env: Environment | undefined) {
-  return expect(jsonPrint(getOk(evaluate(jsonRead(j), env))));
+function expectJsonReadEvalPrint(j: JsonSExpr) {
+  return expect(jsonPrint(getOk(exprCompileEvaluate(jsonRead(j)))));
 }
 
-function expectJsonReadEvalError(j: JsonSExpr, env: Environment | undefined) {
-  return expect(getErr(evaluate(jsonRead(j), env)));
+function expectJsonReadEvalError(j: JsonSExpr) {
+  return expect(getErr(exprCompileEvaluate(jsonRead(j))));
 }
 
 // const listOps = ['first', 'rest', 'last-pair'];
 describe('listOps', () => {
   test('valid cons', () => {
-    expectJsonReadEvalPrint(['cons', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['cons', 1, 1]).toMatchInlineSnapshot(`
       Array [
         1,
         ".",
@@ -912,7 +1013,7 @@ describe('listOps', () => {
       ]
     `);
 
-    expectJsonReadEvalPrint(['cons', 1, ['list']], the_global_environment).toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['cons', 1, ['list']]).toMatchInlineSnapshot(`
       Array [
         1,
       ]
@@ -920,19 +1021,20 @@ describe('listOps', () => {
   });
 
   test('invalid cons', () => {
-    expectJsonReadEvalError(['cons'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['cons']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid list', () => {
-    expectJsonReadEvalPrint(['list', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['list', 1, 1]).toMatchInlineSnapshot(`
       Array [
         1,
         1,
       ]
     `);
 
-    expectJsonReadEvalPrint(['list', 1, ['list', 1]], the_global_environment)
-      .toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['list', 1, ['list', 1]]).toMatchInlineSnapshot(`
       Array [
         1,
         Array [
@@ -941,11 +1043,11 @@ describe('listOps', () => {
       ]
     `);
 
-    expectJsonReadEvalPrint(['list'], the_global_environment).toMatchInlineSnapshot(`Array []`);
+    expectJsonReadEvalPrint(['list']).toMatchInlineSnapshot(`Array []`);
   });
 
   test('valid list*', () => {
-    expectJsonReadEvalPrint(['list*', 1, 1], the_global_environment).toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['list*', 1, 1]).toMatchInlineSnapshot(`
       Array [
         1,
         ".",
@@ -953,94 +1055,93 @@ describe('listOps', () => {
       ]
     `);
 
-    expectJsonReadEvalPrint(['list*', 1], the_global_environment).toMatchInlineSnapshot(`1`);
+    expectJsonReadEvalPrint(['list*', 1]).toMatchInlineSnapshot(`1`);
   });
 
   test('invalid list*', () => {
-    expectJsonReadEvalError(['list*'], the_global_environment).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['list*']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid car', () => {
-    expectJsonReadEvalPrint(
-      ['car', ['quote', ['a']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`"a"`);
+    expectJsonReadEvalPrint(['car', ['quote', ['a']]]).toMatchInlineSnapshot(`"a"`);
   });
 
   test('invalid car', () => {
-    expectJsonReadEvalError(['car', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['car', ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['car', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['car', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['car', 1]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['car', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['car'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(
-      ['car', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['car', true]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['car', ['quote', []]]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['car']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['car', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid cdr', () => {
-    expectJsonReadEvalPrint(
-      ['cdr', ['quote', ['a']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`Array []`);
+    expectJsonReadEvalPrint(['cdr', ['quote', ['a']]]).toMatchInlineSnapshot(`Array []`);
   });
 
   test('invalid cdr', () => {
-    expectJsonReadEvalError(['cdr', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['cdr', ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['cdr', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['cdr', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['cdr', 1]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['cdr', []], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['cdr'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(
-      ['cdr', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['cdr', true]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['cdr', ['quote', []]]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['cdr']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['cdr', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid first', () => {
-    expectJsonReadEvalPrint(
-      ['first', ['quote', ['a']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`"a"`);
+    expectJsonReadEvalPrint(['first', ['quote', ['a']]]).toMatchInlineSnapshot(`"a"`);
   });
 
   test('invalid first', () => {
-    expectJsonReadEvalError(
-      ['first', ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['first', 1], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['first', ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['first', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['first', 1]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['first', []], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['first', true]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['first'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(
-      ['first', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['first', ['quote', []]]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['first']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['first', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid rest', () => {
-    expectJsonReadEvalPrint(
-      ['rest', ['quote', ['a']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`Array []`);
-    expectJsonReadEvalPrint(['rest', ['quote', ['a', 'b']]], the_global_environment)
-      .toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['rest', ['quote', ['a']]]).toMatchInlineSnapshot(`Array []`);
+    expectJsonReadEvalPrint(['rest', ['quote', ['a', 'b']]]).toMatchInlineSnapshot(`
       Array [
         "b",
       ]
@@ -1048,61 +1149,59 @@ describe('listOps', () => {
   });
 
   test('invalid rest', () => {
-    expectJsonReadEvalError(['rest', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['rest', ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['rest', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['rest', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['rest', 1]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['rest', []], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['rest', true]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['rest'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(
-      ['rest', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['rest', ['quote', []]]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['rest']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['rest', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid last', () => {
-    expectJsonReadEvalPrint(
-      ['last', ['quote', ['a']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`"a"`);
-    expectJsonReadEvalPrint(
-      ['last', ['quote', ['a', 'b']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`"b"`);
+    expectJsonReadEvalPrint(['last', ['quote', ['a']]]).toMatchInlineSnapshot(`"a"`);
+    expectJsonReadEvalPrint(['last', ['quote', ['a', 'b']]]).toMatchInlineSnapshot(`"b"`);
   });
 
   test('invalid last', () => {
-    expectJsonReadEvalError(['last', ['quote', 'a']], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last', ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['last', 1], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['last', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last', 1]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['last', []], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last', true]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['last'], the_global_environment).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(
-      ['last', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['last', ['quote', []]]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['last']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['last', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 
   test('valid last-pair', () => {
-    expectJsonReadEvalPrint(['last-pair', ['quote', ['a', 'b']]], the_global_environment)
-      .toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['last-pair', ['quote', ['a', 'b']]]).toMatchInlineSnapshot(`
       Array [
         "b",
       ]
     `);
-    expectJsonReadEvalPrint(['last-pair', ['quote', ['a', '.', 'b']]], the_global_environment)
-      .toMatchInlineSnapshot(`
+    expectJsonReadEvalPrint(['last-pair', ['quote', ['a', '.', 'b']]]).toMatchInlineSnapshot(`
       Array [
         "a",
         ".",
@@ -1112,154 +1211,94 @@ describe('listOps', () => {
   });
 
   test('invalid last-pair', () => {
-    expectJsonReadEvalError(
-      ['last-pair', ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['last-pair', 1], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last-pair', ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['last-pair', true], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last-pair', 1]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['last-pair', []], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last-pair', true]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['last-pair'], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['last-pair', ['quote', []]]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(
-      ['last-pair', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
+    expectJsonReadEvalError(['last-pair']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
+    expectJsonReadEvalError(['last-pair', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
+    );
   });
 });
 
 describe('valueEqualityOps', () => {
   test('valid eq?', () => {
-    expectJsonReadEvalPrint(['eq?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['eq?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['eq?', 0, 1], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['eq?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['eq?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(
-      ['eq?', ['quote', 'a'], ['quote', 'b']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(
-      ['eq?', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['eq?', true, true], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(['eq?', true, false], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(
-      ['eq?', ['list'], ['list']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(
-      ['eq?', ['list', ['quote', 'b'], ['quote', 'c']], ['list', ['quote', 'b'], ['quote', 'c']]],
-      the_global_environment
-    ).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 1, 1]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', 1, 1, 1]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', 0, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 0, 1, 0]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', 0, 1, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', ['quote', 'a'], ['quote', 'b']]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', true, true]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['eq?', true, false]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['eq?', ['list'], ['list']]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint([
+      'eq?',
+      ['list', ['quote', 'b'], ['quote', 'c']],
+      ['list', ['quote', 'b'], ['quote', 'c']],
+    ]).toMatchInlineSnapshot(`false`);
   });
 
   test('valid symbol=?', () => {
-    expectJsonReadEvalPrint(['symbol=?', 1], the_global_environment).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(['symbol=?', 'symbol=?'], the_global_environment).toMatchInlineSnapshot(
+    expectJsonReadEvalPrint(['symbol=?', 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['symbol=?', 'symbol=?']).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['symbol=?', 'number=?']).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['symbol=?', ['quote', 'a']]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['symbol=?', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
+      `true`
+    );
+    expectJsonReadEvalPrint(['symbol=?', ['quote', 'a'], ['quote', 'b']]).toMatchInlineSnapshot(
       `false`
     );
-    expectJsonReadEvalPrint(['symbol=?', 'number=?'], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(
-      ['symbol=?', ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(
-      ['symbol=?', ['quote', 'a'], ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(
-      ['symbol=?', ['quote', 'a'], ['quote', 'b']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`false`);
   });
 
   test('invalid symbol=?', () => {
-    expectJsonReadEvalError(
-      ['symbol=?', 'iamsymbol'],
-      the_global_environment
-    ).toMatchInlineSnapshot(`undefined`);
-    expectJsonReadEvalError(['symbol=?', 'a', 'a'], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['symbol=?', 'iamsymbol']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['symbol=?', 'z'], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['symbol=?', 'a', 'a']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
-    expectJsonReadEvalError(['symbol=?', '1'], the_global_environment).toMatchInlineSnapshot(
-      `undefined`
+    expectJsonReadEvalError(['symbol=?', 'z']).toMatchInlineSnapshot(
+      `"error when evaluating precompiled fep: undefined"`
     );
   });
 
   test('valid number=?', () => {
-    expectJsonReadEvalPrint(['number=?', 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(['number=?', 0, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['number=?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(
-      ['number=?', 0, ['quote', 'a']],
-      the_global_environment
-    ).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['number=?', 1, 1]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['number=?', 0, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['number=?', 0, 1, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['number=?', 0, ['quote', 'a']]).toMatchInlineSnapshot(`false`);
   });
 
   test('valid boolean=?', () => {
-    expectJsonReadEvalPrint(['boolean=?', 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['boolean=?', false, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['boolean=?', false], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(
-      ['boolean=?', false, true],
-      the_global_environment
-    ).toMatchInlineSnapshot(`false`);
-    expectJsonReadEvalPrint(
-      ['boolean=?', true, true],
-      the_global_environment
-    ).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['boolean=?'], the_global_environment).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['boolean=?', 1, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['boolean=?', false, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['boolean=?', false]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['boolean=?', false, true]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['boolean=?', true, true]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['boolean=?']).toMatchInlineSnapshot(`true`);
   });
 });
 
 describe('listEqualityOps', () => {
   test('valid equal?', () => {
-    expectJsonReadEvalPrint(['equal?', 1, 1], the_global_environment).toMatchInlineSnapshot(`true`);
-    expectJsonReadEvalPrint(['equal?', 1, 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `true`
-    );
-    expectJsonReadEvalPrint(['equal?', 0, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['equal?', 0, 1, 0], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
-    expectJsonReadEvalPrint(['equal?', 0, 1, 1], the_global_environment).toMatchInlineSnapshot(
-      `false`
-    );
+    expectJsonReadEvalPrint(['equal?', 1, 1]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['equal?', 1, 1, 1]).toMatchInlineSnapshot(`true`);
+    expectJsonReadEvalPrint(['equal?', 0, 1]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['equal?', 0, 1, 0]).toMatchInlineSnapshot(`false`);
+    expectJsonReadEvalPrint(['equal?', 0, 1, 1]).toMatchInlineSnapshot(`false`);
   });
 });
