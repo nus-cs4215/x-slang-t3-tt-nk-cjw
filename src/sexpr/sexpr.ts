@@ -30,23 +30,11 @@ export interface SNil {
   _type: STypes.Nil;
 }
 
-enum SListVariants {
-  PAIR,
-}
-
-interface SListBase {
+export interface SCons<T, U> {
   _type: STypes.List;
-  _variant: SListVariants;
+  x: T;
+  y: U;
 }
-
-interface SListPair<T> extends SListBase {
-  _variant: SListVariants.PAIR;
-
-  x: SExprT<T>;
-  y: SExprT<T>;
-}
-
-export type SList<T> = SListPair<T>;
 
 interface SBoxedF<T> {
   _type: STypes.Boxed;
@@ -57,14 +45,22 @@ export type SBoxed<T> = T extends never ? never : SBoxedF<T>;
 
 export type SExprBase<T> = SSymbol | SNumber | SBoolean | SNil | SBoxed<T>;
 
-export type SExprT<T> = SExprBase<T> | SList<T>;
+export type SNonemptyHomList<T> = SCons<T, SHomList<T>>;
+export type SHomList<T> = SNil | SNonemptyHomList<T>;
+
+export type SList<T> = SCons<SExprT<T>, SExprT<T>>;
+
+export type SExprT<T> = SExprBase<T> | SCons<SExprT<T>, SExprT<T>>;
 export type SExpr = SExprT<never>;
 
 /****************
  * CONSTRUCTORS *
  ****************/
 
-export const ssymbol = (val: string): SSymbol => ({ _type: STypes.Symbol, val });
+export const ssymbol = <V extends string>(val: V): SSymbol & { val: V } => ({
+  _type: STypes.Symbol,
+  val,
+});
 export const snumber = (val: number): SNumber => ({ _type: STypes.Number, val });
 export const sboolean = (val: boolean): SBoolean => ({
   _type: STypes.Boolean,
@@ -72,14 +68,25 @@ export const sboolean = (val: boolean): SBoolean => ({
 });
 
 export const snil = (): SNil => ({ _type: STypes.Nil });
-export const scons = <T>(x: SExprT<T>, y: SExprT<T>): SList<T> => ({
+export const scons = <T, U>(x: T, y: U): SCons<T, U> => ({
   _type: STypes.List,
-  _variant: SListVariants.PAIR,
   x,
   y,
 });
 
-export function slist<T>(xs: [SExprT<T>, ...SExprT<T>[]], tail: SExprT<T>): SList<T>;
+type TupleTail<T> = T extends readonly [infer U_, ...infer V] ? V : [];
+
+type SListReturnValue<
+  T,
+  Xs extends readonly [...SExprT<T>[]],
+  Tail extends SExprT<T>
+> = Xs['length'] extends 0 ? Tail : SCons<Xs[0], SListReturnValue<T, TupleTail<Xs>, Tail>>;
+
+export function slist<T, Xs extends readonly [...SExprT<T>[]], Tail extends SExprT<T>>(
+  xs: Xs,
+  tail: Tail
+): SListReturnValue<T, Xs, Tail>;
+export function slist<T, U>(xs: [T, ...SExprT<U>[]], tail: SExprT<U>): SCons<T, SExprT<U>>;
 export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T>;
 export function slist<T>(xs: SExprT<T>[], tail: SExprT<T>): SExprT<T> {
   return xs.reduceRight((p, x) => scons(x, p), tail);
@@ -92,26 +99,11 @@ export const sbox = <T>(val: T): SBoxed<T> =>
  * ACCESSORS *
  *************/
 
-export function val(e: SSymbol): string;
-export function val(e: SNumber): number;
-export function val(e: SBoolean): boolean;
-export function val(e: SSymbol | SNumber): string | number;
-export function val(e: SSymbol | SBoolean): string | boolean;
-export function val(e: SNumber | SBoolean): number | boolean;
-export function val(e: SSymbol | SNumber | SBoolean): string | number | boolean;
-export function val<T>(e: SBoxed<T>): T;
-export function val<T>(e: SSymbol | SBoxed<T>): string | T;
-export function val<T>(e: SNumber | SBoxed<T>): number | T;
-export function val<T>(e: SBoolean | SBoxed<T>): boolean | T;
-export function val<T>(e: SSymbol | SNumber | SBoxed<T>): string | number | T;
-export function val<T>(e: SSymbol | SBoolean | SBoxed<T>): string | boolean | T;
-export function val<T>(e: SNumber | SBoolean | SBoxed<T>): number | boolean | T;
-export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T;
-export function val<T>(e: SSymbol | SNumber | SBoolean | SBoxed<T>): string | number | boolean | T {
+export function val<T, E extends SSymbol | SNumber | SBoolean | SBoxed<T>>(e: E): E['val'] {
   return e.val;
 }
-export const car = <T>(p: SList<T>): SExprT<T> => p.x;
-export const cdr = <T>(p: SList<T>): SExprT<T> => p.y;
+export const car = <T, U, P extends SCons<T, U>>(p: P): P['x'] => p.x;
+export const cdr = <T, U, P extends SCons<T, U>>(p: P): P['y'] => p.y;
 
 /**************
  * PREDICATES *

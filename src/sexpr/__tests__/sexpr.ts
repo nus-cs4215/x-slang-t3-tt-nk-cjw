@@ -1,7 +1,7 @@
+import { jsonPrint, jsonRead } from '../jsonsexpr';
 import { SExpr } from '../sexpr';
 import { ssymbol, snumber, sboolean, snil, scons, slist } from '../sexpr';
 import { equals } from '../sexpr';
-import { jsonPrint, jsonRead } from '../jsonsexpr';
 
 describe('test equality', () => {
   const values: (() => SExpr)[] = [

@@ -56,10 +56,33 @@ export function cases<T, Err, U>(r: Result<T, Err>, good: (v: T) => U, bad: (err
   }
 }
 
+export function map_results<T, U, Err>(f: (x: T) => Result<U, Err>, xs: T[]): Result<U[], Err> {
+  const output: U[] = [];
+  for (const x of xs) {
+    const r = f(x);
+    if (isBadResult(r)) {
+      return r;
+    }
+    output.push(r.v);
+  }
+  return ok(output);
+}
+
 export type Result<T, Err> = GoodResult<T> | BadResult<Err>;
 
 export function ok<T>(v: T): GoodResult<T> {
   return { good: true, v, err: undefined };
+}
+
+export function ok_unless_void<T, Err>(
+  v: Exclude<T, void> | void,
+  err: Err
+): Result<Exclude<T, void>, Err> {
+  if (v === undefined) {
+    return { good: false, v: undefined, err };
+  } else {
+    return { good: true, v, err: undefined };
+  }
 }
 
 export function err(err?: void): BadResult<void>;

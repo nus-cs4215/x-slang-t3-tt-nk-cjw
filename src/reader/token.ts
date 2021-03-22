@@ -233,27 +233,54 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
       case '#': {
         // special dispatch
 
-        const j = i;
         // one character dispatches
-        inc();
-        inc();
-        const one_char_dispatch_contents = s.slice(j, i);
-        const end = pos();
+        const one_char_dispatch_contents = s.slice(i, i + 2);
         switch (one_char_dispatch_contents) {
           case '#t':
           case '#f': {
+            inc();
+            inc();
+            const end = pos();
             yield bool(one_char_dispatch_contents, { start, end });
             continue;
           }
           case '#;': {
+            inc();
+            inc();
+            const end = pos();
             yield sexprcomment(one_char_dispatch_contents, { start, end });
+            continue;
+          }
+          case '#%': {
+            // Regular symbol
+            const j = i;
+            while (!delim_regex.test(s[i])) {
+              inc();
+              if (i === s.length) {
+                break;
+              }
+            }
+            const contents = s.slice(j, i);
+            const end = pos();
+            yield substring_to_token(contents, { start, end });
             continue;
           }
         }
 
         // dispatch not supported, output invalid
-        yield invalid(one_char_dispatch_contents, { start, end });
-        continue;
+        {
+          const j = i;
+          while (!delim_regex.test(s[i])) {
+            inc();
+            if (i === s.length) {
+              break;
+            }
+          }
+          const contents = s.slice(j, i);
+          const end = pos();
+          yield invalid(contents, { start, end });
+          continue;
+        }
       }
     }
 

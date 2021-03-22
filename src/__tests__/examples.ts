@@ -1,7 +1,11 @@
+import { make_env_list } from '../environment';
+import { evaluate } from '../evaluator';
+import { primitives_module } from '../modules';
 import { print } from '../printer';
 import { read } from '../reader';
-import { evaluate, the_global_environment } from '../evaluator';
 import { getOk } from '../utils';
+
+const the_global_environment = make_env_list(primitives_module.provides);
 
 function expectReadEvalPrint(program: string) {
   return expect(print(getOk(evaluate(getOk(read(program)), the_global_environment))));

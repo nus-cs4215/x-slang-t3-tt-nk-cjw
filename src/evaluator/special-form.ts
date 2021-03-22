@@ -11,6 +11,8 @@ type SpecialFormKeywordToType = {
   begin: 'begin';
   begin0: 'begin0';
   cond: 'cond';
+  and: 'and';
+  or: 'or';
   lambda: 'lambda';
   let: 'let';
   'let*': 'let*';
@@ -67,6 +69,18 @@ export const special_forms: Record<SpecialFormKeywords, Form[]> = {
         json_plus([json_var('test_exprs'), '.', json_var('then_bodies')], []),
       ]),
       form: 'cond',
+    },
+  ],
+  and: [
+    {
+      pattern: jsonRead(['and', '.', json_star(json_var('exprs'), [])]),
+      form: 'and',
+    },
+  ],
+  or: [
+    {
+      pattern: jsonRead(['or', '.', json_star(json_var('exprs'), [])]),
+      form: 'or',
     },
   ],
   lambda: [
@@ -140,7 +154,7 @@ export enum MatchType {
 }
 
 export type MatchResult =
-  | { match_type: MatchType.Match; form: SpecialFormType; matches: MatchObject }
+  | { match_type: MatchType.Match; form: SpecialFormType; matches: MatchObject<EvalData> }
   | { match_type: MatchType.InvalidSyntax; form: undefined; matches: undefined }
   | { match_type: MatchType.NoMatch; form: undefined; matches: undefined };
 
@@ -153,7 +167,7 @@ export function match_special_form(program: SList<EvalData>): MatchResult {
 
   if (hasKey(special_forms, keyword)) {
     for (const form of special_forms[keyword]) {
-      const matches: MatchObject | undefined = match(program, form.pattern);
+      const matches: MatchObject<EvalData> | undefined = match(program, form.pattern);
       if (matches !== undefined) {
         return { match_type: MatchType.Match, form: form.form, matches };
       }
