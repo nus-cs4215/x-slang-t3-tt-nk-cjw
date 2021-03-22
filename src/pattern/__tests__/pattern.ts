@@ -1,5 +1,17 @@
+import { print } from '../../printer';
+import { read } from '../../reader';
 import { JsonSExpr, JsonSExprT, jsonRead, SExpr, jsonPrint } from '../../sexpr';
-import { json_plus, json_star, json_var, match, PatternLeaf } from '../pattern';
+import { getOk } from '../../utils';
+import {
+  json_plus,
+  json_star,
+  json_symvar,
+  json_var,
+  match,
+  PatternLeaf,
+  read_pattern,
+  unmatch,
+} from '../pattern';
 
 function expectJsonGoodPatternMatch(program: JsonSExpr, pattern: JsonSExprT<PatternLeaf>) {
   const matches = match(jsonRead(program), jsonRead(pattern));
@@ -173,5 +185,285 @@ describe('Basic pattern matching', () => {
       ],
       let_pattern()
     );
+  });
+});
+
+describe('sexpr pattern parsing', () => {
+  test('literals', () => {
+    expect(jsonPrint(getOk(read_pattern("('a 'b 'c 'd)")))).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(getOk(read_pattern("('a 'b 'c . 'd)")))).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        ".",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(getOk(read_pattern('(1 #t 3 . 55)')))).toMatchInlineSnapshot(`
+      Array [
+        1,
+        true,
+        3,
+        ".",
+        55,
+      ]
+    `);
+  });
+
+  test('vars', () => {
+    expect(jsonPrint(getOk(read_pattern("('quote datum)")))).toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        Object {
+          "boxed": Object {
+            "name": "datum",
+            "variant": 0,
+          },
+        },
+      ]
+    `);
+    expect(jsonPrint(getOk(read_pattern("('define sym-name value)")))).toMatchInlineSnapshot(`
+      Array [
+        "define",
+        Object {
+          "boxed": Object {
+            "name": "name",
+            "variant": 1,
+          },
+        },
+        Object {
+          "boxed": Object {
+            "name": "value",
+            "variant": 0,
+          },
+        },
+      ]
+    `);
+  });
+
+  test('subpatterns', () => {
+    expect(getOk(read_pattern("('lambda (sym-params ...) body ...)"))).toEqual(
+      jsonRead([
+        'lambda',
+        json_star(json_symvar('params'), []),
+        '.',
+        json_star(json_var('body'), []),
+      ])
+    );
+    expect(getOk(read_pattern("('let [(sym-name value) ...] body ...)"))).toEqual(
+      jsonRead([
+        'let',
+        json_star([json_symvar('name'), json_var('value')], []),
+        '.',
+        json_star(json_var('body'), []),
+      ])
+    );
+    expect(getOk(read_pattern("('atleastone value ...+)"))).toEqual(
+      jsonRead(['atleastone', '.', json_plus(json_var('value'), [])])
+    );
+    expect(getOk(read_pattern("('atleastone ['ayy value] ...+)"))).toEqual(
+      jsonRead(['atleastone', '.', json_plus(['ayy', json_var('value')], [])])
+    );
+  });
+});
+
+describe('pattern un-matching', () => {
+  test('literals', () => {
+    expect(jsonPrint(unmatch({}, getOk(read_pattern("('a 'b 'c 'd)")))!)).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(unmatch({}, getOk(read_pattern("('a 'b 'c . 'd)")))!)).toMatchInlineSnapshot(`
+      Array [
+        "a",
+        "b",
+        "c",
+        ".",
+        "d",
+      ]
+    `);
+    expect(jsonPrint(unmatch({}, getOk(read_pattern('(1 #t 3 . 55)')))!)).toMatchInlineSnapshot(`
+      Array [
+        1,
+        true,
+        3,
+        ".",
+        55,
+      ]
+    `);
+  });
+
+  test('vars', () => {
+    expect(jsonPrint(unmatch({ datum: [jsonRead(1)] }, getOk(read_pattern("('quote datum)")))!))
+      .toMatchInlineSnapshot(`
+      Array [
+        "quote",
+        1,
+      ]
+    `);
+    expect(
+      jsonPrint(
+        unmatch(
+          { name: [jsonRead('x')], value: [jsonRead(1)] },
+          getOk(read_pattern("('define sym-name value)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "define",
+        "x",
+        1,
+      ]
+    `);
+  });
+
+  test('subpatterns', () => {
+    expect(
+      jsonPrint(
+        unmatch(
+          { params: [jsonRead('x'), jsonRead('y')], body: [jsonRead(['+', 'x', 'y'])] },
+          getOk(read_pattern("('lambda (sym-params ...) body ...)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "lambda",
+        Array [
+          "x",
+          "y",
+        ],
+        Array [
+          "+",
+          "x",
+          "y",
+        ],
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          { params: [], body: [jsonRead(1)] },
+          getOk(read_pattern("('lambda (sym-params ...) body ...)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "lambda",
+        Array [],
+        1,
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          {
+            name: [jsonRead('x'), jsonRead('y')],
+            value: [jsonRead(1), jsonRead(2)],
+            body: [jsonRead(['writeln', 'x']), jsonRead(['+', 'x', 'y'])],
+          },
+          getOk(read_pattern("('let [(sym-name value) ...] body ...)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "let",
+        Array [
+          Array [
+            "x",
+            1,
+          ],
+          Array [
+            "y",
+            2,
+          ],
+        ],
+        Array [
+          "writeln",
+          "x",
+        ],
+        Array [
+          "+",
+          "x",
+          "y",
+        ],
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          { value: [jsonRead(1), jsonRead(2)] },
+          getOk(read_pattern("('atleastone value ...+)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "atleastone",
+        1,
+        2,
+      ]
+    `);
+
+    expect(
+      jsonPrint(
+        unmatch(
+          { value: [jsonRead(1), jsonRead(2)] },
+          getOk(read_pattern("('atleastone ['ayy value] ...+)"))
+        )!
+      )
+    ).toMatchInlineSnapshot(`
+      Array [
+        "atleastone",
+        Array [
+          "ayy",
+          1,
+        ],
+        Array [
+          "ayy",
+          2,
+        ],
+      ]
+    `);
+  });
+});
+
+function expectGoodPatternTransform(program: string, from_pattern: string, to_pattern: string) {
+  const _program = getOk(read(program));
+  const _from_pattern = getOk(read_pattern(from_pattern));
+  const _to_pattern = getOk(read_pattern(to_pattern));
+  const match_result = match(_program, _from_pattern)!;
+  const transformed = unmatch(match_result, _to_pattern)!;
+  return expect(print(transformed));
+}
+
+describe('pattern transform', () => {
+  test('#%app to #%plain-app', () => {
+    expectGoodPatternTransform(
+      '(#%app f x y z)',
+      "('#%app f x ...)",
+      "('#%plain-app f x ...)"
+    ).toMatchInlineSnapshot(`"(#%plain-app f x y z)"`);
+  });
+
+  test('let* to let (2 variables only)', () => {
+    expectGoodPatternTransform(
+      '(let* [(x 1) (y x)] body1 body2 body3)',
+      "('let* [(name value) (name value)] body ...)",
+      "('let [(name value)] ('let [(name value)] body ...))"
+    ).toMatchInlineSnapshot(`"(let ((x 1)) (let ((y x)) body1 body2 body3))"`);
   });
 });
