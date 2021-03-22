@@ -111,63 +111,147 @@ function functorial_expression_transformer(
   };
 }
 
-function let_and_letrec_transformer(name: string) {
-  const pattern_string = `('${name} [(sym-name-noexpand value) ...] expr ...+)`;
-  const pattern = getOk(read_pattern(pattern_string));
-  return (
-    stx: SExpr,
-    expansion_context: ExpansionContext,
-    env: NonemptyEnvironment,
-    global_ctx: CompilerGlobalContext,
-    file_ctx: CompilerFileLocalContext
-  ): Result<FEPNode, CompileErr> => {
-    if (expansion_context !== ExpansionContext.ExpressionContext) {
-      return err(
-        'this ' +
-          name +
-          ' core transformer only applies in an expression context. perhaps you meant to use a different language?'
-      );
-    }
-    const match_result = match(stx, pattern);
-    if (match_result === undefined) {
-      return err('did not match pattern for ' + name + ': ' + print(stx));
-    }
+const let_and_letrec_pattern_string = `(head-noexpand [(sym-name-noexpand value) ...] expr ...+)`;
+const let_and_letrec_pattern = getOk(read_pattern(let_and_letrec_pattern_string));
+function let_transformer(
+  stx: SExpr,
+  expansion_context: ExpansionContext,
+  env: NonemptyEnvironment,
+  global_ctx: CompilerGlobalContext,
+  file_ctx: CompilerFileLocalContext
+): Result<FEPNode, CompileErr> {
+  if (expansion_context !== ExpansionContext.ExpressionContext) {
+    return err(
+      'this let core transformer only applies in an expression context. perhaps you meant to use a different language?'
+    );
+  }
+  const match_result = match(stx, let_and_letrec_pattern);
+  if (match_result === undefined) {
+    return err('did not match pattern for let: ' + print(stx));
+  }
 
-    const expanded_match_result: MatchObject<never> = {};
-    const let_bindings = extract_matches(match_result, (names: SSymbol[]) => {
-      const b = make_empty_bindings();
-      names.forEach((n) => set_define(b, val(n), undefined));
-      return b;
-    });
-    const let_env = make_env(let_bindings, env);
-    for (const [varname, matches] of Object.entries(match_result)) {
-      if (varname.endsWith('-noexpand')) {
-        expanded_match_result[varname] = matches;
-      } else {
-        expanded_match_result[varname] = [];
-        for (const part of matches) {
-          const compile_result = compile(
-            part,
-            ExpansionContext.ExpressionContext,
-            let_env,
-            global_ctx,
-            file_ctx
-          );
-          if (isBadResult(compile_result)) {
-            return compile_result;
-          }
-          expanded_match_result[varname].push(compile_result.v);
+  const expanded_match_result: MatchObject<never> = {};
+  const let_bindings = extract_matches(match_result, (names: SSymbol[]) => {
+    const b = make_empty_bindings();
+    names.forEach((n) => set_define(b, val(n), undefined));
+    return b;
+  });
+  const let_env = make_env(let_bindings, env);
+
+  expanded_match_result['head-noexpand'] = match_result['head-noexpand'];
+  expanded_match_result['name-noexpand'] = match_result['name-noexpand'];
+
+  // Expand values in outer env
+  {
+    const varname = 'value';
+    const matches = match_result[varname];
+    if (varname.endsWith('-noexpand')) {
+      expanded_match_result[varname] = matches;
+    } else {
+      expanded_match_result[varname] = [];
+      for (const part of matches) {
+        const compile_result = compile(
+          part,
+          ExpansionContext.ExpressionContext,
+          env, // outer env
+          global_ctx,
+          file_ctx
+        );
+        if (isBadResult(compile_result)) {
+          return compile_result;
         }
+        expanded_match_result[varname].push(compile_result.v);
       }
     }
+  }
 
-    const unmatch_result = unmatch(expanded_match_result, pattern);
-    if (unmatch_result === undefined) {
-      throw `bad unmatch, pls tell devs. name: ${name}, pattern_string: ${pattern_string}`;
+  // Expand expr in inner env
+  {
+    const varname = 'expr';
+    const matches = match_result[varname];
+    if (varname.endsWith('-noexpand')) {
+      expanded_match_result[varname] = matches;
+    } else {
+      expanded_match_result[varname] = [];
+      for (const part of matches) {
+        const compile_result = compile(
+          part,
+          ExpansionContext.ExpressionContext,
+          let_env,
+          global_ctx,
+          file_ctx
+        );
+        if (isBadResult(compile_result)) {
+          return compile_result;
+        }
+        expanded_match_result[varname].push(compile_result.v);
+      }
     }
+  }
 
-    return ok(unmatch_result as FEPNode);
-  };
+  const unmatch_result = unmatch(expanded_match_result, let_and_letrec_pattern);
+  if (unmatch_result === undefined) {
+    throw `bad unmatch, pls tell devs. name: let, pattern_string: ${let_and_letrec_pattern_string}, match: ${JSON.stringify(
+      expanded_match_result
+    )}`;
+  }
+
+  return ok(unmatch_result as FEPNode);
+}
+
+function letrec_transformer(
+  stx: SExpr,
+  expansion_context: ExpansionContext,
+  env: NonemptyEnvironment,
+  global_ctx: CompilerGlobalContext,
+  file_ctx: CompilerFileLocalContext
+): Result<FEPNode, CompileErr> {
+  if (expansion_context !== ExpansionContext.ExpressionContext) {
+    return err(
+      'this letrec core transformer only applies in an expression context. perhaps you meant to use a different language?'
+    );
+  }
+  const match_result = match(stx, let_and_letrec_pattern);
+  if (match_result === undefined) {
+    return err('did not match pattern for letrec: ' + print(stx));
+  }
+
+  const expanded_match_result: MatchObject<never> = {};
+  const letrec_bindings = extract_matches(match_result, (names: SSymbol[]) => {
+    const b = make_empty_bindings();
+    names.forEach((n) => set_define(b, val(n), undefined));
+    return b;
+  });
+  const letrec_env = make_env(letrec_bindings, env);
+
+  // Expand both value and expr in inner env
+  for (const [varname, matches] of Object.entries(match_result)) {
+    if (varname.endsWith('-noexpand')) {
+      expanded_match_result[varname] = matches;
+    } else {
+      expanded_match_result[varname] = [];
+      for (const part of matches) {
+        const compile_result = compile(
+          part,
+          ExpansionContext.ExpressionContext,
+          letrec_env,
+          global_ctx,
+          file_ctx
+        );
+        if (isBadResult(compile_result)) {
+          return compile_result;
+        }
+        expanded_match_result[varname].push(compile_result.v);
+      }
+    }
+  }
+
+  const unmatch_result = unmatch(expanded_match_result, let_and_letrec_pattern);
+  if (unmatch_result === undefined) {
+    throw `bad unmatch, pls tell devs. name: letrec, pattern_string: ${let_and_letrec_pattern_string}`;
+  }
+
+  return ok(unmatch_result as FEPNode);
 }
 
 function depending_on_expansion_context<T extends ExpansionContext>(
@@ -246,10 +330,7 @@ function plain_lambda(
             switch (command) {
               case 'begin': {
                 // Splice the shit in
-                const match_result = match(
-                  new_form,
-                  getOk(read_pattern("('begin statements ...)"))
-                );
+                const match_result = match(new_form, getOk(read_pattern('(begin statements ...)')));
                 if (match_result === undefined) {
                   return err('did not match pattern for begin: ' + print(new_form));
                 }
@@ -436,33 +517,38 @@ export const core_transformers: Record<
   'define-syntax': make_error_core_transformer(
     'define-syntax forms only allowed in certain core syntactic forms (e.g. directly inside a module)'
   ),
-  quote: self_compiling_in_expression_context('quote', "('quote datum)"),
+  quote: self_compiling_in_expression_context('quote', '(head-noexpand datum)'),
   '#%variable-reference': self_compiling_in_expression_context(
     '#%variable-reference',
-    "('#%variable-reference sym-x)"
+    '(head-noexpand sym-x)'
   ),
   '#%plain-app': functorial_expression_transformer(
     '#%plain-app',
-    "('#%plain-app f xs ...)",
-    "('#%plain-app f xs ...)"
+    '(head-noexpand f xs ...)',
+    '(head-noexpand f xs ...)'
   ),
   if: functorial_expression_transformer(
     'if',
-    "('if cond consequent alternate)",
-    "('if cond consequent alternate)"
+    '(head-noexpand cond consequent alternate)',
+    '(head-noexpand cond consequent alternate)'
   ),
   begin: depending_on_expansion_context(
     {
       [ExpansionContext.ExpressionContext]: functorial_expression_transformer(
         'begin',
-        "('begin expr ...+)",
-        "('begin expr ...+)"
+        '(head-noexpand expr ...+)',
+        '(head-noexpand expr ...+)'
       ),
     },
     'begin forms only allowed in certain core syntactic forms (e.g. directly inside a module or in an expression)'
   ),
-  begin0: functorial_expression_transformer('begin0', "('begin0 expr ...+)", "('begin0 expr ...+)"),
-  let: let_and_letrec_transformer('let'),
-  letrec: let_and_letrec_transformer('letrec'),
+  begin0: functorial_expression_transformer(
+    'begin0',
+    '(head-noexpand expr ...+)',
+    '(head-noexpand expr ...+)'
+  ),
+  // These have to be custom because we need to introduce the bindings in the inner environment
+  let: let_transformer,
+  letrec: letrec_transformer,
   '#%plain-lambda': plain_lambda,
 };
