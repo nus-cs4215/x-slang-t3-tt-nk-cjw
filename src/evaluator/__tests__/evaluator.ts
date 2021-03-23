@@ -6,7 +6,7 @@ import { read } from '../../reader';
 import { sboolean, snumber, ssymbol } from '../../sexpr';
 import { sbox, slist, snil, SNonemptyHomList } from '../../sexpr/sexpr';
 import { getOk, ok } from '../../utils';
-import { err, isGoodResult } from '../../utils/result';
+import { getErr, isGoodResult } from '../../utils/result';
 import { make_fep_closure } from '../datatypes';
 import { evaluate_general_top_level } from '../evaluator';
 
@@ -227,17 +227,21 @@ describe('evaluate_general_top_level', () => {
       )
     ).toEqual(ok(snumber(2)));
     expect(
-      evaluate_general_top_level(
-        getOk(
-          read(
-            `(letrec ([x (#%variable-reference y)]
+      getErr(
+        evaluate_general_top_level(
+          getOk(
+            read(
+              `(letrec ([x (#%variable-reference y)]
                       [y (#%variable-reference x)])
                 (#%variable-reference y))`
-          )
-        ) as GeneralTopLevelForm,
-        env
+            )
+          ) as GeneralTopLevelForm,
+          env
+        )
       )
-    ).toEqual(err());
+    ).toMatchInlineSnapshot(
+      `"evaluate (#%variable-reference): tried to use variable y before initialization"`
+    );
   });
 
   test('evaluate #%plain-lambda', () => {

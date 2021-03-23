@@ -11,7 +11,10 @@ function expectOpTable(ops: string[], tests: string[]) {
       test,
       ...ops.map((op) =>
         cases(readExprCompileEvaluate(test.replace(/op/g, op)), print, (e) => {
-          const e_str = JSON.stringify(e);
+          let e_str = JSON.stringify(e);
+          if (e_str.startsWith('"error when evaluating precompiled fep: ')) {
+            e_str = '"error when evaluating precompiled fep: <error message omitted>"';
+          }
           if (errorMap.has(e_str)) {
             return 'ERR #' + errorMap.get(e_str)!.toString();
           } else {
@@ -241,8 +244,8 @@ test('type predicates', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -337,7 +340,7 @@ test('unary arithmetic ops', () => {
 
     #  | error message
     ---------------------------------------------------------------------------
-    0  | \\"error when evaluating precompiled fep: undefined\\"
+    0  | \\"error when evaluating precompiled fep: <error message omitted>\\"
     1  | \\"did not match pattern for #%plain-app: (#%plain-app zero? 1 . 2)\\"
     2  | \\"did not match pattern for #%plain-app: (#%plain-app positive? 1 . 2)\\"
     3  | \\"did not match pattern for #%plain-app: (#%plain-app negative? 1 . 2)\\"
@@ -399,8 +402,8 @@ test('2 args log', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -446,8 +449,8 @@ test('exactly binary numeric ops', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -560,7 +563,7 @@ test('variable arity arithmetic ops', () => {
 
     #  | error message
     ---------------------------------------------------------------------
-    0  | \\"error when evaluating precompiled fep: undefined\\"
+    0  | \\"error when evaluating precompiled fep: <error message omitted>\\"
     1  | \\"did not match pattern for #%plain-app: (#%plain-app + 1 . 2)\\"
     2  | \\"did not match pattern for #%plain-app: (#%plain-app - 1 . 2)\\"
     3  | \\"did not match pattern for #%plain-app: (#%plain-app * 1 . 2)\\"
@@ -654,8 +657,8 @@ test('numeric comparsion ops', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -734,8 +737,8 @@ test('trigonometric ops', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 
@@ -805,8 +808,8 @@ test('trigonometric ops', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 
@@ -866,8 +869,8 @@ test('trigonometric ops', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -937,8 +940,8 @@ test('2 arg atan', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -985,8 +988,8 @@ test('boolean ops', () => {
 
 
     # | error message
-    ------------------------------------------------------
-    0 | \\"error when evaluating precompiled fep: undefined\\"
+    --------------------------------------------------------------------
+    0 | \\"error when evaluating precompiled fep: <error message omitted>\\"
     "
   `);
 });
@@ -1022,7 +1025,7 @@ describe('listOps', () => {
 
   test('invalid cons', () => {
     expectJsonReadEvalError(['cons']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: cons: expected exactly 2 argument but got "`
     );
   });
 
@@ -1060,7 +1063,7 @@ describe('listOps', () => {
 
   test('invalid list*', () => {
     expectJsonReadEvalError(['list*']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: list*: expected at least 1 argument"`
     );
   });
 
@@ -1070,22 +1073,22 @@ describe('listOps', () => {
 
   test('invalid car', () => {
     expectJsonReadEvalError(['car', ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected argument to be list but got a"`
     );
     expectJsonReadEvalError(['car', 1]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected argument to be list but got 1"`
     );
     expectJsonReadEvalError(['car', true]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected argument to be list but got #t"`
     );
     expectJsonReadEvalError(['car', ['quote', []]]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected argument to be list but got ()"`
     );
     expectJsonReadEvalError(['car']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected exactly 1 argument but got "`
     );
     expectJsonReadEvalError(['car', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected exactly 1 argument but got a, a"`
     );
   });
 
@@ -1095,22 +1098,22 @@ describe('listOps', () => {
 
   test('invalid cdr', () => {
     expectJsonReadEvalError(['cdr', ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: cdr: expected argument to be list but got a"`
     );
     expectJsonReadEvalError(['cdr', 1]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: cdr: expected argument to be list but got 1"`
     );
     expectJsonReadEvalError(['cdr', true]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: cdr: expected argument to be list but got #t"`
     );
     expectJsonReadEvalError(['cdr', ['quote', []]]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: cdr: expected argument to be list but got ()"`
     );
     expectJsonReadEvalError(['cdr']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected exactly 1 argument but got "`
     );
     expectJsonReadEvalError(['cdr', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: car: expected exactly 1 argument but got a, a"`
     );
   });
 
@@ -1120,22 +1123,22 @@ describe('listOps', () => {
 
   test('invalid first', () => {
     expectJsonReadEvalError(['first', ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: first: expected argument to be list but got a"`
     );
     expectJsonReadEvalError(['first', 1]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: first: expected argument to be list but got 1"`
     );
     expectJsonReadEvalError(['first', true]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: first: expected argument to be list but got #t"`
     );
     expectJsonReadEvalError(['first', ['quote', []]]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: first: expected argument to be list but got ()"`
     );
     expectJsonReadEvalError(['first']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: first: expected exactly 1 argument but got "`
     );
     expectJsonReadEvalError(['first', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: first: expected exactly 1 argument but got a, a"`
     );
   });
 
@@ -1150,22 +1153,22 @@ describe('listOps', () => {
 
   test('invalid rest', () => {
     expectJsonReadEvalError(['rest', ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: rest: expected argument to be list but got a"`
     );
     expectJsonReadEvalError(['rest', 1]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: rest: expected argument to be list but got 1"`
     );
     expectJsonReadEvalError(['rest', true]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: rest: expected argument to be list but got #t"`
     );
     expectJsonReadEvalError(['rest', ['quote', []]]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: rest: expected argument to be list but got ()"`
     );
     expectJsonReadEvalError(['rest']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: rest: expected exactly 1 argument but got "`
     );
     expectJsonReadEvalError(['rest', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: rest: expected exactly 1 argument but got a, a"`
     );
   });
 
@@ -1176,22 +1179,22 @@ describe('listOps', () => {
 
   test('invalid last', () => {
     expectJsonReadEvalError(['last', ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last: expected argument to be list but got a"`
     );
     expectJsonReadEvalError(['last', 1]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last: expected argument to be list but got 1"`
     );
     expectJsonReadEvalError(['last', true]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last: expected argument to be list but got #t"`
     );
     expectJsonReadEvalError(['last', ['quote', []]]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last: expected argument to be list but got ()"`
     );
     expectJsonReadEvalError(['last']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last: expected exactly 1 argument but got "`
     );
     expectJsonReadEvalError(['last', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last: expected exactly 1 argument but got a, a"`
     );
   });
 
@@ -1212,22 +1215,22 @@ describe('listOps', () => {
 
   test('invalid last-pair', () => {
     expectJsonReadEvalError(['last-pair', ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last_pair: expected argument to be list but got a"`
     );
     expectJsonReadEvalError(['last-pair', 1]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last_pair: expected argument to be list but got 1"`
     );
     expectJsonReadEvalError(['last-pair', true]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last_pair: expected argument to be list but got #t"`
     );
     expectJsonReadEvalError(['last-pair', ['quote', []]]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last_pair: expected argument to be list but got ()"`
     );
     expectJsonReadEvalError(['last-pair']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last_pair: expected exactly 1 argument but got "`
     );
     expectJsonReadEvalError(['last-pair', ['quote', 'a'], ['quote', 'a']]).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: last_pair: expected exactly 1 argument but got a, a"`
     );
   });
 });
@@ -1266,13 +1269,13 @@ describe('valueEqualityOps', () => {
 
   test('invalid symbol=?', () => {
     expectJsonReadEvalError(['symbol=?', 'iamsymbol']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: evaluate (#%variable-reference): could not find variable iamsymbol"`
     );
     expectJsonReadEvalError(['symbol=?', 'a', 'a']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: evaluate (#%variable-reference): could not find variable a"`
     );
     expectJsonReadEvalError(['symbol=?', 'z']).toMatchInlineSnapshot(
-      `"error when evaluating precompiled fep: undefined"`
+      `"error when evaluating precompiled fep: evaluate (#%variable-reference): could not find variable z"`
     );
   });
 

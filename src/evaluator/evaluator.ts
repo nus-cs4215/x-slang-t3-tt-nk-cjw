@@ -36,6 +36,7 @@ import {
 import { EvaluatorHost, FileName } from '../host';
 import { get_module_info, Module } from '../modules';
 import { extract_matches, match, read_pattern } from '../pattern';
+import { print } from '../printer';
 import {
   car,
   cdr,
@@ -43,7 +44,6 @@ import {
   is_boxed,
   is_list,
   is_nil,
-  is_symbol,
   sbox,
   scons,
   SExprT,
@@ -64,7 +64,7 @@ import {
   EvaluateModule,
 } from './types';
 
-export const fep_apply: Apply = (fun, ...args) => {
+export const fep_apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResult => {
   if (is_boxed(fun)) {
     const v = fun.val;
     if (v.variant === EvalDataType.FEPClosure) {
@@ -72,12 +72,26 @@ export const fep_apply: Apply = (fun, ...args) => {
       const { env, formals, rest, body } = v;
       let _body: SHomList<FEExpr> = body;
       if (rest === undefined) {
-        if (args.length !== formals.length) {
-          return err();
+        if (args.length < formals.length) {
+          return err(
+            `apply: too few arguments given. expected arguments ${formals.join(', ')} but got ${
+              args.length
+            } arguments`
+          );
+        } else if (args.length > formals.length) {
+          return err(
+            `apply: too many arguments given. expected arguments ${formals.join(', ')} but got ${
+              args.length
+            } arguments`
+          );
         }
       } else {
         if (args.length < formals.length) {
-          return err();
+          return err(
+            `apply: too few arguments given. expected arguments ${formals.join(', ')} but got ${
+              args.length
+            } arguments`
+          );
         }
       }
 
@@ -111,35 +125,26 @@ export const fep_apply: Apply = (fun, ...args) => {
     } else {
       // v is a PrimitiveTransformer
       // You can't call them
-      return err();
+      return err('apply: tried to call a transformer like a function');
     }
   }
 
-  if (!is_list(fun)) {
-    return err();
-  }
-  const fun_type = car(fun);
-  if (!is_symbol(fun_type)) {
-    // not in the right format for a function
-    return err();
-  }
-
-  // unsupported function type
-  return err();
+  return err('apply: tried to call non-function value');
 };
 
-export const fep_apply_syntax: ApplySyntax = (fun, stx, compile_env) => {
+export const fep_apply_syntax: ApplySyntax = (
+  fun: EvalSExpr,
+  stx: EvalSExpr,
+  compile_env: Environment
+): EvalResult => {
   if (is_boxed(fun)) {
     const v = fun.val;
     if (v.variant === EvalDataType.FEPClosure) {
       // v was a FEPClosure
       const { env, formals, rest, body } = v;
       let _body: SHomList<FEExpr> = body;
-      if (rest !== undefined) {
-        return err();
-      }
-      if (formals.length !== 1) {
-        return err();
+      if (rest !== undefined || formals.length !== 1) {
+        return err('apply_syntax: syntax transformers should take exactly one argument');
       }
 
       const bindings: Bindings = make_empty_bindings();
@@ -159,24 +164,14 @@ export const fep_apply_syntax: ApplySyntax = (fun, stx, compile_env) => {
     } else if (v.variant === EvalDataType.Primitive) {
       // v is a Primitive
       // You should have used a PrimitiveTransformer
-      return err();
+      return err('apply_syntax: tried to call normal function like a transformer');
     } else {
       // if (v.variant === EvalDataType.PrimitiveTransformer) {
       return (v as PrimitiveTransformer).fun(stx, compile_env);
     }
   }
 
-  if (!is_list(fun)) {
-    return err();
-  }
-  const fun_type = car(fun);
-  if (!is_symbol(fun_type)) {
-    // not in the right format for a function
-    return err();
-  }
-
-  // unsupported function type
-  return err();
+  return err('apply_syntax: tried to call non-function value');
 };
 
 export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
@@ -398,12 +393,14 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
 
       const found_env = find_env(symbol.val, env);
       if (found_env === undefined) {
-        return err();
+        return err(`evaluate (#%variable-reference): could not find variable ${symbol.val}`);
       }
 
       const maybe_expr = get_define(found_env.bindings, symbol.val);
       if (maybe_expr === undefined) {
-        return err();
+        return err(
+          `evaluate (#%variable-reference): tried to use variable ${symbol.val} before initialization`
+        );
       }
 
       return ok(maybe_expr as EvalSExpr);
@@ -423,7 +420,7 @@ export const evaluate_module: EvaluateModule = (
 ): Result<Module, EvalErr> => {
   const module_info_result = get_module_info(program);
   if (isBadResult(module_info_result)) {
-    return err();
+    return module_info_result;
   }
   const {
     name: module_name,
@@ -443,13 +440,13 @@ export const evaluate_module: EvaluateModule = (
   if (module_path_is_builtin) {
     const parent_module_result = host.read_builtin_module(module_path_name);
     if (isBadResult(parent_module_result)) {
-      return err();
+      return parent_module_result;
     }
     parent_module = parent_module_result.v;
   } else {
     const parent_module_r = host.read_fep_module(module_path_name, program_filename);
     if (isBadResult(parent_module_r)) {
-      return err();
+      return parent_module_r;
     }
     parent_module = parent_module_r.v;
   }
@@ -573,7 +570,9 @@ export const evaluate_module: EvaluateModule = (
         if (require_result !== undefined && isGoodResult(require_result)) {
           break;
         }
-        return err();
+        return err(
+          `evaluate_module (#%require): invalid format for require spec ${print(require_form)}`
+        );
       }
       case 'begin-for-syntax': {
         throw 'Not yet implemented';
@@ -612,11 +611,11 @@ export const evaluate_module: EvaluateModule = (
   for (const [name, exported] of provide_names.entries()) {
     const name_env = find_env(name, env);
     if (name_env === undefined) {
-      return err();
+      return err(`evaluate_module (export): could not find binding for ${name} to export`);
     }
     const binding = get_binding(name_env.bindings, name);
     if (binding === undefined) {
-      return err();
+      return err(`evaluate_module (export): binding for ${name} was not initialized`);
     }
     set_binding(exported_bindings, exported, binding);
   }

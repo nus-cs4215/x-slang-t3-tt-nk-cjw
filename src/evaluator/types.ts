@@ -8,7 +8,7 @@ import { EvalData } from './datatypes';
 
 export type EvalSExpr = SExprT<EvalData>;
 
-export type EvalErr = void;
+export type EvalErr = string;
 export type EvalResult = Result<EvalSExpr, EvalErr>;
 
 export type ApplySyntax = (fun: EvalSExpr, stx: EvalSExpr, env: Environment) => EvalResult;
