@@ -26,7 +26,7 @@ export function rpar(contents: RParContents, loc: Location): RPar {
   return { type: 'RPar', contents, loc };
 }
 
-export type QuoteLikeContents = "'" | '`' | ',';
+export type QuoteLikeContents = "'" | '~' | ',';
 export interface QuoteLike extends Base {
   type: 'QuoteLike';
   contents: QuoteLikeContents;
@@ -211,7 +211,7 @@ export function* tokenize(s: string): Iterable<Token> & Iterator<Token> {
         continue;
       }
       case "'":
-      case '`':
+      case '~':
       case ',': {
         inc();
         const end = pos();
