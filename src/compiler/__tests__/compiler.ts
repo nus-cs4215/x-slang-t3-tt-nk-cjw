@@ -348,9 +348,16 @@ test('begin and begin0', () => {
         ; expression level begin0
         (define z0
           (begin0 1 2 3))
+
+        ; lambda level begin
+        ((#%plain-lambda ()
+          (begin
+            (define x 1)
+            (define-syntax y (#%plain-lambda (stx) 2)))
+          (+ x y)))
       )
     `).toMatchInlineSnapshot(
-    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1)) (define y (quote 2)) (define z (begin (quote 1) (quote 2) (quote 3))) (define z0 (begin0 (quote 1) (quote 2) (quote 3)))))"`
+    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1)) (define y (quote 2)) (define z (begin (quote 1) (quote 2) (quote 3))) (define z0 (begin0 (quote 1) (quote 2) (quote 3))) (#%plain-app (#%plain-lambda () (define x (quote 1)) (define-syntax y (#%plain-lambda (stx) (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference x) (quote 2))))))"`
   );
 });
 
@@ -372,7 +379,6 @@ test('if', () => {
 test('let and letrec', () => {
   expectReadCompilePrint(`
       (module name '#%builtin-kernel
-        ; module level begin
         (define x
           (let [
             (y 1)
@@ -386,9 +392,23 @@ test('let and letrec', () => {
           (z 2)
         ]
           (+ y z))
+
+        (define x
+          (letrec [
+            (y z)
+            (z 2)
+          ]
+            (+ y z))
+        )
+
+        (letrec [
+          (y z)
+          (z 2)
+        ]
+          (+ y z))
       )
     `).toMatchInlineSnapshot(
-    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))) (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))))"`
+    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))) (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z))) (define x (letrec ((y (#%variable-reference z)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))) (letrec ((y (#%variable-reference z)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))))"`
   );
 });
 
