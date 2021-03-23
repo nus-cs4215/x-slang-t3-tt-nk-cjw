@@ -2,17 +2,13 @@ import {
   Bindings,
   Environment,
   find_env,
-  get_core,
+  get_binding,
   get_define,
-  get_syntax,
-  has_core,
-  has_define,
-  has_syntax,
   install_bindings,
   make_empty_bindings,
   make_env,
   make_env_list,
-  set_core,
+  set_binding,
   set_define,
   set_syntax,
 } from '../environment';
@@ -39,6 +35,7 @@ import {
 } from '../fep-types';
 import { EvaluatorHost, FileName } from '../host';
 import { get_module_info, Module } from '../modules';
+import { extract_matches, match, read_pattern } from '../pattern';
 import {
   car,
   cdr,
@@ -52,9 +49,10 @@ import {
   SExprT,
   SHomList,
   snil,
+  SSymbol,
   val,
 } from '../sexpr';
-import { err, getOk, isBadResult, ok, Result } from '../utils';
+import { err, getOk, isBadResult, isGoodResult, ok, Result } from '../utils';
 import { EvalDataType, make_fep_closure, PrimitiveTransformer } from './datatypes';
 import {
   Apply,
@@ -465,7 +463,7 @@ export const evaluate_module: EvaluateModule = (
   //  - TODO: handle for syntaimport { getOk } from '../utils/result';
   //  - TODO: evaluate submodules
   // TODO: Make this less hacky lmao
-  const provides_names: Set<string> = new Set();
+  const provide_names: Map<string, string> = new Map();
 
   for (const statement of module_body) {
     const form_type = statement.x.val;
@@ -474,40 +472,108 @@ export const evaluate_module: EvaluateModule = (
         const provide_form = statement as ProvideForm;
         let names_to_export = provide_form.y;
         while (is_list(names_to_export)) {
-          provides_names.add(names_to_export.x.val);
-          names_to_export = names_to_export.y;
+          const name = car(names_to_export);
+          const rename_match_result = match(name, getOk(read_pattern("('rename local exported)")));
+          if (rename_match_result !== undefined) {
+            extract_matches(rename_match_result, (local: [SSymbol], exported: [SSymbol]) =>
+              provide_names.set(val(local[0]), val(exported[0]))
+            );
+            break;
+          }
+          provide_names.set(val(name), val(name));
+          names_to_export = cdr(names_to_export);
         }
         break;
       }
       case '#%require': {
         const require_form = statement as RequireBuiltinForm | RequireFileForm;
-        const require_spec = require_form.y.x;
+        const require_file_pattern = getOk(read_pattern("('#%require sym-name)"));
+        const require_builtin_pattern = getOk(read_pattern("('#%require ('quote sym-name))"));
+        const require_file_renaming_pattern = getOk(
+          read_pattern("('#%require ('rename sym-name sym-local sym-exported))")
+        );
+        const require_builtin_renaming_pattern = getOk(
+          read_pattern("('#%require ('rename ('quote sym-name) sym-local sym-exported))")
+        );
 
         // get the module
-        let required_module: Module;
-        if (is_list(require_spec)) {
-          // builtin require
-          const module_name = require_spec.y.x.val;
-          const module_r = host.read_builtin_module(module_name);
-          if (isBadResult(module_r)) {
-            return err();
-            // return err(`error requiring module ${module_name}: {module_r.err}`);
+        let require_result: Result<void, void> | undefined = undefined;
+        {
+          const match_result = match(require_form, require_file_pattern);
+          if (match_result !== undefined) {
+            require_result = extract_matches(match_result, (name: [SSymbol]) => {
+              const module_name = val(name[0]);
+              // compile required module
+              const module_r = host.read_fep_module(module_name, program_filename);
+              if (isBadResult(module_r)) {
+                return err();
+              }
+              install_bindings(env.bindings, module_r.v.provides);
+              return ok(undefined);
+            });
           }
-          required_module = module_r.v;
-        } else {
-          // file require
-          const module_name = require_spec.val;
-          const module_r = host.read_fep_module(module_name, program_filename);
-          if (isBadResult(module_r)) {
-            return err();
-            // return err(`error requiring module ${module_name}: {module_r.err}`);
-          }
-          required_module = module_r.v;
         }
-
-        // Add its bindings to ours
-        install_bindings(env.bindings, required_module.provides);
-        break;
+        {
+          const match_result = match(require_form, require_builtin_pattern);
+          if (match_result !== undefined) {
+            require_result = extract_matches(match_result, (name: [SSymbol]) => {
+              const module_name = val(name[0]);
+              const module_r = host.read_builtin_module(module_name);
+              if (isBadResult(module_r)) {
+                return err();
+              }
+              install_bindings(env.bindings, module_r.v.provides);
+              return ok(undefined);
+            });
+          }
+        }
+        {
+          const match_result = match(require_form, require_file_renaming_pattern);
+          if (match_result !== undefined) {
+            require_result = extract_matches(
+              match_result,
+              (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => {
+                const module_name = val(name[0]);
+                // compile required module
+                const module_r = host.read_fep_module(module_name, program_filename);
+                if (isBadResult(module_r)) {
+                  return err();
+                }
+                const binding = get_binding(module_r.v.provides, val(local[0]));
+                if (binding === undefined) {
+                  return err();
+                }
+                set_binding(env.bindings, val(exported[0]), binding);
+                return ok(undefined);
+              }
+            );
+          }
+        }
+        {
+          const match_result = match(require_form, require_builtin_renaming_pattern);
+          if (match_result !== undefined) {
+            require_result = extract_matches(
+              match_result,
+              (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => {
+                const module_name = val(name[0]);
+                const module_r = host.read_builtin_module(module_name);
+                if (isBadResult(module_r)) {
+                  return err();
+                }
+                const binding = get_binding(module_r.v.provides, val(local[0]));
+                if (binding === undefined) {
+                  return err();
+                }
+                set_binding(env.bindings, val(exported[0]), binding);
+                return ok(undefined);
+              }
+            );
+          }
+        }
+        if (require_result !== undefined && isGoodResult(require_result)) {
+          break;
+        }
+        return err();
       }
       case 'begin-for-syntax': {
         throw 'Not yet implemented';
@@ -543,18 +609,16 @@ export const evaluate_module: EvaluateModule = (
 
   // Now that we've evaluated all the statements in the body, we return the module
   const exported_bindings = make_empty_bindings();
-  for (const name of provides_names.keys()) {
+  for (const [name, exported] of provide_names.entries()) {
     const name_env = find_env(name, env);
     if (name_env === undefined) {
       return err();
     }
-    if (has_define(name_env.bindings, name)) {
-      set_define(exported_bindings, name, get_define(name_env.bindings, name));
-    } else if (has_syntax(name_env.bindings, name)) {
-      set_syntax(exported_bindings, name, get_syntax(name_env.bindings, name)!);
-    } else if (has_core(name_env.bindings, name)) {
-      set_core(exported_bindings, name, get_core(name_env.bindings, name)!);
+    const binding = get_binding(name_env.bindings, name);
+    if (binding === undefined) {
+      return err();
     }
+    set_binding(exported_bindings, exported, binding);
   }
 
   return ok({

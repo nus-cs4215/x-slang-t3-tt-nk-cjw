@@ -42,6 +42,7 @@ test('exports', () => {
       "make_bindings_from_record",
       "get_binding",
       "has_binding",
+      "set_binding",
       "get_define",
       "get_syntax",
       "get_core",

@@ -73,9 +73,11 @@ export const make_bindings_from_record = (
 export function get_binding(bindings: Bindings, name: string): Binding | undefined {
   return bindings.get(name);
 }
-
 export function has_binding(bindings: Bindings, name: string): boolean {
   return bindings.has(name);
+}
+export function set_binding(bindings: Bindings, name: string, binding: Binding): void {
+  bindings.set(name, binding);
 }
 
 export const get_define = (bindings: Bindings, name: string): MaybeSExpr => {

@@ -136,6 +136,92 @@ describe('module forms work as expected', () => {
     `);
   });
 
+  test('require syntax transformer', () => {
+    const host = maps_to_compiler_host(
+      new Map([
+        ['/input.rkt', "(module input '#%builtin-kernel (#%require parent) x)"],
+        [
+          '/parent.rkt',
+          "(module parent '#%builtin-kernel (define-syntax x (#%plain-lambda (stx) 5)) (#%provide x))",
+        ],
+      ]),
+      ts_based_modules
+    );
+    const compiled_filenames = new Map();
+    const compile_result = compile_file('/input.rkt', {
+      host,
+      compiled_filenames,
+      expansion_depth: 0,
+      MAX_MACRO_EXPANSION_DEPTH_LIMIT: 100000,
+    });
+    expect(print(getOk(compile_result))).toMatchInlineSnapshot(
+      `"(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require parent) (quote 5)))"`
+    );
+    expect(compiled_filenames).toMatchInlineSnapshot(`
+      Map {
+        "/parent.rkt" => "/parent.rkt.fep",
+        "/input.rkt" => "/input.rkt.fep",
+      }
+    `);
+    expect(host.read_file(compiled_filenames.get('/input.rkt'))).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require parent) (quote 5)))",
+      }
+    `);
+    expect(host.read_file(compiled_filenames.get('/parent.rkt'))).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module parent (quote #%builtin-kernel) (#%plain-module-begin (define-syntax x (#%plain-lambda (stx) (quote 5))) (#%provide x)))",
+      }
+    `);
+  });
+
+  test('require and rename syntax transformer', () => {
+    const host = maps_to_compiler_host(
+      new Map([
+        ['/input.rkt', "(module input '#%builtin-kernel (#%require (rename parent x y)) y)"],
+        [
+          '/parent.rkt',
+          "(module parent '#%builtin-kernel (define-syntax x (#%plain-lambda (stx) 5)) (#%provide x))",
+        ],
+      ]),
+      ts_based_modules
+    );
+    const compiled_filenames = new Map();
+    const compile_result = compile_file('/input.rkt', {
+      host,
+      compiled_filenames,
+      expansion_depth: 0,
+      MAX_MACRO_EXPANSION_DEPTH_LIMIT: 100000,
+    });
+    expect(print(getOk(compile_result))).toMatchInlineSnapshot(
+      `"(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename parent x y)) (quote 5)))"`
+    );
+    expect(compiled_filenames).toMatchInlineSnapshot(`
+      Map {
+        "/parent.rkt" => "/parent.rkt.fep",
+        "/input.rkt" => "/input.rkt.fep",
+      }
+    `);
+    expect(host.read_file(compiled_filenames.get('/input.rkt'))).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename parent x y)) (quote 5)))",
+      }
+    `);
+    expect(host.read_file(compiled_filenames.get('/parent.rkt'))).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module parent (quote #%builtin-kernel) (#%plain-module-begin (define-syntax x (#%plain-lambda (stx) (quote 5))) (#%provide x)))",
+      }
+    `);
+  });
+
   test.skip('only provided definitions can be used', () => {
     const host = maps_to_compiler_host(
       new Map([
@@ -366,5 +452,48 @@ describe('compile fails', () => {
     expectReadCompileError(`
       (module name '#%builtin-kernel (lambda (x) x))
     `).toMatchInlineSnapshot();
+  });
+
+  test('demo', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel)
+    `).toMatchInlineSnapshot(`"(module name (quote #%builtin-kernel) (#%plain-module-begin))"`);
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel f)
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%variable-reference f)))"`
+    );
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel (f 1))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%plain-app (#%variable-reference f) (quote 1))))"`
+    );
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        (define-syntax f
+          (#%plain-lambda (stx) 1))
+        f)
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define-syntax f (#%plain-lambda (stx) (quote 1))) (quote 1)))"`
+    );
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        (define-syntax f (#%plain-lambda (stx) 1))
+        (define-syntax g (#%plain-lambda (stx) 'f))
+        g)
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define-syntax f (#%plain-lambda (stx) (quote 1))) (define-syntax g (#%plain-lambda (stx) (quote f))) (quote 1)))"`
+    );
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        (define-syntax f
+          (#%plain-lambda (stx)
+            (cons (car (cdr stx))
+              (cons (cdr (cdr stx))
+                '()))))
+        (f 1 2))
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define-syntax f (#%plain-lambda (stx) (#%plain-app (#%variable-reference cons) (#%plain-app (#%variable-reference car) (#%plain-app (#%variable-reference cdr) (#%variable-reference stx))) (#%plain-app (#%variable-reference cons) (#%plain-app (#%variable-reference cdr) (#%plain-app (#%variable-reference cdr) (#%variable-reference stx))) (quote ()))))) (#%plain-app (quote 1) (#%plain-app (quote 2)))))"`
+    );
   });
 });
