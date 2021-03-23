@@ -82,6 +82,10 @@ function functorial_expression_transformer(
 
     const expanded_match_result: MatchObject<never> = {};
     for (const [name, matches] of Object.entries(match_result)) {
+      if (matches === undefined) {
+        expanded_match_result[name] = [];
+        continue;
+      }
       if (name.endsWith('-noexpand')) {
         expanded_match_result[name] = matches;
       } else {
@@ -144,7 +148,10 @@ function let_transformer(
   // Expand values in outer env
   {
     const varname = 'value';
-    const matches = match_result[varname];
+    let matches = match_result[varname];
+    if (matches === undefined) {
+      matches = [];
+    }
     if (varname.endsWith('-noexpand')) {
       expanded_match_result[varname] = matches;
     } else {
@@ -168,7 +175,10 @@ function let_transformer(
   // Expand expr in inner env
   {
     const varname = 'expr';
-    const matches = match_result[varname];
+    let matches = match_result[varname];
+    if (matches === undefined) {
+      matches = [];
+    }
     if (varname.endsWith('-noexpand')) {
       expanded_match_result[varname] = matches;
     } else {
@@ -226,6 +236,10 @@ function letrec_transformer(
 
   // Expand both value and expr in inner env
   for (const [varname, matches] of Object.entries(match_result)) {
+    if (matches === undefined) {
+      expanded_match_result[varname] = [];
+      continue;
+    }
     if (varname.endsWith('-noexpand')) {
       expanded_match_result[varname] = matches;
     } else {
