@@ -23,6 +23,19 @@ export interface CompilerHost extends EvaluatorHost {
   read_builtin_module(module_name: ModuleName): Result<Module, HostErr>;
 }
 
+function normalize_path(path: string) {
+  path = path
+    .replace(/.*\/\//g, '/') // double slashes indicate absolute paths: /blah/blah//absolute/path -> /absolute/path
+    .replace(/\/\.\//g, '/'); // /./ -> /
+  let prev_path = undefined;
+  while (path !== prev_path) {
+    // replace one occurrence of ../ at a time just in case
+    prev_path = path;
+    path = path.replace(/\/[^/]*\/\.\.\//, '/'); // /something/../ -> /
+  }
+  return path;
+}
+
 // Utility to create a compiler host out of a Map
 class MapHost {
   constructor(
@@ -31,27 +44,23 @@ class MapHost {
     private loaded: Map<FileName, Module> = new Map()
   ) {}
 
-  module_name_to_filename(module_name: ModuleName, relative_to?: FileName) {
+  module_name_to_filename(module_name: ModuleName, relative_to: FileName) {
     let dirname: string;
-    if (relative_to === undefined) {
-      dirname = './';
+    const slashpos = relative_to.lastIndexOf('/');
+    if (slashpos === -1) {
+      // if filename has no /, then it is an error
+      throw 'paths have gone very wrong';
     } else {
-      const slashpos = relative_to.lastIndexOf('/');
-      if (slashpos === -1) {
-        // if filename has no /, then it is relative to .
-        dirname = './';
-      } else {
-        dirname = relative_to.substr(0, slashpos + 1);
-      }
+      dirname = relative_to.substr(0, slashpos + 1);
     }
-    return dirname + module_name + '.rkt';
+    return normalize_path(dirname + module_name + '.rkt');
   }
 
   read_file(filename: FileName) {
     return ok_unless_void(this.files.get(filename), 'file module not found: ' + filename);
   }
 
-  read_fep_module(module_name: ModuleName, relative_to?: FileName): Result<Module, string> {
+  read_fep_module(module_name: ModuleName, relative_to: FileName): Result<Module, string> {
     const fep_filename = this.module_name_to_filename(module_name, relative_to) + '.fep';
     if (this.loaded.has(fep_filename)) {
       return ok(this.loaded.get(fep_filename)!);

@@ -59,6 +59,7 @@
   "homepage": "https://github.com/nus-cs4215/x-slang-t3-tt-nk-cjw",
   "jest": {
     "moduleFileExtensions": [
+      "rkt",
       "ts",
       "js"
     ],

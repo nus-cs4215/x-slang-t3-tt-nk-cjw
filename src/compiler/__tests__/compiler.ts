@@ -1,11 +1,15 @@
 import { maps_to_compiler_host } from '../../host';
+import { libs } from '../../modules/rkt-modules';
 import { print } from '../../printer';
 import { getErr, getOk } from '../../utils';
 import { compile_file, compile_entrypoint } from '../compiler';
 import { ts_based_modules } from '../compiler-base';
 
 function readCompilePrint(module_contents: string) {
-  const host = maps_to_compiler_host(new Map([['/input.rkt', module_contents]]), ts_based_modules);
+  const host = maps_to_compiler_host(
+    new Map([['/input.rkt', module_contents], ...libs]),
+    ts_based_modules
+  );
   const compile_result = compile_entrypoint('/input.rkt', host);
   const fep_contents = print(getOk(compile_result));
   return fep_contents;
@@ -452,6 +456,21 @@ describe('compile fails', () => {
     expectReadCompileError(`
       (module name '#%builtin-kernel (lambda (x) x))
     `).toMatchInlineSnapshot();
+  });
+
+  test('use library files', () => {
+    expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        (#%require /libs/racket/private/let)
+        (let* [
+            (x 1)
+            (y x)
+            ]
+          (+ x y))
+        )
+    `).toMatchInlineSnapshot(
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/let) (let ((x (quote 1))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference +) (#%variable-reference x) (#%variable-reference y)))))))"`
+    );
   });
 
   test('demo', () => {

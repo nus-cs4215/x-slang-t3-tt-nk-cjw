@@ -473,9 +473,7 @@ function handle_require(
         // compile required module
         const module_r = compile_and_run(module_name, global_ctx, file_ctx);
         if (isBadResult(module_r)) {
-          return err(
-            `module core transformer (#%require): error while requiring module ${module_name}`
-          );
+          return module_r;
         }
         install_bindings(bindings, module_r.v.provides);
         continue;
@@ -512,9 +510,7 @@ function handle_require(
         // compile required module
         const module_r = compile_and_run(module_name, global_ctx, file_ctx);
         if (isBadResult(module_r)) {
-          return err(
-            `module core transformer (#%require): error while requiring module ${module_name}`
-          );
+          return module_r;
         }
         const binding = get_binding(module_r.v.provides, local);
         if (binding === undefined) {
@@ -542,9 +538,7 @@ function handle_require(
         );
         const module_r = global_ctx.host.read_builtin_module(module_name);
         if (isBadResult(module_r)) {
-          return err(
-            `module core transformer (#%require): error while requiring module ${module_name}`
-          );
+          return module_r;
         }
         const binding = get_binding(module_r.v.provides, local);
         if (binding === undefined) {
