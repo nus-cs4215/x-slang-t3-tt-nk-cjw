@@ -461,7 +461,7 @@ describe('compile fails', () => {
   test('use library files', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-kernel
-        (#%require /libs/racket/private/let)
+        (#%require /libs/racket/base)
         (let* [
             (x 1)
             (y x)
@@ -469,7 +469,7 @@ describe('compile fails', () => {
           (+ x y))
         )
     `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/let) (let ((x (quote 1))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference +) (#%variable-reference x) (#%variable-reference y)))))))"`
+      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/base) (let ((x (quote 1))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference +) (#%variable-reference x) (#%variable-reference y)))))))"`
     );
   });
 

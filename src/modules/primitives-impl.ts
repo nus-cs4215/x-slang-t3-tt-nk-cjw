@@ -705,6 +705,11 @@ function last_pair(...args: EvalSExpr[]): EvalResult {
   return ok(last_pair);
 }
 
+function console_log(...args: EvalSExpr[]): EvalResult {
+  console.log(args.map(print).join('\n'));
+  return ok(args[args.length - 1]);
+}
+
 export const primitive_funcs: Record<string, (...args: EvalSExpr[]) => EvalResult> = {
   'eq?': eq_,
   'equal?': equal_,
@@ -778,6 +783,8 @@ export const primitive_funcs: Record<string, (...args: EvalSExpr[]) => EvalResul
   rest,
   last,
   'last-pair': last_pair,
+
+  'console-log': console_log,
 };
 
 export const primitive_consts: Record<string, EvalSExpr> = {
