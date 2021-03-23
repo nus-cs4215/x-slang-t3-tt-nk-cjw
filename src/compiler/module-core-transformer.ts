@@ -11,13 +11,13 @@ import {
   set_define,
   set_syntax,
 } from '../environment';
-import { evaluate_general_top_level, evaluate_module } from '../evaluator';
+import { evaluate_expr_or_define, evaluate_module } from '../evaluator';
 import {
-  FEExpr,
+  ExprForm,
   FEPNode,
   ModuleBuiltinParentForm,
   ModuleFileParentForm,
-  TopLevelModuleFormAst,
+  ModuleAst,
 } from '../fep-types';
 import { ModuleName } from '../host';
 import { get_module_info, Module } from '../modules';
@@ -199,7 +199,7 @@ export function module_core_transformer(
             const [name, compiled_rhs] = name_and_compiled_rhs_r.v;
 
             // evaluate rhs
-            const rhs_r = evaluate_general_top_level(compiled_rhs, env);
+            const rhs_r = evaluate_expr_or_define(compiled_rhs, env);
             if (isBadResult(rhs_r)) {
               return err(
                 'error when evaluating rhs of define-syntax in ' +
@@ -439,7 +439,7 @@ export function compile_define_syntax_rhs_or_error(
   env: Environment,
   global_ctx: CompilerGlobalContext,
   file_ctx: CompilerFileLocalContext
-): Result<[string, FEExpr], CompileErr> {
+): Result<[string, ExprForm], CompileErr> {
   const match_result = match(stx, define_syntax_pattern);
   if (match_result !== undefined) {
     const {
@@ -448,7 +448,7 @@ export function compile_define_syntax_rhs_or_error(
     } = match_result as MatchObject<never> & { name: [SSymbol] };
     return then(
       compile(value_expr, ExpansionContext.ExpressionContext, env, global_ctx, file_ctx),
-      (fep) => ok([val(name_expr), fep as FEExpr])
+      (fep) => ok([val(name_expr), fep as ExprForm])
     );
   } else {
     return err('did not match form for define-syntax: ' + print(stx));
@@ -569,11 +569,7 @@ function compile_and_run(
   }
   const fep = compile_r.v;
   // evaluate it
-  const module_r = evaluate_module(
-    fep as TopLevelModuleFormAst,
-    required_filename,
-    global_ctx.host
-  );
+  const module_r = evaluate_module(fep as ModuleAst, required_filename, global_ctx.host);
 
   if (isBadResult(module_r)) {
     return err(`error requiring module ${module_name}: ${module_r.err}`);

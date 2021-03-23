@@ -17,20 +17,19 @@ import {
   BeginForm,
   DefineForm,
   DefineSyntaxForm,
-  FEExpr,
-  GeneralTopLevelFormAst,
+  ExprForm,
+  ExprOrDefineAst,
   IfForm,
   LetForm,
   LetrecForm,
-  ModuleLevelFormAst,
+  StatementAst,
   PlainAppForm,
   PlainLambdaForm,
   PlainModuleBeginForm,
   ProvideForm,
   QuoteForm,
-  RequireBuiltinForm,
-  RequireFileForm,
-  TopLevelModuleFormAst,
+  RequireForm,
+  ModuleAst,
   VariableReferenceForm,
 } from '../fep-types';
 import { EvaluatorHost, FileName } from '../host';
@@ -46,13 +45,14 @@ import {
   is_nil,
   sbox,
   scons,
+  SExpr,
   SExprT,
   SHomList,
   snil,
   SSymbol,
   val,
 } from '../sexpr';
-import { err, getOk, isBadResult, isGoodResult, ok, Result } from '../utils';
+import { err, getOk, isBadResult, ok, Result } from '../utils';
 import { EvalDataType, make_fep_closure, PrimitiveTransformer } from './datatypes';
 import {
   Apply,
@@ -60,17 +60,17 @@ import {
   EvalErr,
   EvalResult,
   EvalSExpr,
-  EvaluateGeneralTopLevel,
+  EvaluateExprOrDefine,
   EvaluateModule,
 } from './types';
 
-export const fep_apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResult => {
+export const apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResult => {
   if (is_boxed(fun)) {
     const v = fun.val;
     if (v.variant === EvalDataType.FEPClosure) {
       // v was a FEPClosure
       const { env, formals, rest, body } = v;
-      let _body: SHomList<FEExpr> = body;
+      let _body: SHomList<ExprForm> = body;
       if (rest === undefined) {
         if (args.length < formals.length) {
           return err(
@@ -112,7 +112,7 @@ export const fep_apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResu
 
       let r: EvalResult;
       while (is_list(_body)) {
-        r = evaluate_general_top_level(car(_body), inner_env);
+        r = evaluate_expr_or_define(car(_body), inner_env);
         if (isBadResult(r)) {
           return r;
         }
@@ -132,7 +132,7 @@ export const fep_apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResu
   return err('apply: tried to call non-function value');
 };
 
-export const fep_apply_syntax: ApplySyntax = (
+export const apply_syntax: ApplySyntax = (
   fun: EvalSExpr,
   stx: EvalSExpr,
   compile_env: Environment
@@ -142,7 +142,7 @@ export const fep_apply_syntax: ApplySyntax = (
     if (v.variant === EvalDataType.FEPClosure) {
       // v was a FEPClosure
       const { env, formals, rest, body } = v;
-      let _body: SHomList<FEExpr> = body;
+      let _body: SHomList<ExprForm> = body;
       if (rest !== undefined || formals.length !== 1) {
         return err('apply_syntax: syntax transformers should take exactly one argument');
       }
@@ -154,7 +154,7 @@ export const fep_apply_syntax: ApplySyntax = (
 
       let r: EvalResult;
       while (is_list(_body)) {
-        r = evaluate_general_top_level(car(_body), inner_env);
+        r = evaluate_expr_or_define(car(_body), inner_env);
         if (isBadResult(r)) {
           return r;
         }
@@ -174,8 +174,8 @@ export const fep_apply_syntax: ApplySyntax = (
   return err('apply_syntax: tried to call non-function value');
 };
 
-export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
-  program: GeneralTopLevelFormAst,
+export const evaluate_expr_or_define: EvaluateExprOrDefine = (
+  program: ExprOrDefineAst,
   env: Environment
 ): EvalResult => {
   const token_val = program.x.val;
@@ -186,7 +186,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       const symbol = car(cdr(defineprogram));
       const expr = car(cdr(cdr(defineprogram)));
 
-      const r = evaluate_general_top_level(expr, env);
+      const r = evaluate_expr_or_define(expr, env);
       if (isBadResult(r)) {
         return r;
       }
@@ -201,7 +201,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       const symbol = car(cdr(definesyntax_program));
       const expr = car(cdr(cdr(definesyntax_program)));
 
-      const r = evaluate_general_top_level(expr, env);
+      const r = evaluate_expr_or_define(expr, env);
       if (isBadResult(r)) {
         return r;
       }
@@ -235,7 +235,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
     case 'if': {
       const ifprogram = program as IfForm;
       const condition = ifprogram.y.x;
-      const condition_r = evaluate_general_top_level(condition, env);
+      const condition_r = evaluate_expr_or_define(condition, env);
 
       if (isBadResult(condition_r)) {
         return condition_r;
@@ -245,17 +245,17 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       const alternative = ifprogram.y.y.y.x;
       const condition_v = condition_r.v;
       return !(is_boolean(condition_v) && val(condition_v) === false)
-        ? evaluate_general_top_level(consequent, env)
-        : evaluate_general_top_level(alternative, env);
+        ? evaluate_expr_or_define(consequent, env)
+        : evaluate_expr_or_define(alternative, env);
     }
     case 'begin': {
       let r: EvalResult;
       const beginprogram = program as BeginForm;
 
-      let sequence: SHomList<FEExpr> = cdr(beginprogram);
+      let sequence: SHomList<ExprForm> = cdr(beginprogram);
       while (is_list(sequence)) {
         const expr = car(sequence);
-        r = evaluate_general_top_level(expr, env);
+        r = evaluate_expr_or_define(expr, env);
 
         if (isBadResult(r)) {
           return r;
@@ -268,12 +268,12 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
     case 'begin0': {
       const begin0program = program as Begin0Form;
       const nonempty_sequence = cdr(begin0program);
-      const r = evaluate_general_top_level(car(nonempty_sequence), env);
+      const r = evaluate_expr_or_define(car(nonempty_sequence), env);
 
       let rest_sequence = cdr(nonempty_sequence);
       while (is_list(rest_sequence)) {
         const expr = car(rest_sequence);
-        const rr = evaluate_general_top_level(expr, env);
+        const rr = evaluate_expr_or_define(expr, env);
 
         if (isBadResult(rr)) {
           return rr;
@@ -292,7 +292,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
         const symbol = car(binding_pair);
         const expr = car(cdr(binding_pair));
 
-        const r = evaluate_general_top_level(expr, env);
+        const r = evaluate_expr_or_define(expr, env);
         if (isBadResult(r)) {
           return r;
         }
@@ -303,10 +303,10 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       env = make_env(bindings, env);
 
       let r: EvalResult;
-      let sequence: SHomList<FEExpr> = cdr(cdr(letprogram));
+      let sequence: SHomList<ExprForm> = cdr(cdr(letprogram));
       while (is_list(sequence)) {
         const expr = car(sequence);
-        r = evaluate_general_top_level(expr, env);
+        r = evaluate_expr_or_define(expr, env);
 
         if (isBadResult(r)) {
           return r;
@@ -335,7 +335,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
         const symbol = car(binding_pair);
         const expr = car(cdr(binding_pair));
 
-        const r = evaluate_general_top_level(expr, env);
+        const r = evaluate_expr_or_define(expr, env);
         if (isBadResult(r)) {
           return r;
         }
@@ -345,10 +345,10 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       }
 
       let r: EvalResult;
-      let sequence: SHomList<FEExpr> = cdr(cdr(letrecprogram));
+      let sequence: SHomList<ExprForm> = cdr(cdr(letrecprogram));
       while (is_list(sequence)) {
         const expr = car(sequence);
-        r = evaluate_general_top_level(expr, env);
+        r = evaluate_expr_or_define(expr, env);
 
         if (isBadResult(r)) {
           return r;
@@ -365,16 +365,14 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
     case '#%plain-app': {
       const plainapp_program = program as PlainAppForm;
       const exprs = cdr(plainapp_program);
-      const fun_r = evaluate_general_top_level(car(exprs), env);
+      const fun_r = evaluate_expr_or_define(car(exprs), env);
 
       if (isBadResult(fun_r)) {
         return fun_r;
       }
       const fun = getOk(fun_r);
 
-      const arg_rs = homlist_to_arr(cdr(exprs)).map((fexpr) =>
-        evaluate_general_top_level(fexpr, env)
-      );
+      const arg_rs = homlist_to_arr(cdr(exprs)).map((fexpr) => evaluate_expr_or_define(fexpr, env));
 
       const args = [];
 
@@ -385,7 +383,7 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
         args.push(getOk(arg_rs[i]));
       }
 
-      return fep_apply(fun, ...args);
+      return apply(fun, ...args);
     }
     case '#%variable-reference': {
       const variablereference_program = program as VariableReferenceForm;
@@ -406,15 +404,14 @@ export const evaluate_general_top_level: EvaluateGeneralTopLevel = (
       return ok(maybe_expr as EvalSExpr);
     }
 
-    // Currently: RequireFileForm and RequireBuiltinForm
     default: {
-      throw 'TODO: Not yet fully implemented';
+      throw 'unreachable code';
     }
   }
 };
 
 export const evaluate_module: EvaluateModule = (
-  program: TopLevelModuleFormAst,
+  program: ModuleAst,
   program_filename: FileName,
   host: EvaluatorHost
 ): Result<Module, EvalErr> => {
@@ -429,7 +426,7 @@ export const evaluate_module: EvaluateModule = (
     module_body: module_body_,
   } = module_info_result.v;
   let plain_module_begin = cdr(module_body_[0] as PlainModuleBeginForm);
-  const module_body: ModuleLevelFormAst[] = [];
+  const module_body: StatementAst[] = [];
   while (is_list(plain_module_begin)) {
     module_body.push(car(plain_module_begin));
     plain_module_begin = cdr(plain_module_begin);
@@ -467,117 +464,152 @@ export const evaluate_module: EvaluateModule = (
     switch (form_type) {
       case '#%provide': {
         const provide_form = statement as ProvideForm;
-        let names_to_export = provide_form.y;
-        while (is_list(names_to_export)) {
-          const name = car(names_to_export);
-          const rename_match_result = match(name, getOk(read_pattern("('rename local exported)")));
-          if (rename_match_result !== undefined) {
-            extract_matches(rename_match_result, (local: [SSymbol], exported: [SSymbol]) =>
-              provide_names.set(val(local[0]), val(exported[0]))
+        const export_specs_match_result = match(
+          provide_form,
+          getOk(read_pattern('(head export_specs ...)'))
+        );
+        if (export_specs_match_result === undefined) {
+          return err(`evaluate_module: incorrect form for #%provide ${print(statement)}`);
+        }
+        const export_specs = extract_matches(
+          export_specs_match_result,
+          (export_specs: SExpr[]) => export_specs
+        );
+        for (const spec of export_specs) {
+          {
+            const rename_match_result = match(
+              spec,
+              getOk(read_pattern("('rename local exported)"))
             );
-            break;
+            if (rename_match_result !== undefined) {
+              extract_matches(rename_match_result, (local: [SSymbol], exported: [SSymbol]) =>
+                provide_names.set(val(local[0]), val(exported[0]))
+              );
+              continue;
+            }
           }
-          provide_names.set(val(name), val(name));
-          names_to_export = cdr(names_to_export);
+          {
+            const rename_match_result = match(spec, getOk(read_pattern('sym-name')));
+            if (rename_match_result !== undefined) {
+              extract_matches(rename_match_result, (name: [SSymbol]) =>
+                provide_names.set(val(name[0]), val(name[0]))
+              );
+              continue;
+            }
+          }
+          return err(`evaluate_module: incorrect export spec form for #%provide ${print(spec)}`);
         }
         break;
       }
       case '#%require': {
-        const require_form = statement as RequireBuiltinForm | RequireFileForm;
-        const require_file_pattern = getOk(read_pattern("('#%require sym-name)"));
-        const require_builtin_pattern = getOk(read_pattern("('#%require ('quote sym-name))"));
-        const require_file_renaming_pattern = getOk(
-          read_pattern("('#%require ('rename sym-name sym-local sym-exported))")
+        const require_form = statement as RequireForm;
+        const import_specs_match_result = match(
+          require_form,
+          getOk(read_pattern('(head import_specs ...)'))
         );
-        const require_builtin_renaming_pattern = getOk(
-          read_pattern("('#%require ('rename ('quote sym-name) sym-local sym-exported))")
+        if (import_specs_match_result === undefined) {
+          return err(`evaluate_module: incorrect form for #%require ${print(statement)}`);
+        }
+        const import_specs = extract_matches(
+          import_specs_match_result,
+          (import_specs: SExpr[]) => import_specs
         );
-
-        // get the module
-        let require_result: Result<void, void> | undefined = undefined;
-        {
-          const match_result = match(require_form, require_file_pattern);
-          if (match_result !== undefined) {
-            require_result = extract_matches(match_result, (name: [SSymbol]) => {
-              const module_name = val(name[0]);
+        for (const spec of import_specs) {
+          {
+            const match_result = match(spec, getOk(read_pattern('sym-name')));
+            if (match_result !== undefined) {
+              const module_name = extract_matches(match_result, (name: [SSymbol]) => val(name[0]));
               // compile required module
               const module_r = host.read_fep_module(module_name, program_filename);
               if (isBadResult(module_r)) {
-                return err();
+                return err(
+                  `evaluate_module (#%require): error while requiring module ${module_name}`
+                );
               }
               install_bindings(env.bindings, module_r.v.provides);
-              return ok(undefined);
-            });
+              continue;
+            }
           }
-        }
-        {
-          const match_result = match(require_form, require_builtin_pattern);
-          if (match_result !== undefined) {
-            require_result = extract_matches(match_result, (name: [SSymbol]) => {
-              const module_name = val(name[0]);
+          {
+            const match_result = match(spec, getOk(read_pattern("('quote sym-name)")));
+            if (match_result !== undefined) {
+              const module_name = extract_matches(match_result, (name: [SSymbol]) => val(name[0]));
               const module_r = host.read_builtin_module(module_name);
               if (isBadResult(module_r)) {
-                return err();
+                return err(
+                  `evaluate_module (#%require): error while requiring builtin module ${module_name}`
+                );
               }
               install_bindings(env.bindings, module_r.v.provides);
-              return ok(undefined);
-            });
+              continue;
+            }
           }
-        }
-        {
-          const match_result = match(require_form, require_file_renaming_pattern);
-          if (match_result !== undefined) {
-            require_result = extract_matches(
-              match_result,
-              (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => {
-                const module_name = val(name[0]);
-                // compile required module
-                const module_r = host.read_fep_module(module_name, program_filename);
-                if (isBadResult(module_r)) {
-                  return err();
-                }
-                const binding = get_binding(module_r.v.provides, val(local[0]));
-                if (binding === undefined) {
-                  return err();
-                }
-                set_binding(env.bindings, val(exported[0]), binding);
-                return ok(undefined);
-              }
+          {
+            const match_result = match(
+              spec,
+              getOk(read_pattern("('rename sym-name sym-local sym-exported)"))
             );
-          }
-        }
-        {
-          const match_result = match(require_form, require_builtin_renaming_pattern);
-          if (match_result !== undefined) {
-            require_result = extract_matches(
-              match_result,
-              (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => {
-                const module_name = val(name[0]);
-                const module_r = host.read_builtin_module(module_name);
-                if (isBadResult(module_r)) {
-                  return err();
-                }
-                const binding = get_binding(module_r.v.provides, val(local[0]));
-                if (binding === undefined) {
-                  return err();
-                }
-                set_binding(env.bindings, val(exported[0]), binding);
-                return ok(undefined);
+            if (match_result !== undefined) {
+              const [module_name, local, exported] = extract_matches(
+                match_result,
+                (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => [
+                  val(name[0]),
+                  val(local[0]),
+                  val(exported[0]),
+                ]
+              );
+              // compile required module
+              const module_r = host.read_fep_module(module_name, program_filename);
+              if (isBadResult(module_r)) {
+                return err(
+                  `evaluate_module (#%require): error while requiring module ${module_name}`
+                );
               }
-            );
+              const binding = get_binding(module_r.v.provides, local);
+              if (binding === undefined) {
+                return err(
+                  `evaluate_module (#%require): binding ${local} not exported in module ${module_name}`
+                );
+              }
+              set_binding(env.bindings, exported, binding);
+              continue;
+            }
           }
+          {
+            const match_result = match(
+              spec,
+              getOk(read_pattern("('rename ('quote sym-name) sym-local sym-exported)"))
+            );
+            if (match_result !== undefined) {
+              const [module_name, local, exported] = extract_matches(
+                match_result,
+                (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => [
+                  val(name[0]),
+                  val(local[0]),
+                  val(exported[0]),
+                ]
+              );
+              const module_r = host.read_builtin_module(module_name);
+              if (isBadResult(module_r)) {
+                return err(
+                  `evaluate_module (#%require): error while requiring module ${module_name}`
+                );
+              }
+              const binding = get_binding(module_r.v.provides, local);
+              if (binding === undefined) {
+                return err(
+                  `evaluate_module (#%require): binding ${local} not exported in module ${module_name}`
+                );
+              }
+              set_binding(env.bindings, exported, binding);
+              continue;
+            }
+          }
+          return err(`evaluate_module: incorrect import spec form for #%require ${print(spec)}`);
         }
-        if (require_result !== undefined && isGoodResult(require_result)) {
-          break;
-        }
-        return err(
-          `evaluate_module (#%require): invalid format for require spec ${print(require_form)}`
-        );
+        break;
       }
       case 'begin-for-syntax': {
-        throw 'Not yet implemented';
-      }
-      case 'module': {
         throw 'Not yet implemented';
       }
       default: {
@@ -592,12 +624,11 @@ export const evaluate_module: EvaluateModule = (
     switch (form_type) {
       case '#%provide':
       case '#%require':
-      case 'begin-for-syntax':
-      case 'module': {
+      case 'begin-for-syntax': {
         break;
       }
       default: {
-        const r = evaluate_general_top_level(statement as GeneralTopLevelFormAst, env);
+        const r = evaluate_expr_or_define(statement as ExprOrDefineAst, env);
         if (isBadResult(r)) {
           return r;
         }

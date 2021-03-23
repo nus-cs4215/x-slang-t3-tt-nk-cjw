@@ -1,6 +1,6 @@
 import { make_empty_bindings, make_env, make_env_list } from '../../environment';
 import { set_define } from '../../environment/environment';
-import { FEExpr, GeneralTopLevelForm } from '../../fep-types';
+import { ExprForm, ExprOrDefineForm } from '../../fep-types';
 import { primitives_module } from '../../modules';
 import { read } from '../../reader';
 import { sboolean, snumber, ssymbol } from '../../sexpr';
@@ -8,7 +8,7 @@ import { sbox, slist, snil, SNonemptyHomList } from '../../sexpr/sexpr';
 import { getOk, ok } from '../../utils';
 import { getErr, isGoodResult } from '../../utils/result';
 import { make_fep_closure } from '../datatypes';
-import { evaluate_general_top_level } from '../evaluator';
+import { evaluate_expr_or_define } from '../evaluator';
 
 const the_global_environment = make_env_list(primitives_module.provides);
 
@@ -17,43 +17,43 @@ const test_env = () => make_env(make_empty_bindings(), the_global_environment);
 describe('evaluate_general_top_level', () => {
   test('evaluate quote', () => {
     expect(
-      evaluate_general_top_level(getOk(read('(quote 1)')) as GeneralTopLevelForm, undefined)
+      evaluate_expr_or_define(getOk(read('(quote 1)')) as ExprOrDefineForm, undefined)
     ).toEqual(ok(snumber(1)));
 
     expect(
-      evaluate_general_top_level(getOk(read('(quote #t)')) as GeneralTopLevelForm, undefined)
+      evaluate_expr_or_define(getOk(read('(quote #t)')) as ExprOrDefineForm, undefined)
     ).toEqual(ok(sboolean(true)));
 
     expect(
-      evaluate_general_top_level(getOk(read('(quote a)')) as GeneralTopLevelForm, undefined)
+      evaluate_expr_or_define(getOk(read('(quote a)')) as ExprOrDefineForm, undefined)
     ).toEqual(ok(ssymbol('a')));
   });
 
   test('evaluate if', () => {
     expect(
-      evaluate_general_top_level(
-        getOk(read('(if (quote #t) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read('(if (quote #t) (quote 1) (quote 2))')) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(snumber(1)));
 
     expect(
-      evaluate_general_top_level(
-        getOk(read('(if (quote a) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read('(if (quote a) (quote 1) (quote 2))')) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(snumber(1)));
 
     expect(
-      evaluate_general_top_level(
-        getOk(read('(if (quote 100) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read('(if (quote 100) (quote 1) (quote 2))')) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(snumber(1)));
 
     expect(
-      evaluate_general_top_level(
-        getOk(read('(if (quote #f) (quote 1) (quote 2))')) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read('(if (quote #f) (quote 1) (quote 2))')) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(snumber(2)));
@@ -61,25 +61,25 @@ describe('evaluate_general_top_level', () => {
 
   test('evaluate begin', () => {
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(begin
                   (quote a)
                   (quote b)
                   (quote 1))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(snumber(1)));
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(begin
                   (quote a)
                   (quote b)
                   (quote c))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(ssymbol('c')));
@@ -87,24 +87,24 @@ describe('evaluate_general_top_level', () => {
 
   test('evaluate begin0', () => {
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(begin0
                   (quote a)
                   (quote b)
                   (quote 1))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(ssymbol('a')));
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(begin0
                   (quote a)
                   (quote b)
                   (quote c))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(ok(ssymbol('a')));
@@ -116,22 +116,13 @@ describe('evaluate_general_top_level', () => {
     set_define(env.bindings, 'y', sboolean(true));
     set_define(env.bindings, 'z', ssymbol('hi'));
     expect(
-      evaluate_general_top_level(
-        getOk(read('(#%variable-reference x)')) as GeneralTopLevelForm,
-        env
-      )
+      evaluate_expr_or_define(getOk(read('(#%variable-reference x)')) as ExprOrDefineForm, env)
     ).toEqual(ok(snumber(10)));
     expect(
-      evaluate_general_top_level(
-        getOk(read('(#%variable-reference y)')) as GeneralTopLevelForm,
-        env
-      )
+      evaluate_expr_or_define(getOk(read('(#%variable-reference y)')) as ExprOrDefineForm, env)
     ).toEqual(ok(sboolean(true)));
     expect(
-      evaluate_general_top_level(
-        getOk(read('(#%variable-reference z)')) as GeneralTopLevelForm,
-        env
-      )
+      evaluate_expr_or_define(getOk(read('(#%variable-reference z)')) as ExprOrDefineForm, env)
     ).toEqual(ok(ssymbol('hi')));
   });
 
@@ -139,36 +130,27 @@ describe('evaluate_general_top_level', () => {
     const env = test_env();
     expect(
       isGoodResult(
-        evaluate_general_top_level(getOk(read(`(define x (quote 10))`)) as GeneralTopLevelForm, env)
+        evaluate_expr_or_define(getOk(read(`(define x (quote 10))`)) as ExprOrDefineForm, env)
       )
     ).toEqual(true);
     expect(
       isGoodResult(
-        evaluate_general_top_level(getOk(read(`(define y (quote #t))`)) as GeneralTopLevelForm, env)
+        evaluate_expr_or_define(getOk(read(`(define y (quote #t))`)) as ExprOrDefineForm, env)
       )
     ).toEqual(true);
     expect(
       isGoodResult(
-        evaluate_general_top_level(getOk(read(`(define z (quote hi))`)) as GeneralTopLevelForm, env)
+        evaluate_expr_or_define(getOk(read(`(define z (quote hi))`)) as ExprOrDefineForm, env)
       )
     ).toEqual(true);
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%variable-reference x)`)) as GeneralTopLevelForm,
-        env
-      )
+      evaluate_expr_or_define(getOk(read(`(#%variable-reference x)`)) as ExprOrDefineForm, env)
     ).toEqual(ok(snumber(10)));
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%variable-reference y)`)) as GeneralTopLevelForm,
-        env
-      )
+      evaluate_expr_or_define(getOk(read(`(#%variable-reference y)`)) as ExprOrDefineForm, env)
     ).toEqual(ok(sboolean(true)));
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%variable-reference z)`)) as GeneralTopLevelForm,
-        env
-      )
+      evaluate_expr_or_define(getOk(read(`(#%variable-reference z)`)) as ExprOrDefineForm, env)
     ).toEqual(ok(ssymbol('hi')));
   });
 
@@ -177,24 +159,24 @@ describe('evaluate_general_top_level', () => {
     set_define(env.bindings, 'x', snumber(10));
     set_define(env.bindings, 'y', sboolean(true));
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(let ([x (quote 1)]) (#%variable-reference x))`)) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read(`(let ([x (quote 1)]) (#%variable-reference x))`)) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snumber(1)));
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(let ([x (#%variable-reference y)]) (#%variable-reference x))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(sboolean(true)));
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(let ([x (quote 2)] [y (#%variable-reference x)]) (#%variable-reference y))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snumber(10)));
@@ -205,37 +187,37 @@ describe('evaluate_general_top_level', () => {
     set_define(env.bindings, 'x', snumber(10));
     set_define(env.bindings, 'y', sboolean(true));
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(letrec ([x (quote 1)]) (#%variable-reference x))`)) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read(`(letrec ([x (quote 1)]) (#%variable-reference x))`)) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snumber(1)));
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(letrec ([x (#%variable-reference y)]) (#%variable-reference x))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(sboolean(true)));
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(letrec ([x (quote 2)] [y (#%variable-reference x)]) (#%variable-reference y))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snumber(2)));
     expect(
       getErr(
-        evaluate_general_top_level(
+        evaluate_expr_or_define(
           getOk(
             read(
               `(letrec ([x (#%variable-reference y)]
                       [y (#%variable-reference x)])
                 (#%variable-reference y))`
             )
-          ) as GeneralTopLevelForm,
+          ) as ExprOrDefineForm,
           env
         )
       )
@@ -246,8 +228,8 @@ describe('evaluate_general_top_level', () => {
 
   test('evaluate #%plain-lambda', () => {
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%plain-lambda (x) (#%variable-reference x))`)) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read(`(#%plain-lambda (x) (#%variable-reference x))`)) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(
@@ -257,15 +239,15 @@ describe('evaluate_general_top_level', () => {
             undefined,
             ['x'],
             undefined,
-            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<ExprForm>
           )
         )
       )
     );
 
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%plain-lambda x (#%variable-reference x))`)) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read(`(#%plain-lambda x (#%variable-reference x))`)) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(
@@ -275,15 +257,15 @@ describe('evaluate_general_top_level', () => {
             undefined,
             [],
             'x',
-            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<ExprForm>
           )
         )
       )
     );
 
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%plain-lambda (x y) (#%variable-reference x))`)) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read(`(#%plain-lambda (x y) (#%variable-reference x))`)) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(
@@ -293,15 +275,15 @@ describe('evaluate_general_top_level', () => {
             undefined,
             ['x', 'y'],
             undefined,
-            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<ExprForm>
           )
         )
       )
     );
 
     expect(
-      evaluate_general_top_level(
-        getOk(read(`(#%plain-lambda (x y . z) (#%variable-reference x))`)) as GeneralTopLevelForm,
+      evaluate_expr_or_define(
+        getOk(read(`(#%plain-lambda (x y . z) (#%variable-reference x))`)) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(
@@ -311,19 +293,19 @@ describe('evaluate_general_top_level', () => {
             undefined,
             ['x', 'y'],
             'z',
-            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<FEExpr>
+            getOk(read('((#%variable-reference x))')) as SNonemptyHomList<ExprForm>
           )
         )
       )
     );
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(
             `(#%plain-lambda (f x) (#%plain-app (#%variable-reference f) (#%variable-reference x)))`
           )
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         undefined
       )
     ).toEqual(
@@ -335,7 +317,7 @@ describe('evaluate_general_top_level', () => {
             undefined,
             getOk(
               read('((#%plain-app (#%variable-reference f) (#%variable-reference x)))')
-            ) as SNonemptyHomList<FEExpr>
+            ) as SNonemptyHomList<ExprForm>
           )
         )
       )
@@ -345,58 +327,58 @@ describe('evaluate_general_top_level', () => {
   test('evaluate #%plain-app', () => {
     const env = test_env();
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(#%plain-app (#%plain-lambda (x) (#%variable-reference x)) (quote 1))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snumber(1)));
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(`(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1))`)
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snil()));
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(
             `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2))`
           )
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(slist([snumber(2)], snil())));
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(
             `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2) (quote 3))`
           )
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(slist([snumber(2), snumber(3)], snil())));
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(
             `(#%plain-app (#%plain-lambda x (#%variable-reference x)) (quote 1) (quote 2) (quote 3))`
           )
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(slist([snumber(1), snumber(2), snumber(3)], snil())));
 
     expect(
-      evaluate_general_top_level(
+      evaluate_expr_or_define(
         getOk(
           read(
             `(#%plain-app (#%plain-lambda 
@@ -406,7 +388,7 @@ describe('evaluate_general_top_level', () => {
                 (#%plain-lambda (y) (#%variable-reference y))
                 (quote 100))`
           )
-        ) as GeneralTopLevelForm,
+        ) as ExprOrDefineForm,
         env
       )
     ).toEqual(ok(snumber(100)));

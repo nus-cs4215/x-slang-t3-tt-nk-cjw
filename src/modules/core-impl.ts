@@ -19,7 +19,7 @@ import {
   set_define,
   set_syntax,
 } from '../environment';
-import { evaluate_general_top_level } from '../evaluator';
+import { evaluate_expr_or_define } from '../evaluator';
 import { FEPNode, PlainLambdaForm } from '../fep-types';
 import { extract_matches, match, MatchObject, read_pattern, unmatch } from '../pattern';
 import { print } from '../printer';
@@ -386,7 +386,7 @@ function plain_lambda(
                 const [name, compiled_rhs] = name_and_compiled_rhs_r.v;
 
                 // evaluate rhs
-                const rhs_r = evaluate_general_top_level(compiled_rhs, lambda_env);
+                const rhs_r = evaluate_expr_or_define(compiled_rhs, lambda_env);
                 if (isBadResult(rhs_r)) {
                   return err(
                     'error when evaluating rhs of define-syntax in ' +

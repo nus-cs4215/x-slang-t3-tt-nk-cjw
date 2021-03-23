@@ -1,5 +1,5 @@
 import { BindingType, Environment, lookup_binding } from '../environment';
-import { fep_apply_syntax } from '../evaluator';
+import { apply_syntax } from '../evaluator';
 import { EvalData } from '../evaluator/datatypes';
 import { FEPNode } from '../fep-types';
 import { CompilerHost, FileName } from '../host';
@@ -100,7 +100,7 @@ export function partial_expand(stx: SExpr, env: Environment): Result<SExpr, Comp
 
       case BindingType.Syntax: {
         const stx_transformer = identifier_binding.val;
-        const expansion_r = fep_apply_syntax(stx_transformer as SExprT<EvalData>, stx, env);
+        const expansion_r = apply_syntax(stx_transformer as SExprT<EvalData>, stx, env);
         if (isBadResult(expansion_r)) {
           return err(
             'partial_expand_v2: error when partially expanding application of stx transformer ' +
@@ -218,7 +218,7 @@ export function expand_once(
       // For us, we bake the stx transformer as a js function of one argument
       // No checking required (here).
       const stx_transformer = identifier_binding.val;
-      const expansion_r = fep_apply_syntax(stx_transformer as SExprT<EvalData>, stx, env);
+      const expansion_r = apply_syntax(stx_transformer as SExprT<EvalData>, stx, env);
       if (isBadResult(expansion_r)) {
         return err(
           'expand_once_v2: error when expanding application of stx transformer ' +

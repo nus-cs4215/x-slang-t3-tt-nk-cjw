@@ -1,5 +1,5 @@
 import { evaluate_module } from './evaluator';
-import { TopLevelModuleFormAst } from './fep-types';
+import { ModuleAst } from './fep-types';
 import { Module } from './modules';
 import { read } from './reader';
 import { err, isBadResult, ok, ok_unless_void, Result } from './utils';
@@ -65,7 +65,7 @@ class MapHost {
     if (isBadResult(fep_r)) {
       return err('error when reading precompiled fep: ' + fep_r.err);
     }
-    const fep_module_r = evaluate_module(fep_r.v as TopLevelModuleFormAst, fep_filename, this);
+    const fep_module_r = evaluate_module(fep_r.v as ModuleAst, fep_filename, this);
     if (isBadResult(fep_module_r)) {
       return err('error when evaluating precompiled fep: ' + fep_module_r.err);
     }
