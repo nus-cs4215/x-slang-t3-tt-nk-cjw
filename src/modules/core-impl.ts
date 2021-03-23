@@ -26,34 +26,6 @@ import { print } from '../printer';
 import { car, is_list, is_symbol, SExpr, slist, snil, SSymbol, ssymbol, val } from '../sexpr';
 import { err, getOk, isBadResult, ok, Result } from '../utils';
 
-function self_compiling_in_expression_context(
-  name: string,
-  pattern_string: string
-): CoreTransformer {
-  const pattern = getOk(read_pattern(pattern_string));
-  return (
-    stx: SExpr,
-    expansion_context: ExpansionContext,
-    env_: NonemptyEnvironment,
-    global_ctx_: CompilerGlobalContext,
-    file_ctx_: CompilerFileLocalContext
-  ): Result<FEPNode, CompileErr> => {
-    if (expansion_context !== ExpansionContext.ExpressionContext) {
-      return err(
-        'this ' +
-          name +
-          ' core transformer only applies in an expression context. perhaps you meant to use a different language?'
-      );
-    }
-    const match_result = match(stx, pattern);
-    if (match_result === undefined) {
-      return err('did not match pattern for ' + name + ': ' + print(stx));
-    }
-
-    return ok(stx as FEPNode);
-  };
-}
-
 function functorial_expression_transformer(
   name: string,
   from_pattern_string: string,
@@ -116,7 +88,11 @@ function functorial_expression_transformer(
 }
 
 const let_and_letrec_pattern_string = `(head-noexpand [(sym-name-noexpand value) ...] expr ...+)`;
+const let_unpattern_string = `('let [(sym-name-noexpand value) ...] expr ...+)`;
+const letrec_unpattern_string = `('letrec [(sym-name-noexpand value) ...] expr ...+)`;
 const let_and_letrec_pattern = getOk(read_pattern(let_and_letrec_pattern_string));
+const let_unpattern = getOk(read_pattern(let_unpattern_string));
+const letrec_unpattern = getOk(read_pattern(letrec_unpattern_string));
 function let_transformer(
   stx: SExpr,
   expansion_context: ExpansionContext,
@@ -199,9 +175,9 @@ function let_transformer(
     }
   }
 
-  const unmatch_result = unmatch(expanded_match_result, let_and_letrec_pattern);
+  const unmatch_result = unmatch(expanded_match_result, let_unpattern);
   if (unmatch_result === undefined) {
-    throw `bad unmatch, pls tell devs. name: let, pattern_string: ${let_and_letrec_pattern_string}, match: ${JSON.stringify(
+    throw `bad unmatch, pls tell devs. name: let, pattern_string: ${letrec_unpattern_string}, match: ${JSON.stringify(
       expanded_match_result
     )}`;
   }
@@ -260,9 +236,9 @@ function letrec_transformer(
     }
   }
 
-  const unmatch_result = unmatch(expanded_match_result, let_and_letrec_pattern);
+  const unmatch_result = unmatch(expanded_match_result, letrec_unpattern);
   if (unmatch_result === undefined) {
-    throw `bad unmatch, pls tell devs. name: letrec, pattern_string: ${let_and_letrec_pattern_string}`;
+    throw `bad unmatch, pls tell devs. name: letrec, pattern_string: ${letrec_unpattern_string}`;
   }
 
   return ok(unmatch_result as FEPNode);
@@ -299,10 +275,7 @@ function plain_lambda(
       'this #%plain-lambda core transformer only applies in an expression context. perhaps you meant to use a different language?'
     );
   }
-  const match_result = match(
-    stx,
-    getOk(read_pattern("('#%plain-lambda (sym-params ...) body ...)"))
-  );
+  const match_result = match(stx, getOk(read_pattern('(head-noexpand (sym-params ...) body ...)')));
   if (match_result === undefined) {
     return err('did not match pattern for #%plain-lambda: ' + print(stx));
   }
@@ -344,7 +317,10 @@ function plain_lambda(
             switch (command) {
               case 'begin': {
                 // Splice the shit in
-                const match_result = match(new_form, getOk(read_pattern('(begin statements ...)')));
+                const match_result = match(
+                  new_form,
+                  getOk(read_pattern("('begin statements ...)"))
+                );
                 if (match_result === undefined) {
                   return err('did not match pattern for begin: ' + print(new_form));
                 }
@@ -531,27 +507,32 @@ export const core_transformers: Record<
   'define-syntax': make_error_core_transformer(
     'define-syntax forms only allowed in certain core syntactic forms (e.g. directly inside a module)'
   ),
-  quote: self_compiling_in_expression_context('quote', '(head-noexpand datum)'),
-  '#%variable-reference': self_compiling_in_expression_context(
+  quote: functorial_expression_transformer(
+    'quote',
+    '(head-noexpand datum-noexpand)',
+    "('quote datum-noexpand)"
+  ),
+  '#%variable-reference': functorial_expression_transformer(
     '#%variable-reference',
-    '(head-noexpand sym-x)'
+    '(head-noexpand sym-x-noexpand)',
+    "('#%variable-reference sym-x-noexpand)"
   ),
   '#%plain-app': functorial_expression_transformer(
     '#%plain-app',
     '(head-noexpand f xs ...)',
-    '(head-noexpand f xs ...)'
+    "('#%plain-app f xs ...)"
   ),
   if: functorial_expression_transformer(
     'if',
     '(head-noexpand cond consequent alternate)',
-    '(head-noexpand cond consequent alternate)'
+    "('if cond consequent alternate)"
   ),
   begin: depending_on_expansion_context(
     {
       [ExpansionContext.ExpressionContext]: functorial_expression_transformer(
         'begin',
         '(head-noexpand expr ...+)',
-        '(head-noexpand expr ...+)'
+        "('begin expr ...+)"
       ),
     },
     'begin forms only allowed in certain core syntactic forms (e.g. directly inside a module or in an expression)'
@@ -559,7 +540,7 @@ export const core_transformers: Record<
   begin0: functorial_expression_transformer(
     'begin0',
     '(head-noexpand expr ...+)',
-    '(head-noexpand expr ...+)'
+    "('begin0 expr ...+)"
   ),
   // These have to be custom because we need to introduce the bindings in the inner environment
   let: let_transformer,

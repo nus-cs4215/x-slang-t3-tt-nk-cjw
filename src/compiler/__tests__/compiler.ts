@@ -189,7 +189,13 @@ describe('module forms work as expected', () => {
         ['/input.rkt', "(module input '#%builtin-kernel (#%require (rename parent x y)) y)"],
         [
           '/parent.rkt',
-          "(module parent '#%builtin-kernel (define-syntax x (#%plain-lambda (stx) 5)) (#%provide x))",
+          `
+          (module parent '#%builtin-kernel
+            (#%require (rename '#%builtin-kernel #%plain-lambda #%plain-lambda-original))
+            (define-syntax x5 (#%plain-lambda-original (stx) 5))
+            (#%provide (rename x5 x))
+            )
+            `,
         ],
       ]),
       ts_based_modules
@@ -210,20 +216,12 @@ describe('module forms work as expected', () => {
         "/input.rkt" => "/input.rkt.fep",
       }
     `);
-    expect(host.read_file(compiled_filenames.get('/input.rkt'))).toMatchInlineSnapshot(`
-      Object {
-        "err": undefined,
-        "good": true,
-        "v": "(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename parent x y)) (quote 5)))",
-      }
-    `);
-    expect(host.read_file(compiled_filenames.get('/parent.rkt'))).toMatchInlineSnapshot(`
-      Object {
-        "err": undefined,
-        "good": true,
-        "v": "(module parent (quote #%builtin-kernel) (#%plain-module-begin (define-syntax x (#%plain-lambda (stx) (quote 5))) (#%provide x)))",
-      }
-    `);
+    expect(getOk(host.read_file(compiled_filenames.get('/input.rkt')))).toMatchInlineSnapshot(
+      `"(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename parent x y)) (quote 5)))"`
+    );
+    expect(getOk(host.read_file(compiled_filenames.get('/parent.rkt')))).toMatchInlineSnapshot(
+      `"(module parent (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename (quote #%builtin-kernel) #%plain-lambda #%plain-lambda-original)) (define-syntax x5 (#%plain-lambda (stx) (quote 5))) (#%provide (rename x5 x))))"`
+    );
   });
 
   test.skip('only provided definitions can be used', () => {
