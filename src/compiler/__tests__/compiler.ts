@@ -403,7 +403,7 @@ test('stdlib', () => {
               (cons 'begin body) ; use begin because body is multiple statements
               (cons 'let
                 (cons (cons (car bindings) '())
-                  (cons (cons 'let* (cons (cdr bindings) body))
+                  (cons (let* (cdr bindings) body))
                     '()))))))
 
         (let* ([a 1] [b a]) b)
@@ -412,11 +412,23 @@ test('stdlib', () => {
         ; (let ([a 1]) (let ([b a]) (let* () b)))
         ; (let ([a 1]) (let ([b a]) (let () b)))
       )
-`).toMatchInlineSnapshot(readCompilePrint(`
+`).toMatchInlineSnapshot('"' + readCompilePrint(`
       (module name '#%builtin-kernel
 
+        (define-syntax let*
+          (#%plain-lambda (let*+stx)
+            (define stx (cdr let*+stx))
+            (define bindings (car stx))
+            (define body (cdr stx))
+            (if (null? bindings)
+              (cons 'begin body) ; use begin because body is multiple statements
+              (cons 'let
+                (cons (cons (car bindings) '())
+                  (cons (let* (cdr bindings) body))
+                    '()))))))
+
         (let ([a 1]) (let ([b a]) (let () b))))
-`));
+`) + '"');
 });
 
 describe('compile fails', () => {
