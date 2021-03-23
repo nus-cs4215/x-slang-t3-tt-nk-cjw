@@ -23,6 +23,7 @@
     "@types/jest": "^26.0.20",
     "@typescript-eslint/eslint-plugin": "^4.15.1",
     "@typescript-eslint/parser": "^4.15.1",
+    "copyfiles": "^2.4.1",
     "coveralls": "^3.1.0",
     "eslint": "^7.20.0",
     "eslint-config-prettier": "^7.2.0",
@@ -44,7 +45,8 @@
     "test:ci": "jest --ci",
     "test-coverage": "jest --coverage",
     "eslint": "eslint --ext \".ts\" src",
-    "build": "yarn tsc",
+    "copy-rkt-files": "yarn copyfiles -u 1 src/**/*.rkt dist/",
+    "build": "yarn tsc && yarn copy-rkt-files",
     "benchmark": "jest --testPathPattern='.*benchmark.*'"
   },
   "repository": {
