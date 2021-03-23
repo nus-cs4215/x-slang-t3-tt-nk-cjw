@@ -223,9 +223,9 @@ export function module_core_transformer(
             //// immediately, and the imported modules are instantiated or
             //// visited as appropriate.
 
-            const module_r = handle_require(new_form, global_ctx, file_ctx, env.bindings);
-            if (isBadResult(module_r)) {
-              return module_r;
+            const require_r = handle_require(new_form, global_ctx, file_ctx, env.bindings);
+            if (isBadResult(require_r)) {
+              return require_r;
             }
             partially_expanded_stmts.push(new_form);
             break;
@@ -233,29 +233,11 @@ export function module_core_transformer(
           case '#%provide': {
             //// If the form is a #%provide form, then it is recorded for
             //// processing after the rest of the body.
-            let names = cdr(new_form);
-            while (is_list(names)) {
-              const name = car(names);
-              const rename_match_result = match(
-                name,
-                getOk(read_pattern("('rename local exported)"))
-              );
-              if (rename_match_result !== undefined) {
-                extract_matches(rename_match_result, (local: [SSymbol], exported: [SSymbol]) =>
-                  provide_names.set(val(local[0]), val(exported[0]))
-                );
-                break;
-              }
-              if (!is_symbol(name)) {
-                return err('fancy provides not implemented yet, use only symbols in #%provide');
-              }
-              provide_names.set(val(name), val(name));
-              names = cdr(names);
-            }
-            if (!is_nil(names)) {
-              return err('non-nil in tail position of #%provide');
-            }
 
+            const provide_r = handle_provide(new_form, provide_names);
+            if (isBadResult(provide_r)) {
+              return provide_r;
+            }
             partially_expanded_stmts.push(new_form);
             break;
           }
@@ -475,85 +457,145 @@ function handle_require(
   file_ctx: CompilerFileLocalContext,
   bindings: Bindings
 ): Result<void, CompileErr> {
-  {
-    const match_result = match(stx, getOk(read_pattern("('#%require sym-name)")));
-    if (match_result !== undefined) {
-      return extract_matches(match_result, (name: [SSymbol]) => {
-        const module_name = val(name[0]);
+  const import_specs_match_result = match(stx, getOk(read_pattern('(head import_specs ...)')));
+  if (import_specs_match_result === undefined) {
+    return err(`module core transformer (#%require): incorrect form for #%require ${print(stx)}`);
+  }
+  const import_specs = extract_matches(
+    import_specs_match_result,
+    (import_specs: SExpr[]) => import_specs
+  );
+  for (const spec of import_specs) {
+    {
+      const match_result = match(spec, getOk(read_pattern('sym-name')));
+      if (match_result !== undefined) {
+        const module_name = extract_matches(match_result, (name: [SSymbol]) => val(name[0]));
         // compile required module
         const module_r = compile_and_run(module_name, global_ctx, file_ctx);
         if (isBadResult(module_r)) {
-          return module_r;
+          return err(
+            `module core transformer (#%require): error while requiring module ${module_name}`
+          );
         }
         install_bindings(bindings, module_r.v.provides);
-        return ok(undefined);
-      });
+        continue;
+      }
     }
-  }
-  {
-    const match_result = match(stx, getOk(read_pattern("('#%require ('quote sym-name))")));
-    if (match_result !== undefined) {
-      return extract_matches(match_result, (name: [SSymbol]) => {
-        const module_name = val(name[0]);
+    {
+      const match_result = match(spec, getOk(read_pattern("('quote sym-name)")));
+      if (match_result !== undefined) {
+        const module_name = extract_matches(match_result, (name: [SSymbol]) => val(name[0]));
         const module_r = global_ctx.host.read_builtin_module(module_name);
         if (isBadResult(module_r)) {
-          return err(`error requiring module ${module_name}: ${module_r.err}`);
+          return err(
+            `module core transformer (#%require): error while requiring builtin module ${module_name}`
+          );
         }
         install_bindings(bindings, module_r.v.provides);
-        return ok(undefined);
-      });
+        continue;
+      }
     }
-  }
-  {
-    const match_result = match(
-      stx,
-      getOk(read_pattern("('#%require ('rename sym-name sym-local sym-exported))"))
-    );
-    if (match_result !== undefined) {
-      return extract_matches(
-        match_result,
-        (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => {
-          const module_name = val(name[0]);
-          // compile required module
-          const module_r = compile_and_run(module_name, global_ctx, file_ctx);
-          if (isBadResult(module_r)) {
-            return module_r;
-          }
-          const binding = get_binding(module_r.v.provides, val(local[0]));
-          if (binding === undefined) {
-            return err('binding ' + val(local[0]) + ' not found in module ' + val(name[0]));
-          }
-          set_binding(bindings, val(exported[0]), binding);
-          return ok(undefined);
-        }
+    {
+      const match_result = match(
+        spec,
+        getOk(read_pattern("('rename sym-name sym-local sym-exported)"))
       );
-    }
-  }
-  {
-    const match_result = match(
-      stx,
-      getOk(read_pattern("('#%require ('rename ('quote sym-name) sym-local sym-exported))"))
-    );
-    if (match_result !== undefined) {
-      return extract_matches(
-        match_result,
-        (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => {
-          const module_name = val(name[0]);
-          const module_r = global_ctx.host.read_builtin_module(module_name);
-          if (isBadResult(module_r)) {
-            return err(`error requiring module ${module_name}: ${module_r.err}`);
-          }
-          const binding = get_binding(module_r.v.provides, val(local[0]));
-          if (binding === undefined) {
-            return err('binding ' + val(local[0]) + ' not found in module ' + val(name[0]));
-          }
-          set_binding(bindings, val(exported[0]), binding);
-          return ok(undefined);
+      if (match_result !== undefined) {
+        const [module_name, local, exported] = extract_matches(
+          match_result,
+          (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => [
+            val(name[0]),
+            val(local[0]),
+            val(exported[0]),
+          ]
+        );
+        // compile required module
+        const module_r = compile_and_run(module_name, global_ctx, file_ctx);
+        if (isBadResult(module_r)) {
+          return err(
+            `module core transformer (#%require): error while requiring module ${module_name}`
+          );
         }
-      );
+        const binding = get_binding(module_r.v.provides, local);
+        if (binding === undefined) {
+          return err(
+            `module core transformer (#%require): binding ${local} not exported in module ${module_name}`
+          );
+        }
+        set_binding(bindings, exported, binding);
+        continue;
+      }
     }
+    {
+      const match_result = match(
+        spec,
+        getOk(read_pattern("('rename ('quote sym-name) sym-local sym-exported)"))
+      );
+      if (match_result !== undefined) {
+        const [module_name, local, exported] = extract_matches(
+          match_result,
+          (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => [
+            val(name[0]),
+            val(local[0]),
+            val(exported[0]),
+          ]
+        );
+        const module_r = global_ctx.host.read_builtin_module(module_name);
+        if (isBadResult(module_r)) {
+          return err(
+            `module core transformer (#%require): error while requiring module ${module_name}`
+          );
+        }
+        const binding = get_binding(module_r.v.provides, local);
+        if (binding === undefined) {
+          return err(
+            `module core transformer (#%require): binding ${local} not exported in module ${module_name}`
+          );
+        }
+        set_binding(bindings, exported, binding);
+        continue;
+      }
+    }
+    return err(
+      `module core transformer (#%require): incorrect import spec form for #%require ${print(spec)}`
+    );
   }
-  return err('did not match format for require ' + print(stx));
+  return ok(undefined);
+}
+
+function handle_provide(stx: SExpr, provide_names: Map<string, string>): Result<void, CompileErr> {
+  const export_specs_match_result = match(stx, getOk(read_pattern('(head export_specs ...)')));
+  if (export_specs_match_result === undefined) {
+    return err(`module core transformer (#%provide): incorrect form for #%provide ${print(stx)}`);
+  }
+  const export_specs = extract_matches(
+    export_specs_match_result,
+    (export_specs: SExpr[]) => export_specs
+  );
+  for (const spec of export_specs) {
+    {
+      const rename_match_result = match(spec, getOk(read_pattern("('rename local exported)")));
+      if (rename_match_result !== undefined) {
+        extract_matches(rename_match_result, (local: [SSymbol], exported: [SSymbol]) =>
+          provide_names.set(val(local[0]), val(exported[0]))
+        );
+        continue;
+      }
+    }
+    {
+      const rename_match_result = match(spec, getOk(read_pattern('sym-name')));
+      if (rename_match_result !== undefined) {
+        extract_matches(rename_match_result, (name: [SSymbol]) =>
+          provide_names.set(val(name[0]), val(name[0]))
+        );
+        continue;
+      }
+    }
+    return err(
+      `module core transformer (#%provide): incorrect export spec form for #%provide ${print(spec)}`
+    );
+  }
+  return ok(undefined);
 }
 
 function compile_and_run(
