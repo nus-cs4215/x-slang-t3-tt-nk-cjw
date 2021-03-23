@@ -388,6 +388,37 @@ test('let and letrec', () => {
   );
 });
 
+
+test('stdlib', () => {
+  // (let* ([id val-expr] ...) body ...+)
+  expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+
+        (define-syntax let*
+          (#%plain-lambda (let*+stx)
+            (define stx (cdr let*+stx))
+            (define bindings (car stx))
+            (define body (cdr stx))
+            (if (null? bindings)
+              (cons 'begin body) ; use begin because body is multiple statements
+              (cons 'let
+                (cons (cons (car bindings) '())
+                  (cons (cons 'let* (cons (cdr bindings) body))
+                    '()))))))
+
+        (let* ([a 1] [b a]) b)
+        ; TRANSFORM
+        ; ('let ([a 1]) (let* ([b a]) b))
+        ; (let ([a 1]) (let ([b a]) (let* () b)))
+        ; (let ([a 1]) (let ([b a]) (let () b)))
+      )
+`).toMatchInlineSnapshot(readCompilePrint(`
+      (module name '#%builtin-kernel
+
+        (let ([a 1]) (let ([b a]) (let () b))))
+`));
+});
+
 describe('compile fails', () => {
   test('nonexistent parent module', () => {
     expectReadCompileError(`
