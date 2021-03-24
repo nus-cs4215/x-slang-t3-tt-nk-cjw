@@ -6,9 +6,9 @@ function expectReadEvalPrint(program: string) {
   return expect(print(getOk(readExprCompileEvaluateOutput(program))));
 }
 
-test.skip('plus one', () => {
+test('plus one', () => {
   expectReadEvalPrint(`
-    (define output__
+    (define output___
       (let ([plus1 (#%plain-lambda (x) (+ x 1))])
         (plus1 1)))
     `).toMatchInlineSnapshot(`"2"`);
@@ -39,7 +39,7 @@ test('fibonacci', () => {
     `).toMatchInlineSnapshot(`"13"`);
 });
 
-test.skip("newton's method sqrt", () => {
+test("newton's method sqrt", () => {
   expectReadEvalPrint(`
     (begin
       (define tolerance 0.000000000000001)
@@ -60,7 +60,7 @@ test.skip("newton's method sqrt", () => {
       (define sqrt
         (#%plain-lambda (x)
           (fixed-point
-            (lambda (y)
+            (#%plain-lambda (y)
               (average y (/ x y)))
             1)))
       (define output___
