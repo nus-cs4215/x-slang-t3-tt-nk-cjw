@@ -1,6 +1,6 @@
 ; // magic file that's simultaneously a racket module and a typescript module
 ; const contents = `
-(module quasiquote '#%builtin-kernel
+(module and-or '#%builtin-kernel
   (#%require quasiquote)
   (define-syntax and
     (#%plain-lambda (and+stx)

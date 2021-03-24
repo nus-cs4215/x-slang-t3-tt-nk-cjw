@@ -22,6 +22,7 @@ test('exports', () => {
       "is_list",
       "is_boxed",
       "equals",
+      "homlist_to_arr",
       "jsonPrint",
       "jsonRead",
       "formatReadErr",
