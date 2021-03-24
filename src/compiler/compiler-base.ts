@@ -14,6 +14,6 @@ export const ts_based_modules: Map<ModuleName, Module> = new Map(
   ts_based_modules_list.map((mod) => [mod.name, mod])
 );
 
-const ts_based_compiler_host = maps_to_compiler_host(new Map(libs), ts_based_modules);
+const ts_based_compiler_host = () => maps_to_compiler_host(new Map(libs), ts_based_modules);
 
-export const builtin_compiler_host: CompilerHost = ts_based_compiler_host;
+export const builtin_compiler_host: () => CompilerHost = ts_based_compiler_host;
