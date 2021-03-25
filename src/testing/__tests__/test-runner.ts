@@ -1,6 +1,94 @@
 import { compile_and_run_test } from '../test-runner';
 
 describe('test compiler works properly', () => {
+  test('cond', () => {
+    expect(
+      compile_and_run_test(`
+      (test-lib /libs/racket/private/cond
+        (cond)
+        )
+      `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (quote no_match))))",
+          "evaluated": "no_match",
+        },
+      }
+    `);
+
+    expect(
+      compile_and_run_test(`
+      (test-lib /libs/racket/private/cond
+        (cond [#t 1 2 3])
+        )
+      `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (quote #t) (begin (quote 1) (quote 2) (quote 3)) (quote no_match)))))",
+          "evaluated": "3",
+        },
+      }
+    `);
+
+    expect(
+      compile_and_run_test(`
+      (test-lib /libs/racket/private/cond
+        (cond [(null? '()) 1])
+        )
+      `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (#%plain-app (#%variable-reference null?) (quote ())) (begin (quote 1)) (quote no_match)))))",
+          "evaluated": "1",
+        },
+      }
+    `);
+
+    expect(
+      compile_and_run_test(`
+      (test-lib /libs/racket/private/cond
+        (cond [(null? '()) 1]
+              [#t 3])
+        )
+      `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (#%plain-app (#%variable-reference null?) (quote ())) (begin (quote 1)) (if (quote #t) (begin (quote 3)) (quote no_match))))))",
+          "evaluated": "1",
+        },
+      }
+    `);
+
+    expect(
+      compile_and_run_test(`
+      (test-lib /libs/racket/private/cond
+        (cond [#f 1 2 3]
+              [#f 4 5 6])
+        )
+      `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": undefined,
+        "good": true,
+        "v": Object {
+          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (quote #f) (begin (quote 1) (quote 2) (quote 3)) (if (quote #f) (begin (quote 4) (quote 5) (quote 6)) (quote no_match))))))",
+          "evaluated": "no_match",
+        },
+      }
+    `);
+  });
   test('when test program compiles and evaluates fine', () => {
     expect(
       compile_and_run_test(`
