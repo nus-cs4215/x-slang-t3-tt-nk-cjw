@@ -5,6 +5,7 @@ import compose_lib from './rkt/compose.rkt';
 import define_provide_lib from './rkt/define+provide.rkt';
 import let_lib from './rkt/let.rkt';
 import quasiquote_lib from './rkt/quasiquote.rkt';
+import cond_lib from './rkt/cond.rkt';
 
 export const libs: readonly [string, string][] = [
   ['/libs/racket/private/and-or.rkt', and_or_lib],
@@ -14,4 +15,5 @@ export const libs: readonly [string, string][] = [
   ['/libs/racket/private/define+provide.rkt', define_provide_lib],
   ['/libs/racket/private/let.rkt', let_lib],
   ['/libs/racket/private/quasiquote.rkt', quasiquote_lib],
+  ['/libs/racket/private/cond.rkt', cond_lib],
 ];
