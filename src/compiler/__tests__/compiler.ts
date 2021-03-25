@@ -52,9 +52,11 @@ describe('module forms work as expected', () => {
   test('make datum', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-kernel 1)
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (quote 1)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin (quote 1))
+        )"
+    `);
   });
 
   test('compile file based parent modules', () => {
@@ -115,9 +117,11 @@ describe('module forms work as expected', () => {
       expansion_depth: 0,
       MAX_MACRO_EXPANSION_DEPTH_LIMIT: 100000,
     });
-    expect(print(getOk(compile_result))).toMatchInlineSnapshot(
-      `"(module input parent (#%plain-module-begin (#%plain-app (quote 1) (quote 2))))"`
-    );
+    expect(print(getOk(compile_result))).toMatchInlineSnapshot(`
+      "(module input parent
+        (#%plain-module-begin (#%plain-app (quote 1) (quote 2)))
+        )"
+    `);
     expect(compiled_filenames).toMatchInlineSnapshot(`
       Map {
         "/parent.rkt" => "/parent.rkt.fep",
@@ -128,14 +132,20 @@ describe('module forms work as expected', () => {
       Object {
         "err": undefined,
         "good": true,
-        "v": "(module input parent (#%plain-module-begin (#%plain-app (quote 1) (quote 2))))",
+        "v": "(module input parent
+        (#%plain-module-begin (#%plain-app (quote 1) (quote 2)))
+        )",
       }
     `);
     expect(host.read_file(compiled_filenames.get('/parent.rkt'))).toMatchInlineSnapshot(`
       Object {
         "err": undefined,
         "good": true,
-        "v": "(module parent (quote #%builtin-kernel) (#%plain-module-begin (#%provide #%module-begin #%app #%datum #%plain-app quote)))",
+        "v": "(module parent (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%provide #%module-begin #%app #%datum #%plain-app quote)
+          )
+        )",
       }
     `);
   });
@@ -158,9 +168,11 @@ describe('module forms work as expected', () => {
       expansion_depth: 0,
       MAX_MACRO_EXPANSION_DEPTH_LIMIT: 100000,
     });
-    expect(print(getOk(compile_result))).toMatchInlineSnapshot(
-      `"(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require parent) (quote 5)))"`
-    );
+    expect(print(getOk(compile_result))).toMatchInlineSnapshot(`
+      "(module input (quote #%builtin-kernel)
+        (#%plain-module-begin (#%require parent) (quote 5))
+        )"
+    `);
     expect(compiled_filenames).toMatchInlineSnapshot(`
       Map {
         "/parent.rkt" => "/parent.rkt.fep",
@@ -171,14 +183,21 @@ describe('module forms work as expected', () => {
       Object {
         "err": undefined,
         "good": true,
-        "v": "(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require parent) (quote 5)))",
+        "v": "(module input (quote #%builtin-kernel)
+        (#%plain-module-begin (#%require parent) (quote 5))
+        )",
       }
     `);
     expect(host.read_file(compiled_filenames.get('/parent.rkt'))).toMatchInlineSnapshot(`
       Object {
         "err": undefined,
         "good": true,
-        "v": "(module parent (quote #%builtin-kernel) (#%plain-module-begin (define-syntax x (#%plain-lambda (stx) (quote 5))) (#%provide x)))",
+        "v": "(module parent (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (define-syntax x (#%plain-lambda (stx) (quote 5)))
+          (#%provide x)
+          )
+        )",
       }
     `);
   });
@@ -207,21 +226,37 @@ describe('module forms work as expected', () => {
       expansion_depth: 0,
       MAX_MACRO_EXPANSION_DEPTH_LIMIT: 100000,
     });
-    expect(print(getOk(compile_result))).toMatchInlineSnapshot(
-      `"(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename parent x y)) (quote 5)))"`
-    );
+    expect(print(getOk(compile_result))).toMatchInlineSnapshot(`
+      "(module input (quote #%builtin-kernel)
+        (#%plain-module-begin (#%require (rename parent x y)) (quote 5))
+        )"
+    `);
     expect(compiled_filenames).toMatchInlineSnapshot(`
       Map {
         "/parent.rkt" => "/parent.rkt.fep",
         "/input.rkt" => "/input.rkt.fep",
       }
     `);
-    expect(getOk(host.read_file(compiled_filenames.get('/input.rkt')))).toMatchInlineSnapshot(
-      `"(module input (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename parent x y)) (quote 5)))"`
-    );
-    expect(getOk(host.read_file(compiled_filenames.get('/parent.rkt')))).toMatchInlineSnapshot(
-      `"(module parent (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename (quote #%builtin-kernel) #%plain-lambda #%plain-lambda-original)) (define-syntax x5 (#%plain-lambda (stx) (quote 5))) (#%provide (rename x5 x))))"`
-    );
+    expect(getOk(host.read_file(compiled_filenames.get('/input.rkt')))).toMatchInlineSnapshot(`
+      "(module input (quote #%builtin-kernel)
+        (#%plain-module-begin (#%require (rename parent x y)) (quote 5))
+        )"
+    `);
+    expect(getOk(host.read_file(compiled_filenames.get('/parent.rkt')))).toMatchInlineSnapshot(`
+      "(module parent (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require
+            (rename
+              (quote #%builtin-kernel)
+              #%plain-lambda
+              #%plain-lambda-original
+              )
+            )
+          (define-syntax x5 (#%plain-lambda (stx) (quote 5)))
+          (#%provide (rename x5 x))
+          )
+        )"
+    `);
   });
 
   test.skip('only provided definitions can be used', () => {
@@ -254,33 +289,41 @@ describe('function application expressions and datum', () => {
     // core syntactic forms
     expectReadCompilePrint(`
       (module name '#%builtin-kernel (quote 1) (#%plain-app (quote 2)))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (quote 1) (#%plain-app (quote 2))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin (quote 1) (#%plain-app (quote 2)))
+        )"
+    `);
   });
 
   test('load primitives module and access identifier', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-primitives (#%plain-module-begin pi))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (#%variable-reference pi)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-primitives)
+        (#%plain-module-begin (#%variable-reference pi))
+        )"
+    `);
   });
 
   test('make datum in expression', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-kernel (define x 1))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin (define x (quote 1)))
+        )"
+    `);
   });
 
   test('make app', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-kernel (1 1))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%plain-app (quote 1) (quote 1))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin (#%plain-app (quote 1) (quote 1)))
+        )"
+    `);
   });
 });
 
@@ -288,17 +331,23 @@ describe('lambda', () => {
   test('make lambda', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-base-lang (lambda (x) x))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (#%plain-lambda (x) (#%variable-reference x))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-base-lang)
+        (#%plain-module-begin (#%plain-lambda (x) (#%variable-reference x)))
+        )"
+    `);
   });
 
   test('make lambda in expression context', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-base-lang (define f (lambda (x) x)))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (define f (#%plain-lambda (x) (#%variable-reference x)))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-base-lang)
+        (#%plain-module-begin
+          (define f (#%plain-lambda (x) (#%variable-reference x)))
+          )
+        )"
+    `);
   });
 });
 
@@ -306,17 +355,24 @@ describe('define and define-syntax in module form', () => {
   test('load primitives module and define something', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-primitives (#%plain-module-begin (define something pi)))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (define something (#%variable-reference pi))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-primitives)
+        (#%plain-module-begin (define something (#%variable-reference pi)))
+        )"
+    `);
   });
 
   test('load primitives module and define something and use it', () => {
     expectReadCompilePrint(`
       (module name '#%builtin-primitives (#%plain-module-begin (define something pi) something))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-primitives) (#%plain-module-begin (define something (#%variable-reference pi)) (#%variable-reference something)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-primitives)
+        (#%plain-module-begin
+          (define something (#%variable-reference pi))
+          (#%variable-reference something)
+          )
+        )"
+    `);
   });
 
   test('make syntax transformer', () => {
@@ -325,9 +381,14 @@ describe('define and define-syntax in module form', () => {
         (define-syntax foo (lambda (stx) 1))
         foo
       )
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-base-lang) (#%plain-module-begin (define-syntax foo (#%plain-lambda (stx) (quote 1))) (quote 1)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-base-lang)
+        (#%plain-module-begin
+          (define-syntax foo (#%plain-lambda (stx) (quote 1)))
+          (quote 1)
+          )
+        )"
+    `);
   });
 });
 
@@ -354,9 +415,27 @@ test('begin and begin0', () => {
             (define-syntax y (#%plain-lambda (stx) 2)))
           (+ x y)))
       )
-    `).toMatchInlineSnapshot(
-    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (quote 1)) (define y (quote 2)) (define z (begin (quote 1) (quote 2) (quote 3))) (define z0 (begin0 (quote 1) (quote 2) (quote 3))) (#%plain-app (#%plain-lambda () (define x (quote 1)) (define-syntax y (#%plain-lambda (stx) (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference x) (quote 2))))))"`
-  );
+    `).toMatchInlineSnapshot(`
+    "(module name (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (define x (quote 1))
+        (define y (quote 2))
+        (define z (begin (quote 1) (quote 2) (quote 3)))
+        (define z0 (begin0 (quote 1) (quote 2) (quote 3)))
+        (#%plain-app
+          (#%plain-lambda ()
+            (define x (quote 1))
+            (define-syntax y (#%plain-lambda (stx) (quote 2)))
+            (#%plain-app
+              (#%variable-reference +)
+              (#%variable-reference x)
+              (quote 2)
+              )
+            )
+          )
+        )
+      )"
+  `);
 });
 
 test('if', () => {
@@ -369,9 +448,14 @@ test('if', () => {
         (define z
           (if #t 1 2))
       )
-    `).toMatchInlineSnapshot(
-    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (if (quote #t) (quote 1) (quote 2)) (define z (if (quote #t) (quote 1) (quote 2)))))"`
-  );
+    `).toMatchInlineSnapshot(`
+    "(module name (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (if (quote #t) (quote 1) (quote 2))
+        (define z (if (quote #t) (quote 1) (quote 2)))
+        )
+      )"
+  `);
 });
 
 test('let and letrec', () => {
@@ -405,9 +489,44 @@ test('let and letrec', () => {
         ]
           (+ y z))
       )
-    `).toMatchInlineSnapshot(
-    `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define x (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))) (let ((y (quote 1)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z))) (define x (letrec ((y (#%variable-reference z)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))) (letrec ((y (#%variable-reference z)) (z (quote 2))) (#%plain-app (#%variable-reference +) (#%variable-reference y) (#%variable-reference z)))))"`
-  );
+    `).toMatchInlineSnapshot(`
+    "(module name (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (define x
+          (let ((y (quote 1)) (z (quote 2)))
+            (#%plain-app
+              (#%variable-reference +)
+              (#%variable-reference y)
+              (#%variable-reference z)
+              )
+            )
+          )
+        (let ((y (quote 1)) (z (quote 2)))
+          (#%plain-app
+            (#%variable-reference +)
+            (#%variable-reference y)
+            (#%variable-reference z)
+            )
+          )
+        (define x
+          (letrec ((y (#%variable-reference z)) (z (quote 2)))
+            (#%plain-app
+              (#%variable-reference +)
+              (#%variable-reference y)
+              (#%variable-reference z)
+              )
+            )
+          )
+        (letrec ((y (#%variable-reference z)) (z (quote 2)))
+          (#%plain-app
+            (#%variable-reference +)
+            (#%variable-reference y)
+            (#%variable-reference z)
+            )
+          )
+        )
+      )"
+  `);
 });
 
 describe('compile fails', () => {
@@ -486,9 +605,24 @@ describe('compile fails', () => {
             ]
           (+ x y))
         )
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/base) (let ((x (quote 1))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference +) (#%variable-reference x) (#%variable-reference y)))))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/base)
+          (let ((x (quote 1)))
+            (let ((y (#%variable-reference x)))
+              (begin
+                (#%plain-app
+                  (#%variable-reference +)
+                  (#%variable-reference x)
+                  (#%variable-reference y)
+                  )
+                )
+              )
+            )
+          )
+        )"
+    `);
   });
 
   test('demo', () => {
@@ -497,30 +631,47 @@ describe('compile fails', () => {
     `).toMatchInlineSnapshot(`"(module name (quote #%builtin-kernel) (#%plain-module-begin))"`);
     expectReadCompilePrint(`
       (module name '#%builtin-kernel f)
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%variable-reference f)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin (#%variable-reference f))
+        )"
+    `);
     expectReadCompilePrint(`
       (module name '#%builtin-kernel (f 1))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (#%plain-app (#%variable-reference f) (quote 1))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%plain-app (#%variable-reference f) (quote 1))
+          )
+        )"
+    `);
     expectReadCompilePrint(`
       (module name '#%builtin-kernel
         (define-syntax f
           (#%plain-lambda (stx) 1))
         f)
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define-syntax f (#%plain-lambda (stx) (quote 1))) (quote 1)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (define-syntax f (#%plain-lambda (stx) (quote 1)))
+          (quote 1)
+          )
+        )"
+    `);
     expectReadCompilePrint(`
       (module name '#%builtin-kernel
         (define-syntax f (#%plain-lambda (stx) 1))
         (define-syntax g (#%plain-lambda (stx) 'f))
         g)
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define-syntax f (#%plain-lambda (stx) (quote 1))) (define-syntax g (#%plain-lambda (stx) (quote f))) (quote 1)))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (define-syntax f (#%plain-lambda (stx) (quote 1)))
+          (define-syntax g (#%plain-lambda (stx) (quote f)))
+          (quote 1)
+          )
+        )"
+    `);
     expectReadCompilePrint(`
       (module name '#%builtin-kernel
         (define-syntax f
@@ -529,8 +680,31 @@ describe('compile fails', () => {
               (cons (cdr (cdr stx))
                 '()))))
         (f 1 2))
-    `).toMatchInlineSnapshot(
-      `"(module name (quote #%builtin-kernel) (#%plain-module-begin (define-syntax f (#%plain-lambda (stx) (#%plain-app (#%variable-reference cons) (#%plain-app (#%variable-reference car) (#%plain-app (#%variable-reference cdr) (#%variable-reference stx))) (#%plain-app (#%variable-reference cons) (#%plain-app (#%variable-reference cdr) (#%plain-app (#%variable-reference cdr) (#%variable-reference stx))) (quote ()))))) (#%plain-app (quote 1) (#%plain-app (quote 2)))))"`
-    );
+    `).toMatchInlineSnapshot(`
+      "(module name (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (define-syntax f
+            (#%plain-lambda (stx)
+              (#%plain-app
+                (#%variable-reference cons)
+                (#%plain-app
+                  (#%variable-reference car)
+                  (#%plain-app (#%variable-reference cdr) (#%variable-reference stx))
+                  )
+                (#%plain-app
+                  (#%variable-reference cons)
+                  (#%plain-app
+                    (#%variable-reference cdr)
+                    (#%plain-app (#%variable-reference cdr) (#%variable-reference stx))
+                    )
+                  (quote ())
+                  )
+                )
+              )
+            )
+          (#%plain-app (quote 1) (#%plain-app (quote 2)))
+          )
+        )"
+    `);
   });
 });

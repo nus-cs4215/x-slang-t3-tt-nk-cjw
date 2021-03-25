@@ -13,7 +13,13 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (quote no_match))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/cond)
+          (#%provide test-result)
+          (define test-result (quote no_match))
+          )
+        )",
           "evaluated": "no_match",
         },
       }
@@ -30,7 +36,15 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (quote #t) (begin (quote 1) (quote 2) (quote 3)) (quote no_match)))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/cond)
+          (#%provide test-result)
+          (define test-result
+            (if (quote #t) (begin (quote 1) (quote 2) (quote 3)) (quote no_match))
+            )
+          )
+        )",
           "evaluated": "3",
         },
       }
@@ -47,7 +61,18 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (#%plain-app (#%variable-reference null?) (quote ())) (begin (quote 1)) (quote no_match)))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/cond)
+          (#%provide test-result)
+          (define test-result
+            (if (#%plain-app (#%variable-reference null?) (quote ()))
+              (begin (quote 1))
+              (quote no_match)
+              )
+            )
+          )
+        )",
           "evaluated": "1",
         },
       }
@@ -65,7 +90,18 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (#%plain-app (#%variable-reference null?) (quote ())) (begin (quote 1)) (if (quote #t) (begin (quote 3)) (quote no_match))))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/cond)
+          (#%provide test-result)
+          (define test-result
+            (if (#%plain-app (#%variable-reference null?) (quote ()))
+              (begin (quote 1))
+              (if (quote #t) (begin (quote 3)) (quote no_match))
+              )
+            )
+          )
+        )",
           "evaluated": "1",
         },
       }
@@ -83,7 +119,18 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/cond) (#%provide test-result) (define test-result (if (quote #f) (begin (quote 1) (quote 2) (quote 3)) (if (quote #f) (begin (quote 4) (quote 5) (quote 6)) (quote no_match))))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/cond)
+          (#%provide test-result)
+          (define test-result
+            (if (quote #f)
+              (begin (quote 1) (quote 2) (quote 3))
+              (if (quote #f) (begin (quote 4) (quote 5) (quote 6)) (quote no_match))
+              )
+            )
+          )
+        )",
           "evaluated": "no_match",
         },
       }
@@ -104,7 +151,26 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/base) (#%provide test-result) (define y (quote 2)) (define test-result (let ((x (quote 3))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference +) (#%variable-reference x) (#%variable-reference y))))))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/base)
+          (#%provide test-result)
+          (define y (quote 2))
+          (define test-result
+            (let ((x (quote 3)))
+              (let ((y (#%variable-reference x)))
+                (begin
+                  (#%plain-app
+                    (#%variable-reference +)
+                    (#%variable-reference x)
+                    (#%variable-reference y)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )",
           "evaluated": "6",
         },
       }
@@ -124,7 +190,26 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/let) (#%provide test-result) (define y (quote 2)) (define test-result (let ((x (quote 3))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference +) (#%variable-reference x) (#%variable-reference y))))))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/let)
+          (#%provide test-result)
+          (define y (quote 2))
+          (define test-result
+            (let ((x (quote 3)))
+              (let ((y (#%variable-reference x)))
+                (begin
+                  (#%plain-app
+                    (#%variable-reference +)
+                    (#%variable-reference x)
+                    (#%variable-reference y)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )",
           "evaluated": "6",
         },
       }
@@ -141,7 +226,15 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require (rename (quote #%builtin-kernel) + fancy-+)) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference fancy-+) (quote 1) (quote 2)))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require (rename (quote #%builtin-kernel) + fancy-+))
+          (#%provide test-result)
+          (define test-result
+            (#%plain-app (#%variable-reference fancy-+) (quote 1) (quote 2))
+            )
+          )
+        )",
           "evaluated": "3",
         },
       }
@@ -161,7 +254,37 @@ describe('test compiler works properly', () => {
         "err": undefined,
         "good": true,
         "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/quasiquote /libs/racket/private/let) (#%provide test-result) (define y (quote 2)) (define test-result (let ((x (quote 3))) (let ((y (#%variable-reference x))) (begin (#%plain-app (#%variable-reference cons) (quote +) (#%plain-app (#%variable-reference cons) (#%variable-reference x) (#%plain-app (#%variable-reference cons) (#%variable-reference y) (quote ()))))))))))",
+          "compiled": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require
+            /libs/racket/private/quasiquote
+            /libs/racket/private/let
+            )
+          (#%provide test-result)
+          (define y (quote 2))
+          (define test-result
+            (let ((x (quote 3)))
+              (let ((y (#%variable-reference x)))
+                (begin
+                  (#%plain-app
+                    (#%variable-reference cons)
+                    (quote +)
+                    (#%plain-app
+                      (#%variable-reference cons)
+                      (#%variable-reference x)
+                      (#%plain-app
+                        (#%variable-reference cons)
+                        (#%variable-reference y)
+                        (quote ())
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )",
           "evaluated": "(+ 3 3)",
         },
       }

@@ -19,7 +19,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference caar) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference caar) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "1",
       },
     }
@@ -36,7 +44,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference cadar) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference cadar) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "2",
       },
     }
@@ -53,7 +69,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference caddar) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference caddar) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "3",
       },
     }
@@ -70,7 +94,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference cadr) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference cadr) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "(4 5 6)",
       },
     }
@@ -87,7 +119,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference caadr) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference caadr) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "4",
       },
     }
@@ -104,7 +144,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference cadadr) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference cadadr) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "5",
       },
     }
@@ -121,7 +169,15 @@ test('car et al', () => {
       "err": undefined,
       "good": true,
       "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel) (#%plain-module-begin (#%require /libs/racket/private/car-et-al) (#%provide test-result) (define test-result (#%plain-app (#%variable-reference caddadr) (quote ((1 2 3) (4 5 6)))))))",
+        "compiled": "(module test-module (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (#%require /libs/racket/private/car-et-al)
+        (#%provide test-result)
+        (define test-result
+          (#%plain-app (#%variable-reference caddadr) (quote ((1 2 3) (4 5 6))))
+          )
+        )
+      )",
         "evaluated": "6",
       },
     }
@@ -140,7 +196,19 @@ test('car et al', () => {
           `)
       ).evaluated as SBoxed<FEPClosure>).val.body.x
     )
-  ).toMatchInlineSnapshot(
-    `"(#%plain-app (#%variable-reference car) (#%plain-app (#%variable-reference cdr) (#%plain-app (#%variable-reference cdr) (#%plain-app (#%variable-reference car) (#%plain-app (#%variable-reference cdr) (#%variable-reference x))))))"`
-  );
+  ).toMatchInlineSnapshot(`
+    "(#%plain-app
+      (#%variable-reference car)
+      (#%plain-app
+        (#%variable-reference cdr)
+        (#%plain-app
+          (#%variable-reference cdr)
+          (#%plain-app
+            (#%variable-reference car)
+            (#%plain-app (#%variable-reference cdr) (#%variable-reference x))
+            )
+          )
+        )
+      )"
+  `);
 });
