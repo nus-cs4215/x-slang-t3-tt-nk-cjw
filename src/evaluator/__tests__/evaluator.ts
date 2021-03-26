@@ -222,7 +222,7 @@ describe('evaluate_general_top_level', () => {
         )
       )
     ).toMatchInlineSnapshot(
-      `"evaluate (#%variable-reference): variable not bound or tried to use variable y before initialization"`
+      `"evaluate (#%variable-reference): tried to use variable y before initialization"`
     );
   });
 

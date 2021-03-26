@@ -397,14 +397,10 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
         return err(`evaluate (#%variable-reference): could not find variable ${symbol.val}`);
       }
 
-      const binding = get_binding(found_env.bindings, symbol.val);
-      if (
-        binding === undefined ||
-        binding._type !== BindingType.Define ||
-        binding.val === undefined
-      ) {
+      const binding = get_binding(found_env.bindings, symbol.val)!;
+      if (binding._type !== BindingType.Define || binding.val === undefined) {
         return err(
-          `evaluate (#%variable-reference): variable not bound or tried to use variable ${symbol.val} before initialization`
+          `evaluate (#%variable-reference): tried to use variable ${symbol.val} before initialization`
         );
       }
       return ok(binding.val as EvalSExpr);
