@@ -529,6 +529,37 @@ test('let and letrec', () => {
   `);
 });
 
+test('set!', () => {
+  expectReadCompilePrint(`
+      (module name '#%builtin-kernel
+        ; module level set!
+        (set! x 10)
+
+        ; expression level set!
+        (let ([x 5])
+          (set! x (+ x 1))
+          x)
+      )
+    `).toMatchInlineSnapshot(`
+    "(module name (quote #%builtin-kernel)
+      (#%plain-module-begin
+        (set! x (quote 10))
+        (let ((x (quote 5)))
+          (set!
+            x
+            (#%plain-app
+              (#%variable-reference +)
+              (#%variable-reference x)
+              (quote 1)
+              )
+            )
+          (#%variable-reference x)
+          )
+        )
+      )"
+  `);
+});
+
 describe('compile fails', () => {
   test('nonexistent parent module', () => {
     expectReadCompileError(`

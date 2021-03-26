@@ -542,6 +542,11 @@ export const core_transformers: Record<
     '(head-noexpand expr ...+)',
     "('begin0 expr ...+)"
   ),
+  'set!': functorial_expression_transformer(
+    'set!',
+    '(head-noexpand sym-x-noexpand expr)',
+    "('set! sym-x-noexpand expr)"
+  ),
   // These have to be custom because we need to introduce the bindings in the inner environment
   let: let_transformer,
   letrec: letrec_transformer,
