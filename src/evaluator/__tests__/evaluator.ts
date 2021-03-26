@@ -393,4 +393,56 @@ describe('evaluate_general_top_level', () => {
       )
     ).toEqual(ok(snumber(100)));
   });
+  test('evaluate set! with undefined value', () => {
+    const env = test_env();
+    expect(
+      evaluate_expr_or_define(
+        getOk(read(`(set! i-am-not-defined (quote 10))`)) as ExprOrDefineForm,
+        env
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": "evaluate (set!): assignment disallowed; cannot set variable i-am-not-defined before its definition",
+        "good": false,
+        "v": undefined,
+      }
+    `);
+  });
+
+  test('evaluate set!', () => {
+    const env = test_env();
+    expect(
+      isGoodResult(
+        evaluate_expr_or_define(getOk(read(`(define x (quote 10))`)) as ExprOrDefineForm, env)
+      )
+    ).toEqual(true);
+    expect(
+      evaluate_expr_or_define(getOk(read(`(#%variable-reference x)`)) as ExprOrDefineForm, env)
+    ).toEqual(ok(snumber(10)));
+
+    expect(
+      isGoodResult(
+        evaluate_expr_or_define(getOk(read(`(set! x (quote 11))`)) as ExprOrDefineForm, env)
+      )
+    ).toEqual(true);
+    expect(
+      evaluate_expr_or_define(getOk(read(`(#%variable-reference x)`)) as ExprOrDefineForm, env)
+    ).toEqual(ok(snumber(11)));
+
+    expect(
+      isGoodResult(
+        evaluate_expr_or_define(
+          getOk(
+            read(
+              `(set! x (#%plain-app (#%variable-reference +) (#%variable-reference x) (quote 10)))`
+            )
+          ) as ExprOrDefineForm,
+          env
+        )
+      )
+    ).toEqual(true);
+    expect(
+      evaluate_expr_or_define(getOk(read(`(#%variable-reference x)`)) as ExprOrDefineForm, env)
+    ).toEqual(ok(snumber(21)));
+  });
 });

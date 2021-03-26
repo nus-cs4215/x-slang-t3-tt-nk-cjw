@@ -52,7 +52,8 @@ export type ExprForm =
   | LetrecForm
   | QuoteForm
   | PlainAppForm
-  | VariableReferenceForm;
+  | VariableReferenceForm
+  | SetForm;
 
 export type PlainLambdaForm = SCons<
   Token<'#%plain-lambda'>,
@@ -72,5 +73,6 @@ export type LetrecForm = SCons<
 export type QuoteForm = SCons<Token<'quote'>, SCons<SExpr, SNil>>;
 export type PlainAppForm = SCons<Token<'#%plain-app'>, SNonemptyHomList<ExprForm>>;
 export type VariableReferenceForm = SCons<Token<'#%variable-reference'>, SCons<SSymbol, SNil>>;
+export type SetForm = SCons<Token<'set!'>, SCons<SSymbol, SCons<ExprForm, SNil>>>;
 
 export type FEFormals = SSymbol | SNil | SCons<SSymbol, FEFormals>;

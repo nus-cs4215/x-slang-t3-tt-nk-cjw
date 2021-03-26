@@ -1,6 +1,7 @@
 import {
   Bindings,
   BindingType,
+  define_binding,
   Environment,
   find_env,
   get_binding,
@@ -31,6 +32,7 @@ import {
   RequireForm,
   ModuleAst,
   VariableReferenceForm,
+  SetForm,
 } from '../fep-types';
 import { EvaluatorHost, FileName } from '../host';
 import { get_module_info, Module } from '../modules';
@@ -406,6 +408,35 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
         );
       }
       return ok(binding.val as EvalSExpr);
+    }
+
+    case 'set!': {
+      const set_program = program as SetForm;
+      const symbol = car(cdr(set_program));
+
+      const found_env = find_env(symbol.val, env);
+      const expr = car(cdr(cdr(set_program)));
+      const r = evaluate_expr_or_define(expr, env);
+      if (isBadResult(r)) {
+        return r;
+      }
+
+      if (found_env === undefined) {
+        return err(
+          `evaluate (set!): assignment disallowed; cannot set variable ${symbol.val} before its definition`
+        );
+      }
+
+      const binding = get_binding(found_env.bindings, symbol.val)!;
+      if (binding._type !== BindingType.Define || binding.val === undefined) {
+        return err(`evaluate (set!): tried to set variable ${symbol.val} before initialization`);
+      }
+
+      const new_binding = define_binding(getOk(r));
+
+      set_binding(found_env.bindings, symbol.val, new_binding);
+      // deviates from Racket: returning the value that has been set
+      return r;
     }
 
     default: {
