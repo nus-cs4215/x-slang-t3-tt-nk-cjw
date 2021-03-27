@@ -8,6 +8,7 @@ import dict_lib from './rkt/dict.rkt';
 import let_lib from './rkt/let.rkt';
 import quasiquote_lib from './rkt/quasiquote.rkt';
 import queue_lib from './rkt/queue.rkt';
+import syntax_case_lib from './rkt/syntax-case.rkt';
 
 export const libs: readonly [string, string][] = [
   ['/libs/racket/private/and-or.rkt', and_or_lib],
@@ -20,4 +21,5 @@ export const libs: readonly [string, string][] = [
   ['/libs/racket/private/let.rkt', let_lib],
   ['/libs/racket/private/quasiquote.rkt', quasiquote_lib],
   ['/libs/racket/private/queue.rkt', queue_lib],
+  ['/libs/racket/private/syntax-case.rkt', syntax_case_lib],
 ];
