@@ -239,7 +239,7 @@ function readList(firsttok: Tok.LPar, tokens: Token[], i: number): PartialReadRe
 
 const quote_type = {
   "'": 'quote',
-  '`': 'quasiquote',
+  '~': 'quasiquote',
   ',': 'unquote',
 };
 

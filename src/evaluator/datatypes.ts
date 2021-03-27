@@ -1,5 +1,5 @@
 import { Environment, NonemptyEnvironment } from '../environment';
-import { FEExpr } from '../fep-types';
+import { ExprForm } from '../fep-types';
 import { SNonemptyHomList } from '../sexpr';
 import { EvalResult, EvalSExpr } from './types';
 
@@ -23,7 +23,7 @@ export interface FEPClosure {
   formals: string[];
   rest: string | undefined; // in apply, match as many params as you can. If you run out argument, it's an error,
   // it should be in res
-  body: SNonemptyHomList<FEExpr>;
+  body: SNonemptyHomList<ExprForm>;
 }
 
 export interface Primitive {
@@ -49,7 +49,7 @@ export const make_fep_closure = (
   env: Environment,
   formals: string[],
   rest: string | undefined,
-  body: SNonemptyHomList<FEExpr>
+  body: SNonemptyHomList<ExprForm>
 ): FEPClosure => ({
   variant: EvalDataType.FEPClosure,
   env,

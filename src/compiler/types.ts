@@ -1,6 +1,6 @@
 import { Environment } from '../environment';
 import { EvalErr } from '../evaluator/types';
-import { FEPNode, TopLevelForm } from '../fep-types';
+import { FEPNode, ModuleForm } from '../fep-types';
 import { CompilerHost, FileContents, FileName } from '../host';
 import { ReadErr } from '../reader';
 import { SExpr } from '../sexpr';
@@ -8,7 +8,7 @@ import { Result } from '../utils';
 
 export type CompileErr = string | ReadErr | EvalErr;
 export interface CompileModuleResultV {
-  fep: TopLevelForm;
+  fep: ModuleForm;
   compiled_filenames: Map<FileName, FileName>;
 }
 export type CompileModule = (

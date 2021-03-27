@@ -9,8 +9,7 @@ import { err, getOk, ok } from '../utils';
 function lambda(stx: EvalSExpr, compile_env_: NonemptyEnvironment): EvalResult {
   const match_result = match(stx, getOk(read_pattern("('lambda (stx-params ...) body ...)")));
   if (match_result === undefined) {
-    console.log('did not match form for lambda: ' + print(stx));
-    return err();
+    return err('did not match form for lambda: ' + print(stx));
   }
   // Since it looks good, we defer to the core #%plain-lambda transformer
   return ok(scons(ssymbol('#%plain-lambda'), cdr(stx as SList<EvalData>)));

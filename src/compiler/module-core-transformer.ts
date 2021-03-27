@@ -1,20 +1,23 @@
 import {
+  Bindings,
   Environment,
   find_env,
+  get_binding,
   install_bindings,
   make_empty_bindings,
   make_env,
   NonemptyEnvironment,
+  set_binding,
   set_define,
   set_syntax,
 } from '../environment';
-import { evaluate_general_top_level, evaluate_module } from '../evaluator';
+import { evaluate_expr_or_define, evaluate_module } from '../evaluator';
 import {
-  FEExpr,
+  ExprForm,
   FEPNode,
   ModuleBuiltinParentForm,
   ModuleFileParentForm,
-  TopLevelModuleFormAst,
+  ModuleAst,
 } from '../fep-types';
 import { ModuleName } from '../host';
 import { get_module_info, Module } from '../modules';
@@ -119,7 +122,7 @@ export function module_core_transformer(
     return err('non-nil tail in module body');
   }
 
-  const provide_names: Set<string> = new Set();
+  const provide_names: Map<string, string> = new Map();
 
   // First pass, partially expand everything until everything is at the statement level.
   // While we're doing this, we process bindings and syntaxes,
@@ -196,7 +199,7 @@ export function module_core_transformer(
             const [name, compiled_rhs] = name_and_compiled_rhs_r.v;
 
             // evaluate rhs
-            const rhs_r = evaluate_general_top_level(compiled_rhs, env);
+            const rhs_r = evaluate_expr_or_define(compiled_rhs, env);
             if (isBadResult(rhs_r)) {
               return err(
                 'error when evaluating rhs of define-syntax in ' +
@@ -220,31 +223,21 @@ export function module_core_transformer(
             //// immediately, and the imported modules are instantiated or
             //// visited as appropriate.
 
-            const module_r = evaluate_require_module(new_form, global_ctx, file_ctx);
-            if (isBadResult(module_r)) {
-              return module_r;
+            const require_r = handle_require(new_form, global_ctx, file_ctx, env.bindings);
+            if (isBadResult(require_r)) {
+              return require_r;
             }
-            install_bindings(env.bindings, module_r.v.provides);
-
             partially_expanded_stmts.push(new_form);
             break;
           }
           case '#%provide': {
             //// If the form is a #%provide form, then it is recorded for
             //// processing after the rest of the body.
-            let names = cdr(new_form);
-            while (is_list(names)) {
-              const name = car(names);
-              if (!is_symbol(name)) {
-                return err('fancy provides not implemented yet, use only symbols in #%provide');
-              }
-              provide_names.add(val(name));
-              names = cdr(names);
-            }
-            if (!is_nil(names)) {
-              return err('non-nil in tail position of #%provide');
-            }
 
+            const provide_r = handle_provide(new_form, provide_names);
+            if (isBadResult(provide_r)) {
+              return provide_r;
+            }
             partially_expanded_stmts.push(new_form);
             break;
           }
@@ -428,7 +421,7 @@ export function compile_define_syntax_rhs_or_error(
   env: Environment,
   global_ctx: CompilerGlobalContext,
   file_ctx: CompilerFileLocalContext
-): Result<[string, FEExpr], CompileErr> {
+): Result<[string, ExprForm], CompileErr> {
   const match_result = match(stx, define_syntax_pattern);
   if (match_result !== undefined) {
     const {
@@ -437,7 +430,7 @@ export function compile_define_syntax_rhs_or_error(
     } = match_result as MatchObject<never> & { name: [SSymbol] };
     return then(
       compile(value_expr, ExpansionContext.ExpressionContext, env, global_ctx, file_ctx),
-      (fep) => ok([val(name_expr), fep as FEExpr])
+      (fep) => ok([val(name_expr), fep as ExprForm])
     );
   } else {
     return err('did not match form for define-syntax: ' + print(stx));
@@ -458,37 +451,145 @@ export function get_define_varname_and_rhs(stx: SExpr): Result<[string, SExpr], 
   }
 }
 
-const require_file_pattern = jsonRead(['#%require', json_symvar('name')]);
-const require_builtin_pattern = jsonRead(['#%require', ['quote', json_symvar('name')]]);
-function evaluate_require_module(
+function handle_require(
   stx: SExpr,
   global_ctx: CompilerGlobalContext,
-  file_ctx: CompilerFileLocalContext
-): Result<Module, CompileErr> {
-  {
-    const match_result = match(stx, require_file_pattern);
-    if (match_result !== undefined) {
-      return extract_matches(match_result, (name: [SSymbol]) => {
-        const module_name = val(name[0]);
-        // compile required module
-        return compile_and_run(module_name, global_ctx, file_ctx);
-      });
-    }
+  file_ctx: CompilerFileLocalContext,
+  bindings: Bindings
+): Result<void, CompileErr> {
+  const import_specs_match_result = match(stx, getOk(read_pattern('(head import_specs ...)')));
+  if (import_specs_match_result === undefined) {
+    return err(`module core transformer (#%require): incorrect form for #%require ${print(stx)}`);
   }
-  {
-    const match_result = match(stx, require_builtin_pattern);
-    if (match_result !== undefined) {
-      return extract_matches(match_result, (name: [SSymbol]) => {
-        const module_name = val(name[0]);
+  const import_specs = extract_matches(
+    import_specs_match_result,
+    (import_specs: SExpr[]) => import_specs
+  );
+  for (const spec of import_specs) {
+    {
+      const match_result = match(spec, getOk(read_pattern('sym-name')));
+      if (match_result !== undefined) {
+        const module_name = extract_matches(match_result, (name: [SSymbol]) => val(name[0]));
+        // compile required module
+        const module_r = compile_and_run(module_name, global_ctx, file_ctx);
+        if (isBadResult(module_r)) {
+          return module_r;
+        }
+        install_bindings(bindings, module_r.v.provides);
+        continue;
+      }
+    }
+    {
+      const match_result = match(spec, getOk(read_pattern("('quote sym-name)")));
+      if (match_result !== undefined) {
+        const module_name = extract_matches(match_result, (name: [SSymbol]) => val(name[0]));
         const module_r = global_ctx.host.read_builtin_module(module_name);
         if (isBadResult(module_r)) {
-          return err(`error requiring module ${module_name}: ${module_r.err}`);
+          return err(
+            `module core transformer (#%require): error while requiring builtin module ${module_name}`
+          );
         }
-        return module_r;
-      });
+        install_bindings(bindings, module_r.v.provides);
+        continue;
+      }
     }
+    {
+      const match_result = match(
+        spec,
+        getOk(read_pattern("('rename sym-name sym-local sym-exported)"))
+      );
+      if (match_result !== undefined) {
+        const [module_name, local, exported] = extract_matches(
+          match_result,
+          (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => [
+            val(name[0]),
+            val(local[0]),
+            val(exported[0]),
+          ]
+        );
+        // compile required module
+        const module_r = compile_and_run(module_name, global_ctx, file_ctx);
+        if (isBadResult(module_r)) {
+          return module_r;
+        }
+        const binding = get_binding(module_r.v.provides, local);
+        if (binding === undefined) {
+          return err(
+            `module core transformer (#%require): binding ${local} not exported in module ${module_name}`
+          );
+        }
+        set_binding(bindings, exported, binding);
+        continue;
+      }
+    }
+    {
+      const match_result = match(
+        spec,
+        getOk(read_pattern("('rename ('quote sym-name) sym-local sym-exported)"))
+      );
+      if (match_result !== undefined) {
+        const [module_name, local, exported] = extract_matches(
+          match_result,
+          (name: [SSymbol], local: [SSymbol], exported: [SSymbol]) => [
+            val(name[0]),
+            val(local[0]),
+            val(exported[0]),
+          ]
+        );
+        const module_r = global_ctx.host.read_builtin_module(module_name);
+        if (isBadResult(module_r)) {
+          return module_r;
+        }
+        const binding = get_binding(module_r.v.provides, local);
+        if (binding === undefined) {
+          return err(
+            `module core transformer (#%require): binding ${local} not exported in module ${module_name}`
+          );
+        }
+        set_binding(bindings, exported, binding);
+        continue;
+      }
+    }
+    return err(
+      `module core transformer (#%require): incorrect import spec form for #%require ${print(spec)}`
+    );
   }
-  return err('did not match format for require ' + print(stx));
+  return ok(undefined);
+}
+
+function handle_provide(stx: SExpr, provide_names: Map<string, string>): Result<void, CompileErr> {
+  const export_specs_match_result = match(stx, getOk(read_pattern('(head export_specs ...)')));
+  if (export_specs_match_result === undefined) {
+    return err(`module core transformer (#%provide): incorrect form for #%provide ${print(stx)}`);
+  }
+  const export_specs = extract_matches(
+    export_specs_match_result,
+    (export_specs: SExpr[]) => export_specs
+  );
+  for (const spec of export_specs) {
+    {
+      const rename_match_result = match(spec, getOk(read_pattern("('rename local exported)")));
+      if (rename_match_result !== undefined) {
+        extract_matches(rename_match_result, (local: [SSymbol], exported: [SSymbol]) =>
+          provide_names.set(val(local[0]), val(exported[0]))
+        );
+        continue;
+      }
+    }
+    {
+      const rename_match_result = match(spec, getOk(read_pattern('sym-name')));
+      if (rename_match_result !== undefined) {
+        extract_matches(rename_match_result, (name: [SSymbol]) =>
+          provide_names.set(val(name[0]), val(name[0]))
+        );
+        continue;
+      }
+    }
+    return err(
+      `module core transformer (#%provide): incorrect export spec form for #%provide ${print(spec)}`
+    );
+  }
+  return ok(undefined);
 }
 
 function compile_and_run(
@@ -504,11 +605,7 @@ function compile_and_run(
   }
   const fep = compile_r.v;
   // evaluate it
-  const module_r = evaluate_module(
-    fep as TopLevelModuleFormAst,
-    required_filename,
-    global_ctx.host
-  );
+  const module_r = evaluate_module(fep as ModuleAst, required_filename, global_ctx.host);
 
   if (isBadResult(module_r)) {
     return err(`error requiring module ${module_name}: ${module_r.err}`);

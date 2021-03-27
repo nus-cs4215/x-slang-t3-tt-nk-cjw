@@ -145,3 +145,12 @@ export function equals(e1: SExprT<unknown>, e2: SExprT<unknown>): boolean {
     }
   }
 }
+
+export function homlist_to_arr<T extends SExprT<U>, U>(homlist: SHomList<T>): T[] {
+  const arr: T[] = [];
+  while (is_list<U>(homlist)) {
+    arr.push(car(homlist));
+    homlist = cdr(homlist);
+  }
+  return arr;
+}

@@ -81,7 +81,7 @@ describe('valid read tests', () => {
         "a",
       ]
     `);
-    expectReadAsJson('`a').toMatchInlineSnapshot(`
+    expectReadAsJson('~a').toMatchInlineSnapshot(`
       Array [
         "quasiquote",
         "a",
@@ -99,7 +99,7 @@ describe('valid read tests', () => {
         Array [],
       ]
     `);
-    expectReadAsJson('`(+ ,(+ 1 2) ,(+ 3 4))').toMatchInlineSnapshot(`
+    expectReadAsJson('~(+ ,(+ 1 2) ,(+ 3 4))').toMatchInlineSnapshot(`
       Array [
         "quasiquote",
         Array [

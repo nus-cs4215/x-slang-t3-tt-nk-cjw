@@ -55,10 +55,6 @@ export const make_bindings = (
   return new Map(bs);
 };
 
-export const make_bindings_from_map_of_binding = (bindings: Bindings) => {
-  return bindings;
-};
-
 export const make_bindings_from_record = (
   defines: Record<string, MaybeSExpr>,
   syntaxes: Record<string, SExprT<unknown>>,
@@ -73,50 +69,12 @@ export const make_bindings_from_record = (
 export function get_binding(bindings: Bindings, name: string): Binding | undefined {
   return bindings.get(name);
 }
-
 export function has_binding(bindings: Bindings, name: string): boolean {
   return bindings.has(name);
 }
-
-export const get_define = (bindings: Bindings, name: string): MaybeSExpr => {
-  const binding = bindings.get(name);
-  if (binding === undefined || binding._type !== BindingType.Define) {
-    return undefined;
-  } else {
-    return binding.val;
-  }
-};
-
-export const get_syntax = (bindings: Bindings, name: string): MaybeSExpr => {
-  const binding = bindings.get(name);
-  if (binding === undefined || binding._type !== BindingType.Syntax) {
-    return undefined;
-  } else {
-    return binding.val;
-  }
-};
-
-export const get_core = (bindings: Bindings, name: string): CoreTransformer | undefined => {
-  const binding = bindings.get(name);
-  if (binding === undefined || binding._type !== BindingType.Core) {
-    return undefined;
-  } else {
-    return binding.fun;
-  }
-};
-
-export const has_define = (bindings: Bindings, name: string): boolean => {
-  const binding = bindings.get(name);
-  return binding !== undefined && binding._type === BindingType.Define;
-};
-export const has_syntax = (bindings: Bindings, name: string): boolean => {
-  const binding = bindings.get(name);
-  return binding !== undefined && binding._type === BindingType.Syntax;
-};
-export const has_core = (bindings: Bindings, name: string): boolean => {
-  const binding = bindings.get(name);
-  return binding !== undefined && binding._type === BindingType.Core;
-};
+export function set_binding(bindings: Bindings, name: string, binding: Binding): void {
+  bindings.set(name, binding);
+}
 
 export const set_define = (bindings: Bindings, name: string, value: MaybeSExpr): void => {
   bindings.set(name, define_binding(value!));
@@ -130,32 +88,6 @@ export function set_core(bindings: Bindings, name: string, value: CoreTransforme
 export function install_bindings(destination: Bindings, source: Bindings) {
   for (const [name, binding] of source.entries()) {
     destination.set(name, binding);
-  }
-}
-
-export function* get_all_bindings(
-  bindings: Bindings
-): Iterator<[string, Binding]> & Iterable<[string, Binding]> {
-  yield* bindings.entries();
-}
-
-export function* get_all_defines(
-  bindings: Bindings
-): Iterator<[string, MaybeSExpr]> & Iterable<[string, MaybeSExpr]> {
-  for (const [name, binding] of bindings.entries()) {
-    if (binding._type === BindingType.Define) {
-      yield [name, binding.val];
-    }
-  }
-}
-
-export function* get_all_syntaxes(
-  bindings: Bindings
-): Iterator<[string, SExprT<unknown>]> & Iterable<[string, SExprT<unknown>]> {
-  for (const [name, binding] of bindings.entries()) {
-    if (binding._type === BindingType.Syntax) {
-      yield [name, binding.val];
-    }
   }
 }
 

@@ -12,10 +12,7 @@ function module_begin(stx: EvalSExpr, compile_env_: NonemptyEnvironment): EvalRe
 function app(stx: EvalSExpr, compile_env: NonemptyEnvironment): EvalResult {
   // Just replace #%app with #%plain-app
   if (find_env('#%plain-app', compile_env) === undefined) {
-    console.log(compile_env.bindings);
-    console.log(compile_env.parent?.bindings);
-    console.log('#%plain-app not bound in ' + print(stx));
-    return err();
+    return err('#%plain-app not bound in ' + print(stx));
   }
   return ok(scons(ssymbol('#%plain-app'), cdr(stx as SList<never>)));
 }
@@ -25,8 +22,7 @@ function datum(stx: EvalSExpr, compile_env: NonemptyEnvironment): EvalResult {
   // so we just return it after consing it with quote
 
   if (find_env('quote', compile_env) === undefined) {
-    console.log('quote not bound in ' + print(stx));
-    return err();
+    return err('quote not bound in ' + print(stx));
   }
   // remove #%datum
   stx = cdr(stx as SList<never>);
@@ -37,8 +33,7 @@ function top_(stx: EvalSExpr, compile_env: NonemptyEnvironment): EvalResult {
   // Just replace (#%top . x) with (#%variable-reference x)
 
   if (find_env('#%variable-reference', compile_env) === undefined) {
-    console.log('#%variable-reference not bound in ' + print(stx));
-    return err();
+    return err('#%variable-reference not bound in ' + print(stx));
   }
   stx = cdr(stx as SList<never>);
   return ok(scons(ssymbol('#%variable-reference'), scons(stx, snil())));
