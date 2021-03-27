@@ -16,7 +16,11 @@ type CompileResult = string;
 type EvaluateResult = string;
 export function compile_and_run_test(
   program: string
-): Result<{ compiled: CompileResult; evaluated: EvaluateResult }, ReadErr | CompileErr | EvalErr> {
+): {
+  read?: ReadErr;
+  compiled?: Result<CompileResult, CompileErr>;
+  evaluated?: Result<EvaluateResult, EvalErr>;
+} {
   // Put our fancy lib in
   const host = builtin_compiler_host();
   host.write_file('/testing/test-compiler.rkt', test_compiler);
@@ -40,7 +44,7 @@ export function compile_and_run_test(
   // read
   const program_stx_r = read(program);
   if (isBadResult(program_stx_r)) {
-    return program_stx_r;
+    return { read: program_stx_r.err };
   }
 
   // compile
@@ -57,20 +61,20 @@ export function compile_and_run_test(
     { filename }
   );
   if (isBadResult(program_fep_r)) {
-    return program_fep_r;
+    return { compiled: program_fep_r };
   }
 
   // evaluate
   const program_result_r = evaluate_module(program_fep_r.v as ModuleForm, filename, host);
   if (isBadResult(program_result_r)) {
-    return program_result_r;
+    return { compiled: ok(print(program_fep_r.v)), evaluated: program_result_r };
   }
-  return ok({
-    compiled: print(program_fep_r.v),
-    evaluated: print(
-      (get_binding(program_result_r.v.provides, 'test-result') as DefineBinding).val!
+  return {
+    compiled: ok(print(program_fep_r.v)),
+    evaluated: ok(
+      print((get_binding(program_result_r.v.provides, 'test-result') as DefineBinding).val!)
     ),
-  });
+  };
 }
 
 type EvaluateWithoutPrintResult = SExprT<unknown>;

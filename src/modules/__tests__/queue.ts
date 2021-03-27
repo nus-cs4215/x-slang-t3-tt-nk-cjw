@@ -9,10 +9,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -21,7 +21,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "#boxed",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#boxed",
       },
     }
   `);
@@ -36,10 +40,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -52,7 +56,11 @@ test('queue', () => {
         (define test-result (#%variable-reference q))
         )
       )",
-        "evaluated": "#boxed",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#boxed",
       },
     }
   `);
@@ -67,10 +75,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -88,7 +96,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "1",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "1",
       },
     }
   `);
@@ -105,10 +117,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -136,7 +148,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "1",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "1",
       },
     }
   `);
@@ -154,10 +170,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -189,7 +205,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "2",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "2",
       },
     }
   `);
@@ -208,10 +228,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -248,7 +268,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "4",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "4",
       },
     }
   `);
@@ -268,10 +292,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -312,7 +336,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "3",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "3",
       },
     }
   `);
@@ -333,10 +361,10 @@ test('queue', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/queue)
         (#%provide test-result)
@@ -381,7 +409,11 @@ test('queue', () => {
           )
         )
       )",
-        "evaluated": "4",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "4",
       },
     }
   `);

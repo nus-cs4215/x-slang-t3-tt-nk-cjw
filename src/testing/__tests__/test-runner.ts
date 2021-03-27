@@ -10,17 +10,21 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/private/cond)
           (#%provide test-result)
           (define test-result (quote no_match))
           )
         )",
-          "evaluated": "no_match",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "no_match",
         },
       }
     `);
@@ -33,10 +37,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/private/cond)
           (#%provide test-result)
@@ -45,7 +49,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "3",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "3",
         },
       }
     `);
@@ -58,10 +66,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/private/cond)
           (#%provide test-result)
@@ -73,7 +81,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "1",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "1",
         },
       }
     `);
@@ -87,10 +99,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/private/cond)
           (#%provide test-result)
@@ -102,7 +114,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "1",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "1",
         },
       }
     `);
@@ -116,10 +132,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/private/cond)
           (#%provide test-result)
@@ -131,7 +147,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "no_match",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "no_match",
         },
       }
     `);
@@ -148,10 +168,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/base)
           (#%provide test-result)
@@ -171,7 +191,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "6",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "6",
         },
       }
     `);
@@ -187,10 +211,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require /libs/racket/private/let)
           (#%provide test-result)
@@ -210,7 +234,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "6",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "6",
         },
       }
     `);
@@ -223,10 +251,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require (rename (quote #%builtin-kernel) + fancy-+))
           (#%provide test-result)
@@ -235,7 +263,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "3",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "3",
         },
       }
     `);
@@ -251,10 +283,10 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": undefined,
-        "good": true,
-        "v": Object {
-          "compiled": "(module test-module (quote #%builtin-kernel)
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
         (#%plain-module-begin
           (#%require
             /libs/racket/private/quasiquote
@@ -285,7 +317,11 @@ describe('test compiler works properly', () => {
             )
           )
         )",
-          "evaluated": "(+ 3 3)",
+        },
+        "evaluated": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(+ 3 3)",
         },
       }
     `);
@@ -302,9 +338,35 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": "evaluate (#%variable-reference): could not find variable let*",
-        "good": false,
-        "v": undefined,
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/private/quasiquote)
+          (#%provide test-result)
+          (define test-result
+            (#%plain-app
+              (#%variable-reference let*)
+              (#%plain-app
+                (#%plain-app (#%variable-reference x) (quote 3))
+                (#%plain-app (#%variable-reference y) (#%variable-reference x))
+                )
+              (#%plain-app
+                (#%variable-reference +)
+                (#%variable-reference x)
+                (#%variable-reference y)
+                )
+              )
+            )
+          )
+        )",
+        },
+        "evaluated": Object {
+          "err": "evaluate (#%variable-reference): could not find variable let*",
+          "good": false,
+          "v": undefined,
+        },
       }
     `);
   });
@@ -320,7 +382,7 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": Object {
+        "read": Object {
           "loc": Object {
             "end": Object {
               "character": 124,
@@ -335,8 +397,6 @@ describe('test compiler works properly', () => {
           },
           "message": "Unexpected EOF",
         },
-        "good": false,
-        "v": undefined,
       }
     `);
   });
@@ -352,9 +412,11 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": "did not match pattern for let: (let (x) (let* (3) (y x) (+ x y)))",
-        "good": false,
-        "v": undefined,
+        "compiled": Object {
+          "err": "did not match pattern for let: (let (x) (let* (3) (y x) (+ x y)))",
+          "good": false,
+          "v": undefined,
+        },
       }
     `);
   });
@@ -370,9 +432,30 @@ describe('test compiler works properly', () => {
       `)
     ).toMatchInlineSnapshot(`
       Object {
-        "err": "+: expected all arguments to be numbers but got 3, x",
-        "good": false,
-        "v": undefined,
+        "compiled": Object {
+          "err": undefined,
+          "good": true,
+          "v": "(module test-module (quote #%builtin-kernel)
+        (#%plain-module-begin
+          (#%require /libs/racket/base)
+          (#%provide test-result)
+          (define test-result
+            (let ((x (quote 3)) (y (quote x)))
+              (#%plain-app
+                (#%variable-reference +)
+                (#%variable-reference x)
+                (#%variable-reference y)
+                )
+              )
+            )
+          )
+        )",
+        },
+        "evaluated": Object {
+          "err": "+: expected all arguments to be numbers but got 3, x",
+          "good": false,
+          "v": undefined,
+        },
       }
     `);
   });

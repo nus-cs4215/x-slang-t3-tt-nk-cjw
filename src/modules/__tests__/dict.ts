@@ -9,17 +9,21 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
         (define test-result (#%plain-app (#%variable-reference make-dict)))
         )
       )",
-        "evaluated": "#boxed",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#boxed",
       },
     }
   `);
@@ -33,10 +37,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -50,7 +54,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#f",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#f",
       },
     }
   `);
@@ -65,10 +73,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -82,7 +90,11 @@ test('dict', () => {
         (define test-result (#%variable-reference d))
         )
       )",
-        "evaluated": "#boxed",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#boxed",
       },
     }
   `);
@@ -97,10 +109,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -120,7 +132,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#t",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#t",
       },
     }
   `);
@@ -135,10 +151,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -158,7 +174,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#f",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#f",
       },
     }
   `);
@@ -173,10 +193,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -196,7 +216,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "5",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "5",
       },
     }
   `);
@@ -211,10 +235,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -234,7 +258,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#f",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#f",
       },
     }
   `);
@@ -250,10 +278,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -279,7 +307,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#t",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#t",
       },
     }
   `);
@@ -295,10 +327,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -324,7 +356,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#t",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#t",
       },
     }
   `);
@@ -340,10 +376,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -369,7 +405,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#f",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#f",
       },
     }
   `);
@@ -385,10 +425,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -414,7 +454,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "5",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "5",
       },
     }
   `);
@@ -430,10 +474,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -459,7 +503,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "6",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "6",
       },
     }
   `);
@@ -475,10 +523,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -504,7 +552,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "#f",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "#f",
       },
     }
   `);
@@ -521,10 +573,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -556,7 +608,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "7",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "7",
       },
     }
   `);
@@ -573,10 +629,10 @@ test('dict', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/dict)
         (#%provide test-result)
@@ -608,7 +664,11 @@ test('dict', () => {
           )
         )
       )",
-        "evaluated": "6",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "6",
       },
     }
   `);

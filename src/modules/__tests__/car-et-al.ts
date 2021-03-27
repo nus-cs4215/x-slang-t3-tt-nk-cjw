@@ -16,10 +16,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -28,7 +28,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "1",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "1",
       },
     }
   `);
@@ -41,10 +45,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -53,7 +57,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "2",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "2",
       },
     }
   `);
@@ -66,10 +74,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -78,7 +86,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "3",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "3",
       },
     }
   `);
@@ -91,10 +103,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -103,7 +115,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "(4 5 6)",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(4 5 6)",
       },
     }
   `);
@@ -116,10 +132,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -128,7 +144,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "4",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "4",
       },
     }
   `);
@@ -141,10 +161,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -153,7 +173,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "5",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "5",
       },
     }
   `);
@@ -166,10 +190,10 @@ test('car et al', () => {
       `)
   ).toMatchInlineSnapshot(`
     Object {
-      "err": undefined,
-      "good": true,
-      "v": Object {
-        "compiled": "(module test-module (quote #%builtin-kernel)
+      "compiled": Object {
+        "err": undefined,
+        "good": true,
+        "v": "(module test-module (quote #%builtin-kernel)
       (#%plain-module-begin
         (#%require /libs/racket/private/car-et-al)
         (#%provide test-result)
@@ -178,7 +202,11 @@ test('car et al', () => {
           )
         )
       )",
-        "evaluated": "6",
+      },
+      "evaluated": Object {
+        "err": undefined,
+        "good": true,
+        "v": "6",
       },
     }
   `);
