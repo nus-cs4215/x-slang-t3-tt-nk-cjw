@@ -381,8 +381,8 @@ describe('evaluate_general_top_level', () => {
       evaluate_expr_or_define(
         getOk(
           read(
-            `(#%plain-app (#%plain-lambda 
-                            (f x) 
+            `(#%plain-app (#%plain-lambda
+                            (f x)
                             (#%plain-app (#%variable-reference f) (#%variable-reference x))
                            )
                 (#%plain-lambda (y) (#%variable-reference y))
@@ -392,7 +392,67 @@ describe('evaluate_general_top_level', () => {
         env
       )
     ).toEqual(ok(snumber(100)));
+
+    expect(
+      getErr(
+        evaluate_expr_or_define(
+          getOk(
+            read(`(#%plain-app (#%plain-lambda (x) (#%variable-reference x)))`)
+          ) as ExprOrDefineForm,
+          env
+        )
+      )
+    ).toMatchInlineSnapshot(
+      `"apply: too few arguments given. expected arguments x but got 0 arguments"`
+    );
+
+    expect(
+      getErr(
+        evaluate_expr_or_define(
+          getOk(
+            read(`(#%plain-app (#%plain-lambda (x) (#%variable-reference x)) (quote 1) (quote 2))`)
+          ) as ExprOrDefineForm,
+          env
+        )
+      )
+    ).toMatchInlineSnapshot(
+      `"apply: too many arguments given. expected arguments x but got 2 arguments"`
+    );
+
+    expect(
+      getErr(
+        evaluate_expr_or_define(
+          getOk(
+            read(`(#%plain-app (#%plain-lambda (x . y) (#%variable-reference x)))`)
+          ) as ExprOrDefineForm,
+          env
+        )
+      )
+    ).toMatchInlineSnapshot(
+      `"apply: too few arguments given. expected arguments x but got 0 arguments"`
+    );
+
+    expect(
+      getErr(
+        evaluate_expr_or_define(
+          getOk(read(`(#%plain-app (quote (1 2 3)) (quote 100))`)) as ExprOrDefineForm,
+          env
+        )
+      )
+    ).toMatchInlineSnapshot(`"apply: tried to call non-function value"`);
+
+    expect(
+      getErr(
+        evaluate_expr_or_define(
+          getOk(
+            read(`(#%plain-app (#%variable-reference module) (quote 100))`)
+          ) as ExprOrDefineForm,
+          env
+        )
+      )
+    ).toMatchInlineSnapshot(`"evaluate (#%variable-reference): could not find variable module"`);
   });
+
   test('evaluate set! with undefined value', () => {
     const env = test_env();
     expect(
@@ -403,6 +463,28 @@ describe('evaluate_general_top_level', () => {
     ).toMatchInlineSnapshot(`
       Object {
         "err": "evaluate (set!): assignment disallowed; cannot set variable i-am-not-defined before its definition",
+        "good": false,
+        "v": undefined,
+      }
+    `);
+  });
+
+  test('evaluate set! with undefined value', () => {
+    const env = test_env();
+    expect(
+      evaluate_expr_or_define(
+        getOk(
+          read(`
+            (letrec ([x (set! y (quote 1))]
+                     [y (#%variable-reference y)])
+              (#%variable-reference y))
+          `)
+        ) as ExprOrDefineForm,
+        env
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "err": "evaluate (set!): tried to set variable y before initialization",
         "good": false,
         "v": undefined,
       }

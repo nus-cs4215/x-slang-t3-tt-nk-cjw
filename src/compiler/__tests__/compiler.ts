@@ -605,7 +605,7 @@ describe('compile fails', () => {
   test.skip('nonexistent binding in expr', () => {
     expectReadCompileError(`
       (module name '#%builtin-kernel (define x y))
-    `).toMatchInlineSnapshot(`"#%module-begin not bound in (#%module-begin (define x y))"`);
+    `).toMatchInlineSnapshot();
   });
 
   test('making datum without #%datum in environment', () => {
@@ -654,6 +654,37 @@ describe('compile fails', () => {
           )
         )"
     `);
+  });
+
+  test('creating non-function syntax transformer', () => {
+    expectReadCompileError(`
+      (module name '#%builtin-kernel
+        (define-syntax foo 1)
+        foo
+        )
+    `).toMatchInlineSnapshot(
+      `"partial_expand_v2: error when partially expanding application of stx transformer foo: apply_syntax: tried to call non-function value"`
+    );
+  });
+
+  test('creating wrong arity syntax transformer', () => {
+    expectReadCompileError(`
+      (module name '#%builtin-kernel
+        (define-syntax foo (#%plain-lambda (x y) x))
+        foo
+        )
+    `).toMatchInlineSnapshot(
+      `"partial_expand_v2: error when partially expanding application of stx transformer foo: apply_syntax: syntax transformers should take exactly one argument"`
+    );
+
+    expectReadCompileError(`
+      (module name '#%builtin-kernel
+        (define-syntax foo (#%plain-lambda () 1))
+        foo
+        )
+    `).toMatchInlineSnapshot(
+      `"partial_expand_v2: error when partially expanding application of stx transformer foo: apply_syntax: syntax transformers should take exactly one argument"`
+    );
   });
 
   test('demo', () => {

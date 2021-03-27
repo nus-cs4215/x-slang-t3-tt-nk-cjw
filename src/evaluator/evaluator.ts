@@ -125,10 +125,6 @@ export const apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResult =
     } else if (v.variant === EvalDataType.Primitive) {
       // v is a Primitive
       return v.fun(...args);
-    } else {
-      // v is a PrimitiveTransformer
-      // You can't call them
-      return err('apply: tried to call a transformer like a function');
     }
   }
 
@@ -164,12 +160,7 @@ export const apply_syntax: ApplySyntax = (
         _body = cdr(_body);
       }
       return r!;
-    } else if (v.variant === EvalDataType.Primitive) {
-      // v is a Primitive
-      // You should have used a PrimitiveTransformer
-      return err('apply_syntax: tried to call normal function like a transformer');
-    } else {
-      // if (v.variant === EvalDataType.PrimitiveTransformer) {
+    } else if (v.variant === EvalDataType.PrimitiveTransformer) {
       return (v as PrimitiveTransformer).fun(stx, compile_env);
     }
   }
