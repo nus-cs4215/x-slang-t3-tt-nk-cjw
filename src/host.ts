@@ -70,11 +70,7 @@ class MapHost {
     if (isBadResult(fep_contents_r)) {
       return fep_contents_r;
     }
-    const fep_r = read(fep_contents_r.v);
-    if (isBadResult(fep_r)) {
-      return err('error when reading precompiled fep: ' + fep_r.err);
-    }
-    const fep_module_r = evaluate_module(fep_r.v as ModuleAst, fep_filename, this);
+    const fep_module_r = evaluate_module(fep_contents_r.v, fep_filename, this);
     if (isBadResult(fep_module_r)) {
       return err('error when evaluating precompiled fep: ' + fep_module_r.err);
     }

@@ -33,11 +33,14 @@ import {
   ModuleAst,
   VariableReferenceForm,
   SetForm,
+  ExprOrDefineForm,
 } from '../fep-types';
 import { EvaluatorHost, FileName } from '../host';
+import { js_transpile_run_expr_or_define, js_transpile_run_module } from '../js-eval/js-eval';
 import { get_module_info, Module } from '../modules';
 import { extract_matches, match, read_pattern } from '../pattern';
 import { print } from '../printer';
+import { read } from '../reader';
 import {
   car,
   cdr,
@@ -56,7 +59,7 @@ import {
   val,
 } from '../sexpr';
 import { err, getOk, isBadResult, ok, Result } from '../utils';
-import { EvalDataType, make_fep_closure, PrimitiveTransformer } from './datatypes';
+import { EvalDataType, make_fep_closure, Primitive, PrimitiveTransformer } from './datatypes';
 import {
   Apply,
   ApplySyntax,
@@ -73,7 +76,7 @@ export const apply: Apply = (fun: EvalSExpr, ...args: EvalSExpr[]): EvalResult =
     if (v.variant === EvalDataType.FEPClosure) {
       // v was a FEPClosure
       const { env, formals, rest, body } = v;
-      let _body: SHomList<ExprForm> = body;
+      let _body: SHomList<ExprOrDefineForm> = body;
       if (rest === undefined) {
         if (args.length < formals.length) {
           return err(
@@ -141,7 +144,7 @@ export const apply_syntax: ApplySyntax = (
     if (v.variant === EvalDataType.FEPClosure) {
       // v was a FEPClosure
       const { env, formals, rest, body } = v;
-      let _body: SHomList<ExprForm> = body;
+      let _body: SHomList<ExprOrDefineForm> = body;
       if (rest !== undefined || formals.length !== 1) {
         return err('apply_syntax: syntax transformers should take exactly one argument');
       }
@@ -160,6 +163,8 @@ export const apply_syntax: ApplySyntax = (
         _body = cdr(_body);
       }
       return r!;
+    } else if (v.variant === EvalDataType.Primitive) {
+      return (v as Primitive).fun(stx);
     } else if (v.variant === EvalDataType.PrimitiveTransformer) {
       return (v as PrimitiveTransformer).fun(stx, compile_env);
     }
@@ -168,7 +173,7 @@ export const apply_syntax: ApplySyntax = (
   return err('apply_syntax: tried to call non-function value');
 };
 
-export const evaluate_expr_or_define: EvaluateExprOrDefine = (
+const interpret_expr_or_define: EvaluateExprOrDefine = (
   program: ExprOrDefineAst,
   env: Environment
 ): EvalResult => {
@@ -180,7 +185,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
       const symbol = car(cdr(defineprogram));
       const expr = car(cdr(cdr(defineprogram)));
 
-      const r = evaluate_expr_or_define(expr, env);
+      const r = interpret_expr_or_define(expr, env);
       if (isBadResult(r)) {
         return r;
       }
@@ -195,7 +200,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
       const symbol = car(cdr(definesyntax_program));
       const expr = car(cdr(cdr(definesyntax_program)));
 
-      const r = evaluate_expr_or_define(expr, env);
+      const r = interpret_expr_or_define(expr, env);
       if (isBadResult(r)) {
         return r;
       }
@@ -229,7 +234,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
     case 'if': {
       const ifprogram = program as IfForm;
       const condition = ifprogram.y.x;
-      const condition_r = evaluate_expr_or_define(condition, env);
+      const condition_r = interpret_expr_or_define(condition, env);
 
       if (isBadResult(condition_r)) {
         return condition_r;
@@ -239,8 +244,8 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
       const alternative = ifprogram.y.y.y.x;
       const condition_v = condition_r.v;
       return !(is_boolean(condition_v) && val(condition_v) === false)
-        ? evaluate_expr_or_define(consequent, env)
-        : evaluate_expr_or_define(alternative, env);
+        ? interpret_expr_or_define(consequent, env)
+        : interpret_expr_or_define(alternative, env);
     }
     case 'begin': {
       let r: EvalResult;
@@ -249,7 +254,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
       let sequence: SHomList<ExprForm> = cdr(beginprogram);
       while (is_list(sequence)) {
         const expr = car(sequence);
-        r = evaluate_expr_or_define(expr, env);
+        r = interpret_expr_or_define(expr, env);
 
         if (isBadResult(r)) {
           return r;
@@ -262,12 +267,12 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
     case 'begin0': {
       const begin0program = program as Begin0Form;
       const nonempty_sequence = cdr(begin0program);
-      const r = evaluate_expr_or_define(car(nonempty_sequence), env);
+      const r = interpret_expr_or_define(car(nonempty_sequence), env);
 
       let rest_sequence = cdr(nonempty_sequence);
       while (is_list(rest_sequence)) {
         const expr = car(rest_sequence);
-        const rr = evaluate_expr_or_define(expr, env);
+        const rr = interpret_expr_or_define(expr, env);
 
         if (isBadResult(rr)) {
           return rr;
@@ -286,7 +291,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
         const symbol = car(binding_pair);
         const expr = car(cdr(binding_pair));
 
-        const r = evaluate_expr_or_define(expr, env);
+        const r = interpret_expr_or_define(expr, env);
         if (isBadResult(r)) {
           return r;
         }
@@ -300,7 +305,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
       let sequence: SHomList<ExprForm> = cdr(cdr(letprogram));
       while (is_list(sequence)) {
         const expr = car(sequence);
-        r = evaluate_expr_or_define(expr, env);
+        r = interpret_expr_or_define(expr, env);
 
         if (isBadResult(r)) {
           return r;
@@ -329,7 +334,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
         const symbol = car(binding_pair);
         const expr = car(cdr(binding_pair));
 
-        const r = evaluate_expr_or_define(expr, env);
+        const r = interpret_expr_or_define(expr, env);
         if (isBadResult(r)) {
           return r;
         }
@@ -342,7 +347,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
       let sequence: SHomList<ExprForm> = cdr(cdr(letrecprogram));
       while (is_list(sequence)) {
         const expr = car(sequence);
-        r = evaluate_expr_or_define(expr, env);
+        r = interpret_expr_or_define(expr, env);
 
         if (isBadResult(r)) {
           return r;
@@ -359,14 +364,16 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
     case '#%plain-app': {
       const plainapp_program = program as PlainAppForm;
       const exprs = cdr(plainapp_program);
-      const fun_r = evaluate_expr_or_define(car(exprs), env);
+      const fun_r = interpret_expr_or_define(car(exprs), env);
 
       if (isBadResult(fun_r)) {
         return fun_r;
       }
       const fun = getOk(fun_r);
 
-      const arg_rs = homlist_to_arr(cdr(exprs)).map((fexpr) => evaluate_expr_or_define(fexpr, env));
+      const arg_rs = homlist_to_arr(cdr(exprs)).map((fexpr) =>
+        interpret_expr_or_define(fexpr, env)
+      );
 
       const args = [];
 
@@ -403,7 +410,7 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
 
       const found_env = find_env(symbol.val, env);
       const expr = car(cdr(cdr(set_program)));
-      const r = evaluate_expr_or_define(expr, env);
+      const r = interpret_expr_or_define(expr, env);
       if (isBadResult(r)) {
         return r;
       }
@@ -432,11 +439,12 @@ export const evaluate_expr_or_define: EvaluateExprOrDefine = (
   }
 };
 
-export const evaluate_module: EvaluateModule = (
-  program: ModuleAst,
+export const interpret_module: EvaluateModule = (
+  program_str: string,
   program_filename: FileName,
   host: EvaluatorHost
 ): Result<Module, EvalErr> => {
+  const program = getOk(read(program_str)) as ModuleAst;
   const module_info_result = get_module_info(program);
   if (isBadResult(module_info_result)) {
     return module_info_result;
@@ -491,7 +499,7 @@ export const evaluate_module: EvaluateModule = (
           getOk(read_pattern('(head export_specs ...)'))
         );
         if (export_specs_match_result === undefined) {
-          return err(`evaluate_module: incorrect form for #%provide ${print(statement)}`);
+          return err(`interpret_module: incorrect form for #%provide ${print(statement)}`);
         }
         const export_specs = extract_matches(
           export_specs_match_result,
@@ -519,7 +527,7 @@ export const evaluate_module: EvaluateModule = (
               continue;
             }
           }
-          return err(`evaluate_module: incorrect export spec form for #%provide ${print(spec)}`);
+          return err(`interpret_module: incorrect export spec form for #%provide ${print(spec)}`);
         }
         break;
       }
@@ -530,7 +538,7 @@ export const evaluate_module: EvaluateModule = (
           getOk(read_pattern('(head import_specs ...)'))
         );
         if (import_specs_match_result === undefined) {
-          return err(`evaluate_module: incorrect form for #%require ${print(statement)}`);
+          return err(`interpret_module: incorrect form for #%require ${print(statement)}`);
         }
         const import_specs = extract_matches(
           import_specs_match_result,
@@ -545,7 +553,7 @@ export const evaluate_module: EvaluateModule = (
               const module_r = host.read_fep_module(module_name, program_filename);
               if (isBadResult(module_r)) {
                 return err(
-                  `evaluate_module (#%require): error while requiring module ${module_name}`
+                  `interpret_module (#%require): error while requiring module ${module_name}`
                 );
               }
               install_bindings(env.bindings, module_r.v.provides);
@@ -559,7 +567,7 @@ export const evaluate_module: EvaluateModule = (
               const module_r = host.read_builtin_module(module_name);
               if (isBadResult(module_r)) {
                 return err(
-                  `evaluate_module (#%require): error while requiring builtin module ${module_name}`
+                  `interpret_module (#%require): error while requiring builtin module ${module_name}`
                 );
               }
               install_bindings(env.bindings, module_r.v.provides);
@@ -584,13 +592,13 @@ export const evaluate_module: EvaluateModule = (
               const module_r = host.read_fep_module(module_name, program_filename);
               if (isBadResult(module_r)) {
                 return err(
-                  `evaluate_module (#%require): error while requiring module ${module_name}`
+                  `interpret_module (#%require): error while requiring module ${module_name}`
                 );
               }
               const binding = get_binding(module_r.v.provides, local);
               if (binding === undefined) {
                 return err(
-                  `evaluate_module (#%require): binding ${local} not exported in module ${module_name}`
+                  `interpret_module (#%require): binding ${local} not exported in module ${module_name}`
                 );
               }
               set_binding(env.bindings, exported, binding);
@@ -614,20 +622,20 @@ export const evaluate_module: EvaluateModule = (
               const module_r = host.read_builtin_module(module_name);
               if (isBadResult(module_r)) {
                 return err(
-                  `evaluate_module (#%require): error while requiring module ${module_name}`
+                  `interpret_module (#%require): error while requiring module ${module_name}`
                 );
               }
               const binding = get_binding(module_r.v.provides, local);
               if (binding === undefined) {
                 return err(
-                  `evaluate_module (#%require): binding ${local} not exported in module ${module_name}`
+                  `interpret_module (#%require): binding ${local} not exported in module ${module_name}`
                 );
               }
               set_binding(env.bindings, exported, binding);
               continue;
             }
           }
-          return err(`evaluate_module: incorrect import spec form for #%require ${print(spec)}`);
+          return err(`interpret_module: incorrect import spec form for #%require ${print(spec)}`);
         }
         break;
       }
@@ -650,7 +658,7 @@ export const evaluate_module: EvaluateModule = (
         break;
       }
       default: {
-        const r = evaluate_expr_or_define(statement as ExprOrDefineAst, env);
+        const r = interpret_expr_or_define(statement as ExprOrDefineAst, env);
         if (isBadResult(r)) {
           return r;
         }
@@ -664,11 +672,11 @@ export const evaluate_module: EvaluateModule = (
   for (const [name, exported] of provide_names.entries()) {
     const name_env = find_env(name, env);
     if (name_env === undefined) {
-      return err(`evaluate_module (export): could not find binding for ${name} to export`);
+      return err(`interpret_module (export): could not find binding for ${name} to export`);
     }
     const binding = get_binding(name_env.bindings, name);
     if (binding === undefined) {
-      return err(`evaluate_module (export): binding for ${name} was not initialized`);
+      return err(`interpret_module (export): binding for ${name} was not initialized`);
     }
     set_binding(exported_bindings, exported, binding);
   }
@@ -679,3 +687,30 @@ export const evaluate_module: EvaluateModule = (
     provides: exported_bindings,
   });
 };
+
+export const evaluate_expr_or_define: EvaluateExprOrDefine = interpret_expr_or_define;
+export const evaluate_module: EvaluateModule = interpret_module;
+
+// export const evaluate_expr_or_define: EvaluateExprOrDefine = (
+//   program: ExprOrDefineAst,
+//   env: Environment
+// ): EvalResult => {
+//   // Heuristic: if evaluating a function,
+//   // use transpiler so that we get speed when we run the function
+//   if (is_list(program) && is_symbol(car(program)) && val(car(program)) === '#%plain-lambda') {
+//     return js_transpile_run_expr_or_define(program, env);
+//   }
+//   return interpret_expr_or_define(program, env);
+// };
+
+// export const evaluate_module: EvaluateModule = (
+//   program_str: string,
+//   program_filename: FileName,
+//   host: EvaluatorHost
+// ): Result<Module, EvalErr> => {
+//   // Heuristic: if there are no #%plain-lambda, then just interpret it.
+//   if (!program_str.includes('#%plain-lambda')) {
+//     return interpret_module(program_str, program_filename, host);
+//   }
+//   return js_transpile_run_module(program_str, program_filename, host);
+// };

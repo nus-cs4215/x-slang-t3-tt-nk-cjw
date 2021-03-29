@@ -1,6 +1,6 @@
 import { STypes, SExprT, val, car, cdr, is_list, is_nil } from '../sexpr';
 
-type StringExpr = [StringExpr[], number] | [string, number];
+type StringExpr = readonly [readonly StringExpr[], number] | readonly [string, number];
 
 function print_to_stringexpr<T>(
   e: SExprT<T>,
@@ -48,16 +48,19 @@ function print_to_stringexpr<T>(
       output.push(first);
       length += first[1];
 
+      let rest: SExprT<unknown> = cdr(e);
+
       // handle the rest of the elements
-      for (e = cdr(e); is_list(e); e = cdr(e)) {
-        const sub = print_to_stringexpr(car(e), cache);
+      while (is_list(rest)) {
+        const sub = print_to_stringexpr(car(rest), cache);
         output.push(sub);
         length += sub[1];
+        rest = cdr(rest);
       }
 
       // handle improper list
-      if (!is_nil(e)) {
-        const last = print_to_stringexpr(e, cache);
+      if (!is_nil(rest)) {
+        const last = print_to_stringexpr(rest, cache);
         output.push(['.', 1]);
         length += 1;
         output.push(last);
@@ -76,7 +79,7 @@ function print_to_stringexpr<T>(
   return result;
 }
 
-function flatten_expr_to_tree(expr: StringExpr, flat: string[] = []): StringTree[] {
+function flatten_expr_to_tree(expr: StringExpr, flat: string[]): StringTree[] {
   // While there can be shared trees, we're guaranteed that the string tree is a DAG.
   // If it wasn't, it's unclear what this function should do, anyway.
   //
@@ -96,7 +99,7 @@ function flatten_expr_to_tree(expr: StringExpr, flat: string[] = []): StringTree
       flat.push(')');
     }
   } else {
-    flat.push(expr[0]);
+    flat.push(expr[0] as string);
   }
 
   return flat;
@@ -160,7 +163,7 @@ function format_stringexpr(
       // too big case
       const indented_children: [number, StringTree][][] = [];
       for (const child of expr[0]) {
-        indented_children.push(format_stringexpr(child, lineLength));
+        indented_children.push(format_stringexpr(child, lineLength, cache));
       }
       // If there were no children, we do the () and we are done
       if (indented_children.length === 0) {
@@ -223,11 +226,11 @@ function format_stringexpr(
       }
     } else {
       // not too big case
-      result.push([0, flatten_expr_to_tree(expr)]);
+      result.push([0, flatten_expr_to_tree(expr, [])]);
     }
   } else {
     // it's just a single element, add newline and move on.
-    result.push([0, expr[0]]);
+    result.push([0, expr[0] as string]);
   }
 
   cache.set(expr, result);

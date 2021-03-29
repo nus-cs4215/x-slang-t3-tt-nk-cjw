@@ -605,7 +605,7 @@ function compile_and_run(
   }
   const fep = compile_r.v;
   // evaluate it
-  const module_r = evaluate_module(fep as ModuleAst, required_filename, global_ctx.host);
+  const module_r = evaluate_module(print(fep), required_filename, global_ctx.host);
 
   if (isBadResult(module_r)) {
     return err(`error requiring module ${module_name}: ${module_r.err}`);

@@ -124,3 +124,23 @@ export function lookup_binding(name: string, env: Environment): Binding | undefi
   }
   return get_binding(found_env.bindings, name);
 }
+
+export function get_all_from_bindings(
+  bindings: Bindings
+): Iterator<[string, Binding]> & Iterable<[string, Binding]> {
+  return bindings.entries();
+}
+
+export function* get_all_from_environment(
+  environment: Environment
+): Iterator<[string, Binding]> & Iterable<[string, Binding]> {
+  const already_seen: Set<string> = new Set();
+  while (environment !== undefined) {
+    for (const b of get_all_from_bindings(environment.bindings)) {
+      if (already_seen.has(b[0])) continue;
+      already_seen.add(b[0]);
+      yield b;
+    }
+    environment = environment.parent;
+  }
+}

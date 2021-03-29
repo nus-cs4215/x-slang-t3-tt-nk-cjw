@@ -1,4 +1,4 @@
-import { BindingType, Environment, lookup_binding } from '../environment';
+import { BindingType, CoreBinding, Environment, lookup_binding } from '../environment';
 import { apply_syntax } from '../evaluator';
 import { EvalData } from '../evaluator/datatypes';
 import { FEPNode } from '../fep-types';
@@ -17,7 +17,7 @@ import {
   STypes,
   val,
 } from '../sexpr';
-import { err, isBadResult, isGoodResult, ok, Result, then } from '../utils';
+import { err, getOk, isBadResult, isGoodResult, ok, Result, then } from '../utils';
 import { make_initial_compilation_environment } from './initial-compilation-environment';
 import {
   CompileErr,
@@ -274,10 +274,15 @@ export function compile(
   );
 }
 
+const compile_cache: Map<string, string> = new Map();
+
 export function compile_file(
   filename: FileName,
   global_ctx: CompilerGlobalContext
 ): Result<FEPNode, CompileErr> {
+  for (const [fep_filename, fep_str] of compile_cache) {
+    global_ctx.host.write_file(fep_filename, fep_str);
+  }
   const fep_filename = filename + '.fep';
   const fep_module_contents_r = global_ctx.host.read_file(fep_filename);
   if (isGoodResult(fep_module_contents_r)) {
@@ -308,6 +313,11 @@ export function compile_file(
   const module_fep_str = print(module_r.v);
   global_ctx.host.write_file(fep_filename, module_fep_str);
   global_ctx.compiled_filenames.set(filename, fep_filename);
+
+  if (fep_filename.startsWith('/libs')) {
+    compile_cache.set(fep_filename, module_fep_str);
+  }
+
   return module_r;
 }
 
