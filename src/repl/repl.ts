@@ -1,8 +1,9 @@
 import { compile_and_run_test } from '../testing/test-runner';
 import { readFile } from 'fs';
+import { resolve } from 'path';
 
 export function startRepl() {
-  const fileName = process.argv[2];
+  const fileName = resolve(process.argv[2]);
   readFile(fileName, 'utf8', (err, data) => {
     // Readfile error
     if (err) {
