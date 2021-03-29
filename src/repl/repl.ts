@@ -10,7 +10,11 @@ export function startRepl() {
       return;
     }
 
-    const result = compile_and_run_test(data);
+    // Preprocessing
+    const processedData = `(test ${data})`;
+
+    // Parse error
+    const result = compile_and_run_test(processedData);
     if (result['read']) {
       console.error(result['read']);
       console.error('error');
@@ -37,12 +41,5 @@ export function startRepl() {
       console.error('EVALUATION ERROR:');
       console.error(evaluated);
     }
-
-    // const evaluated = result['evaluated'];
-    // if (evaluated && evaluated.good) {
-    //   console.log('EVALUATION RESULT:');
-    //   console.log(evaluated['v']);
-    //   console.log('');
-    // }
   });
 }
