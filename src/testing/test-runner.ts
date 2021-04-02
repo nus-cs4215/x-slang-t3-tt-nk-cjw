@@ -29,7 +29,7 @@ export function compile_and_run_test(
     compile_entrypoint('/testing/test-compiler.rkt', host)
   ) as ModuleForm;
   const test_compiler_module = getOk(
-    evaluate_module(test_compiler_fep, '/testing/test-compiler.rkt', host)
+    evaluate_module(print(test_compiler_fep), '/testing/test-compiler.rkt', host)
   );
 
   const compile_env = make_env(
@@ -65,7 +65,7 @@ export function compile_and_run_test(
   }
 
   // evaluate
-  const program_result_r = evaluate_module(program_fep_r.v as ModuleForm, filename, host);
+  const program_result_r = evaluate_module(print(program_fep_r.v), filename, host);
   if (isBadResult(program_result_r)) {
     return { compiled: ok(print(program_fep_r.v)), evaluated: program_result_r };
   }
@@ -92,7 +92,7 @@ export function compile_and_run_test_without_print(
     compile_entrypoint('/testing/test-compiler.rkt', host)
   ) as ModuleForm;
   const test_compiler_module = getOk(
-    evaluate_module(test_compiler_fep, '/testing/test-compiler.rkt', host)
+    evaluate_module(print(test_compiler_fep), '/testing/test-compiler.rkt', host)
   );
 
   const compile_env = make_env(
@@ -128,7 +128,7 @@ export function compile_and_run_test_without_print(
   }
 
   // evaluate
-  const program_result_r = evaluate_module(program_fep_r.v as ModuleForm, filename, host);
+  const program_result_r = evaluate_module(print(program_fep_r.v), filename, host);
   if (isBadResult(program_result_r)) {
     return program_result_r;
   }

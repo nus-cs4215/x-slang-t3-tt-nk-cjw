@@ -57,7 +57,7 @@ export type ExprForm =
 
 export type PlainLambdaForm = SCons<
   Token<'#%plain-lambda'>,
-  SCons<FEFormals, SNonemptyHomList<ExprForm>>
+  SCons<FEFormals, SNonemptyHomList<ExprOrDefineForm>>
 >;
 export type IfForm = SCons<Token<'if'>, SCons<ExprForm, SCons<ExprForm, SCons<ExprForm, SNil>>>>;
 export type BeginForm = SCons<Token<'begin'>, SNonemptyHomList<ExprForm>>;

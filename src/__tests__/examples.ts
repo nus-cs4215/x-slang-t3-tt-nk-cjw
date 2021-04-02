@@ -39,6 +39,20 @@ test('fibonacci', () => {
     `).toMatchInlineSnapshot(`"13"`);
 });
 
+test('fibonacci long', () => {
+  expectReadEvalPrint(`
+    (begin
+      (define fib
+        (#%plain-lambda (n)
+          (if (<= n 1)
+              n
+              (+ (fib (- n 1))
+                 (fib (- n 2))))))
+      (define output___
+        (fib 27)))
+    `).toMatchInlineSnapshot(`"196418"`);
+});
+
 test("newton's method sqrt", () => {
   expectReadEvalPrint(`
     (begin

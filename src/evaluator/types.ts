@@ -1,5 +1,5 @@
 import { Environment } from '../environment';
-import { ExprOrDefineAst, ModuleAst } from '../fep-types';
+import { ExprOrDefineAst } from '../fep-types';
 import { EvaluatorHost, FileName } from '../host';
 import { Module } from '../modules';
 import { SExprT } from '../sexpr';
@@ -17,7 +17,7 @@ export type Apply = (fun: EvalSExpr, ...args: EvalSExpr[]) => EvalResult;
 export type EvaluateExprOrDefine = (program: ExprOrDefineAst, env: Environment) => EvalResult;
 
 export type EvaluateModule = (
-  program: ModuleAst,
+  program: string,
   program_filename: FileName,
   host: EvaluatorHost
 ) => Result<Module, EvalErr>;

@@ -1,11 +1,4 @@
-import { FEPClosure } from '../../evaluator/datatypes';
-import { print } from '../../printer';
-import { SBoxed } from '../../sexpr';
-import {
-  compile_and_run_test,
-  compile_and_run_test_without_print,
-} from '../../testing/test-runner';
-import { getOk } from '../../utils';
+import { compile_and_run_test } from '../../testing/test-runner';
 
 test('car et al', () => {
   expect(
@@ -209,34 +202,5 @@ test('car et al', () => {
         "v": "6",
       },
     }
-  `);
-
-  // Check that the FEP is just 1 function with lots of applications,
-  // not many nested closures,
-  // and also all the applications are in the right order
-  expect(
-    print(
-      (getOk(
-        compile_and_run_test_without_print(`
-          (test-lib /libs/racket/private/car-et-al
-            caddadr
-            )
-          `)
-      ).evaluated as SBoxed<FEPClosure>).val.body.x
-    )
-  ).toMatchInlineSnapshot(`
-    "(#%plain-app
-      (#%variable-reference car)
-      (#%plain-app
-        (#%variable-reference cdr)
-        (#%plain-app
-          (#%variable-reference cdr)
-          (#%plain-app
-            (#%variable-reference car)
-            (#%plain-app (#%variable-reference cdr) (#%variable-reference x))
-            )
-          )
-        )
-      )"
   `);
 });

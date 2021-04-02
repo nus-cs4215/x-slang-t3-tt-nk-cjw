@@ -287,6 +287,13 @@ export function readOneDatum(tokens: Token[], i: number = 0): PartialReadResult 
   return ok([...token_to_sexpr(firsttok), i + 1]);
 }
 
+const read_cache: Map<string, ReadResult> = new Map();
+
 export function read(s: string): ReadResult {
-  return then(readOneDatum([...tokenize(s)]), (r: [SExpr, Location, number]) => ok(r[0]));
+  if (read_cache.has(s)) {
+    return read_cache.get(s)!;
+  }
+  const result = then(readOneDatum([...tokenize(s)]), (r: [SExpr, Location, number]) => ok(r[0]));
+  read_cache.set(s, result);
+  return result;
 }
