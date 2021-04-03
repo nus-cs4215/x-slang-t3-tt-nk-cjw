@@ -1,4 +1,12 @@
-import { Begin0Form, BeginForm, ExprForm, ExprOrDefineAst, LetForm, QuoteForm } from '../fep-types';
+import {
+  Begin0Form,
+  BeginForm,
+  ExprForm,
+  ExprOrDefineAst,
+  LetForm,
+  QuoteForm,
+  VariableReferenceForm,
+} from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
 import { homlist_to_arr } from '../sexpr/sexpr';
 import { flatten_compiled_program_tree } from './utils';
@@ -15,12 +23,14 @@ export type CompiledProgramTree = number | CompiledProgramTree[];
 const MAKE_CONST = 0; // followed by a <const id>
 const POP_N = 1; // followed by n, number of things to pop
 const ADD_BINDING = 2; // followed by a <name id>
+const GET_ENV = 3; // followed by a <name id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
   names[MAKE_CONST] = 'MAKE_CONST';
   names[POP_N] = 'POP_N';
   names[ADD_BINDING] = 'ADD_BINDING';
+  names[GET_ENV] = 'GET_ENV';
   return names;
 };
 
@@ -29,6 +39,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[MAKE_CONST] = 1;
   paramCounts[POP_N] = 1;
   paramCounts[ADD_BINDING] = 1;
+  paramCounts[GET_ENV] = 1;
   return paramCounts;
 };
 
@@ -98,6 +109,16 @@ const fep_to_bytecode_helper = (
 
       return compiledProgramTree;
     }
+    case '#%variable-reference': {
+      const variablereference_program = program as VariableReferenceForm;
+      const symbol = car(cdr(variablereference_program));
+      const nameId = getNameId(val(symbol), programState);
+
+      compiledProgramTree.push(GET_ENV);
+      compiledProgramTree.push(nameId);
+
+      return compiledProgramTree;
+    }
     case 'let': {
       const letprogram = program as LetForm;
 
@@ -105,14 +126,8 @@ const fep_to_bytecode_helper = (
       // adding the exprs into the stack first
       for (let i = 0; i < binding_pairs.length; i++) {
         const binding_pair = binding_pairs[i];
-        const symbol = car(binding_pair);
         const expr = car(cdr(binding_pair));
 
-        const nameId = programState.nameToNameId.get(val(symbol));
-        if (nameId === undefined) {
-          programState.nameToNameId.set(val(symbol), programState.nameIdToName.length);
-          programState.nameIdToName.push(val(symbol));
-        }
         compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
       }
 
@@ -121,11 +136,7 @@ const fep_to_bytecode_helper = (
         const binding_pair = binding_pairs[i];
         const symbol = car(binding_pair);
 
-        const nameId = programState.nameToNameId.get(val(symbol));
-        if (nameId === undefined) {
-          console.error('nameId is undefined when it should not have been');
-          return compiledProgramTree;
-        }
+        const nameId = getNameId(val(symbol), programState);
         compiledProgramTree.push(ADD_BINDING);
         compiledProgramTree.push(nameId);
       }
@@ -147,6 +158,20 @@ const fep_to_bytecode_helper = (
       return compiledProgramTree;
     }
   }
+};
+
+// allocates a new nameId if previously non-existent
+const getNameId = (name: string, programState: ProgramState): number => {
+  const nameId = programState.nameToNameId.get(name);
+  if (nameId === undefined) {
+    const allocatedNameId = programState.nameIdToName.length;
+
+    programState.nameToNameId.set(name, allocatedNameId);
+    programState.nameIdToName.push(name);
+    return allocatedNameId;
+  }
+
+  return nameId;
 };
 
 export const prettify_compiled_program = (compiledProgram: CompiledProgramTree[]): string[] => {

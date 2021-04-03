@@ -142,3 +142,67 @@ test('compile begin', () => {
   `);
   expect(programState2.constIdToSExpr).toEqual([snumber(1), sboolean(true)]);
 });
+
+test('compile #%variable-reference', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(getOk(read('(#%variable-reference x)')) as ExprOrDefineForm, programState1)
+  ).toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState1.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+    }
+  `);
+
+  expect(
+    compileAndPrettify(getOk(read('(#%variable-reference y)')) as ExprOrDefineForm, programState1)
+  ).toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "1",
+    ]
+  `);
+  expect(programState1.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+    }
+  `);
+
+  // should still be 0
+  expect(
+    compileAndPrettify(getOk(read('(#%variable-reference x)')) as ExprOrDefineForm, programState1)
+  ).toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState1.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+    }
+  `);
+
+  expect(
+    compileAndPrettify(getOk(read('(#%variable-reference z)')) as ExprOrDefineForm, programState1)
+  ).toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "2",
+    ]
+  `);
+  expect(programState1.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+      "z" => 2,
+    }
+  `);
+});
