@@ -1,5 +1,6 @@
-import { Begin0Form, ExprForm, ExprOrDefineAst, QuoteForm } from '../fep-types';
+import { Begin0Form, BeginForm, ExprForm, ExprOrDefineAst, QuoteForm } from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
+import { homlist_to_arr } from '../sexpr/sexpr';
 import { flatten_compiled_program_tree } from './utils';
 
 export interface ProgramState {
@@ -76,6 +77,21 @@ const fep_to_bytecode_helper = (
       }
       compiledProgramTree.push(POP);
       compiledProgramTree.push(numExprs - 1);
+
+      return compiledProgramTree;
+    }
+    case 'begin': {
+      const beginprogram = program as BeginForm;
+
+      const sequence: ExprForm[] = homlist_to_arr(cdr(beginprogram));
+      for (let i = 0; i < sequence.length - 1; i++) {
+        const expr = sequence[i];
+        compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+      }
+      compiledProgramTree.push(POP);
+      compiledProgramTree.push(sequence.length - 1);
+
+      compiledProgramTree.push(fep_to_bytecode_helper(sequence[sequence.length - 1], programState));
 
       return compiledProgramTree;
     }

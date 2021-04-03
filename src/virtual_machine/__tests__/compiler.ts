@@ -93,3 +93,52 @@ test('compile begin0', () => {
   `);
   expect(programState2.constIdToSExpr).toEqual([snumber(1), sboolean(true)]);
 });
+
+test('compile begin', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(begin
+            (quote a)
+            (quote b)
+            (quote c))`)
+      ) as ExprOrDefineForm,
+      programState1
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "MAKE_CONST",
+      "1",
+      "POP",
+      "2",
+      "MAKE_CONST",
+      "2",
+    ]
+  `);
+  expect(programState1.constIdToSExpr).toEqual([ssymbol('a'), ssymbol('b'), ssymbol('c')]);
+
+  const programState2 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(begin
+            (quote 1)
+            (quote #t))`)
+      ) as ExprOrDefineForm,
+      programState2
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "POP",
+      "1",
+      "MAKE_CONST",
+      "1",
+    ]
+  `);
+  expect(programState2.constIdToSExpr).toEqual([snumber(1), sboolean(true)]);
+});
