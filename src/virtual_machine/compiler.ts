@@ -21,6 +21,13 @@ const get_opcode_names = (): string[] => {
   return names;
 };
 
+const get_opcode_paramCounts = (): number[] => {
+  const paramCounts = [];
+  paramCounts[MAKE_CONST] = 1;
+  paramCounts[POP] = 1;
+  return paramCounts;
+};
+
 export const make_program_state = (): ProgramState => ({
   nameToNameId: new Map(),
   nameIdToName: [],
@@ -82,6 +89,7 @@ const fep_to_bytecode_helper = (
 
 export const prettify_compiled_program = (compiledProgram: CompiledProgramTree[]): string[] => {
   const opcodeNames = get_opcode_names();
+  const paramCounts = get_opcode_paramCounts();
   const prettified: string[] = [];
   for (let i = 0; i < compiledProgram.length; i++) {
     const opcode = compiledProgram[i];
@@ -90,12 +98,13 @@ export const prettify_compiled_program = (compiledProgram: CompiledProgramTree[]
       return prettified;
     }
 
-    // Has one thing behind it
-    if (opcode === MAKE_CONST || opcode === POP) {
-      prettified.push(opcodeNames[opcode]);
+    prettified.push(opcodeNames[opcode]); // push opcodes
+
+    // push the n parameters behind it
+    let paramCount = paramCounts[opcode];
+    while (paramCount > 0) {
       prettified.push(compiledProgram[++i].toString());
-    } else {
-      prettified.push(opcodeNames[opcode]);
+      paramCount--;
     }
   }
   return prettified;
