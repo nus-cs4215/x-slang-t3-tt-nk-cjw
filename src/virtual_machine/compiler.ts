@@ -1,4 +1,4 @@
-import { BeginForm, ExprForm, ExprOrDefineAst, QuoteForm } from '../fep-types';
+import { Begin0Form, ExprForm, ExprOrDefineAst, QuoteForm } from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
 import { flatten_compiled_program_tree } from './utils';
 
@@ -38,14 +38,15 @@ export const compile_fep_to_bytecode = (
   program: ExprOrDefineAst,
   programState: ProgramState
 ): CompiledProgramTree[] => {
-  const preFlattenedProgram = fep_to_bytecode_helper(program, programState, []);
+  const preFlattenedProgram = fep_to_bytecode_helper(program, programState);
+  // ensures flattening only happens once at the end, avoiding quadratic runtime
   return flatten_compiled_program_tree(preFlattenedProgram);
 };
 
 const fep_to_bytecode_helper = (
   program: ExprOrDefineAst,
   programState: ProgramState,
-  compiledProgramTree: CompiledProgramTree[]
+  compiledProgramTree: CompiledProgramTree[] = []
 ): CompiledProgramTree[] => {
   const token_val = val(car(program));
   switch (token_val) {
@@ -63,15 +64,13 @@ const fep_to_bytecode_helper = (
       return compiledProgramTree;
     }
     case 'begin0': {
-      const beginprogram = program as BeginForm;
+      const begin0program = program as Begin0Form;
 
-      let sequence: SHomList<ExprForm> = cdr(beginprogram);
+      let sequence: SHomList<ExprForm> = cdr(begin0program);
       let numExprs = 0;
       while (is_list(sequence)) {
         const expr = car(sequence);
-        const beginExprProgramTree: CompiledProgramTree[] = [];
-        fep_to_bytecode_helper(expr, programState, beginExprProgramTree);
-        compiledProgramTree.push(beginExprProgramTree);
+        compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
         sequence = cdr(sequence);
         numExprs++;
       }
