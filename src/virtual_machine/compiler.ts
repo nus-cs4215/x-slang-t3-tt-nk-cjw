@@ -13,13 +13,13 @@ export type CompiledProgramTree = number | CompiledProgramTree[];
 
 // OpCodes
 const MAKE_CONST = 0; // followed by a <const id>
-const POP = 1; // followed by n, number of things to pop
+const POP_N = 1; // followed by n, number of things to pop
 const ADD_BINDING = 2; // followed by a <name id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
   names[MAKE_CONST] = 'MAKE_CONST';
-  names[POP] = 'POP';
+  names[POP_N] = 'POP_N';
   names[ADD_BINDING] = 'ADD_BINDING';
   return names;
 };
@@ -27,7 +27,7 @@ const get_opcode_names = (): string[] => {
 const get_opcode_paramCounts = (): number[] => {
   const paramCounts = [];
   paramCounts[MAKE_CONST] = 1;
-  paramCounts[POP] = 1;
+  paramCounts[POP_N] = 1;
   paramCounts[ADD_BINDING] = 1;
   return paramCounts;
 };
@@ -78,7 +78,7 @@ const fep_to_bytecode_helper = (
         sequence = cdr(sequence);
         numExprs++;
       }
-      compiledProgramTree.push(POP);
+      compiledProgramTree.push(POP_N);
       compiledProgramTree.push(numExprs - 1);
 
       return compiledProgramTree;
@@ -91,7 +91,7 @@ const fep_to_bytecode_helper = (
         const expr = sequence[i];
         compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
       }
-      compiledProgramTree.push(POP);
+      compiledProgramTree.push(POP_N);
       compiledProgramTree.push(sequence.length - 1);
 
       compiledProgramTree.push(fep_to_bytecode_helper(sequence[sequence.length - 1], programState));
@@ -136,7 +136,7 @@ const fep_to_bytecode_helper = (
         const expr = sequence[i];
         compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
       }
-      compiledProgramTree.push(POP);
+      compiledProgramTree.push(POP_N);
       compiledProgramTree.push(sequence.length - 1);
 
       compiledProgramTree.push(fep_to_bytecode_helper(sequence[sequence.length - 1], programState));

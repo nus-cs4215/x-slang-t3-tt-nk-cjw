@@ -65,7 +65,7 @@ test('compile begin0', () => {
       "1",
       "MAKE_CONST",
       "2",
-      "POP",
+      "POP_N",
       "2",
     ]
   `);
@@ -87,7 +87,7 @@ test('compile begin0', () => {
       "0",
       "MAKE_CONST",
       "1",
-      "POP",
+      "POP_N",
       "1",
     ]
   `);
@@ -112,7 +112,7 @@ test('compile begin', () => {
       "0",
       "MAKE_CONST",
       "1",
-      "POP",
+      "POP_N",
       "2",
       "MAKE_CONST",
       "2",
@@ -134,7 +134,7 @@ test('compile begin', () => {
     Array [
       "MAKE_CONST",
       "0",
-      "POP",
+      "POP_N",
       "1",
       "MAKE_CONST",
       "1",
