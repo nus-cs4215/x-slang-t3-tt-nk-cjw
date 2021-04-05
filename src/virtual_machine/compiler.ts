@@ -4,6 +4,7 @@ import {
   ExprForm,
   ExprOrDefineAst,
   LetForm,
+  PlainLambdaForm,
   QuoteForm,
   SetForm,
   VariableReferenceForm,
@@ -16,6 +17,7 @@ export interface ProgramState {
   nameToNameId: Map<string, number>;
   nameIdToName: string[];
   constIdToSExpr: SExpr[];
+  funcIdToCompiledProgram: CompiledProgramTree[][];
 }
 
 export type CompiledProgramTree = number | CompiledProgramTree[];
@@ -26,6 +28,7 @@ const POP_N = 1; // followed by n, number of things to pop
 const ADD_BINDING = 2; // followed by a <name id>
 const GET_ENV = 3; // followed by a <name id>
 const SET_ENV = 4; // followed by a <name id>
+const MAKE_FUNC = 5; // followed by a <func id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -34,6 +37,7 @@ const get_opcode_names = (): string[] => {
   names[ADD_BINDING] = 'ADD_BINDING';
   names[GET_ENV] = 'GET_ENV';
   names[SET_ENV] = 'SET_ENV';
+  names[MAKE_FUNC] = 'MAKE_FUNC';
   return names;
 };
 
@@ -44,6 +48,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[ADD_BINDING] = 1;
   paramCounts[GET_ENV] = 1;
   paramCounts[SET_ENV] = 1;
+  paramCounts[MAKE_FUNC] = 1;
   return paramCounts;
 };
 
@@ -51,6 +56,7 @@ export const make_program_state = (): ProgramState => ({
   nameToNameId: new Map(),
   nameIdToName: [],
   constIdToSExpr: [],
+  funcIdToCompiledProgram: [],
 });
 
 export const compile_fep_to_bytecode = (
@@ -166,6 +172,29 @@ const fep_to_bytecode_helper = (
       compiledProgramTree.push(sequence.length - 1);
 
       compiledProgramTree.push(fep_to_bytecode_helper(sequence[sequence.length - 1], programState));
+      return compiledProgramTree;
+    }
+    case '#%plain-lambda': {
+      const plainlambda_program = program as PlainLambdaForm;
+      // during compilation, the formals are probably just added to the name table
+      // probably don't need to loop through them to add, because when compiling the body,
+      // we will add them anyway
+
+      // TODO: Actually maybe you need to store this formals information in the programState hmm
+      // let formals = car(cdr(plainlambda_program));
+      const body = cdr(cdr(plainlambda_program));
+
+      const exprs = homlist_to_arr(body);
+      const lambdaBodyProgramTree: CompiledProgramTree[] = [];
+      for (const expr of exprs) {
+        fep_to_bytecode_helper(expr, programState, lambdaBodyProgramTree);
+      }
+      const flattenedProgramTree = flatten_compiled_program_tree(lambdaBodyProgramTree);
+      const funcId = programState.funcIdToCompiledProgram.length;
+      programState.funcIdToCompiledProgram.push(flattenedProgramTree);
+
+      compiledProgramTree.push(MAKE_FUNC);
+      compiledProgramTree.push(funcId);
       return compiledProgramTree;
     }
     default: {
