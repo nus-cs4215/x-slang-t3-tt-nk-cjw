@@ -2,7 +2,7 @@
   (#%plain-lambda (a b)
     (+ a b)))
 
-(add 1 2)
+(console-log (add 1 2))
 
 ; Single body stmts
 (define-syntax defun1
@@ -19,7 +19,7 @@
 (defun1 add_ (a b)
   (+ a b))
 
-(add_ 1 2)
+(console-log (add_ 1 2))
 
 ;; Multi body stmts
 (define-syntax defun
@@ -42,3 +42,7 @@
   (+ a b))
 
 (add__ 1 2)
+
+;; Defun with quasiquote
+
+;; Defun with syntax-case
