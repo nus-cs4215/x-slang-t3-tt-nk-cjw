@@ -5,6 +5,7 @@ import {
   ExprOrDefineAst,
   LetForm,
   QuoteForm,
+  SetForm,
   VariableReferenceForm,
 } from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
@@ -24,6 +25,7 @@ const MAKE_CONST = 0; // followed by a <const id>
 const POP_N = 1; // followed by n, number of things to pop
 const ADD_BINDING = 2; // followed by a <name id>
 const GET_ENV = 3; // followed by a <name id>
+const SET_ENV = 4; // followed by a <name id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -31,6 +33,7 @@ const get_opcode_names = (): string[] => {
   names[POP_N] = 'POP_N';
   names[ADD_BINDING] = 'ADD_BINDING';
   names[GET_ENV] = 'GET_ENV';
+  names[SET_ENV] = 'SET_ENV';
   return names;
 };
 
@@ -40,6 +43,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[POP_N] = 1;
   paramCounts[ADD_BINDING] = 1;
   paramCounts[GET_ENV] = 1;
+  paramCounts[SET_ENV] = 1;
   return paramCounts;
 };
 
@@ -117,6 +121,17 @@ const fep_to_bytecode_helper = (
       compiledProgramTree.push(GET_ENV);
       compiledProgramTree.push(nameId);
 
+      return compiledProgramTree;
+    }
+    case 'set!': {
+      const set_program = program as SetForm;
+
+      const expr = car(cdr(cdr(set_program)));
+      compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+
+      const symbol = car(cdr(set_program));
+      compiledProgramTree.push(SET_ENV);
+      compiledProgramTree.push(getNameId(val(symbol), programState));
       return compiledProgramTree;
     }
     case 'let': {

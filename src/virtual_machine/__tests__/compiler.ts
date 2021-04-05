@@ -369,3 +369,51 @@ test('compile let', () => {
     }
   `);
 });
+
+test('compile set!', () => {
+  const programState1 = make_program_state();
+  expect(compileAndPrettify(getOk(read(`(set! x (quote 1))`)) as ExprOrDefineForm, programState1))
+    .toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "SET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState1.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+    }
+  `);
+
+  const programState2 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(let ([x (quote 1)]) (set! x (quote 2)) (#%variable-reference x))`)
+      ) as ExprOrDefineForm,
+      programState2
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "ADD_BINDING",
+      "0",
+      "MAKE_CONST",
+      "1",
+      "SET_ENV",
+      "0",
+      "POP_N",
+      "1",
+      "GET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState2.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+    }
+  `);
+});
