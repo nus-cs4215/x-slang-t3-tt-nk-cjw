@@ -1,5 +1,5 @@
 ; Defun which supports a single body statement
-(define-syntax defun1
+(define-syntax defun
    (#%plain-lambda (stx)
                    (let ([func-name (car (cdr stx))]
                          [args (car (cdr (cdr stx)))]
@@ -10,7 +10,7 @@
                      (list 'define func-name
                            (list '#%plain-lambda args body)))))
 
-(defun1 add_ (a b)
+(defun add (a b)
   (+ a b)) ; Only 1 body statement
 
-(add_ 1 2)
+(add 1 2)
