@@ -33,7 +33,7 @@
 (console-log '================)
 
 
-(defun add__ (a b)
+(defun add (a b)
   (console-log a) ; Multiple
   (console-log b) ; statements
   (+ a b))        ; returning the last one.
@@ -42,4 +42,4 @@
 (compile-log COMPILE-PHASE-END)
 (compile-log =================)
 
-(add__ 1 2)
+(add 1 2)

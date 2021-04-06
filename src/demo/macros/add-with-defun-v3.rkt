@@ -1,12 +1,23 @@
+(define-syntax compile-log
+  (#%plain-lambda (stx)
+    (console-log (car (cdr stx)))
+    '0))
+
+(compile-log ===================)
+(compile-log COMPILE-PHASE-BEGIN)
+(compile-log ===================)
+
 ;; From the previous section we can examine the generated syntax:
 ;; (define add__
 ;;   (#%plain-lambda (a b) (begin (console-log a) (console-log b) (+ a b)))
 ;;   )
 ;;
 ;; Defun with quasiquote
-(define-syntax defun-qq
+(define-syntax defun
   (#%plain-lambda (stx)
+    (console-log 'Input-syntax:)
     (console-log stx)
+    (console-log)
     (let ([func-name (car (cdr stx))]
           [args (car (cdr (cdr stx)))]
           [body (cdr (cdr (cdr stx)))])
@@ -17,11 +28,18 @@
         (console-log)
         defun-stx))))
 
-(defun-qq add___ (a b)
+(console-log)
+(console-log '================)
+(console-log 'EVAL-PHASE-BEGIN)
+(console-log '================)
+
+(defun add (a b)
   (console-log a)
   (console-log b)
   (+ a b))
 
-(console-log (add___ 1 2))
+(compile-log =================)
+(compile-log COMPILE-PHASE-END)
+(compile-log =================)
 
-;; Defun with syntax-case
+(console-log (add 1 2))
