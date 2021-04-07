@@ -30,7 +30,6 @@ export function startRepl() {
     const result = compile_and_run_test(processedData);
     if (result['read']) {
       const readError = result['read'];
-      console.error(readError);
       console.error(formatReadErr(readError, processedData));
       return;
     }
