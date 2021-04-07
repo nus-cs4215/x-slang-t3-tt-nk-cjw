@@ -4,27 +4,60 @@ This document is intended for developers. It has been written in the hope that i
 
 Racket Interpreter takes Racket code, interpretes it as Javascript, and runs it.
 
-The project has several [Entrypoints](#entrypoints), which use underlying functionality from the [](#Backend).
+The project has several [Entrypoints](#entrypoints), which use underlying functionality from the [Backend](#Backend).
 
 # Entrypoints
 
-[compiler](#compiler)
-[evaluator](#evaluator)
-[repl](#repl)
+## [Compiler](Compiler.md)
+
+<insert dependency diagram>
+
+Compiler to compile Syntax to Fully Expanded Programs (FEP) using Syntax-transformers.
+
+## [Evaluator](Evaluator.md)
+
+<insert dependency diagram>
+
+Evaluator for Racket programs.
+
+## [Repl](Repl.md)
+
+<insert dependency diagram>
+
+A CLI tool for running `*.rkt` files.
 
 # Backend
 
-[sexpr](#sexpr)
-[reader](#reader)
-[printer](#printer)
-[environment](#environment)
-[modules](#modules)
+## [sexpr](sexpr)
 
-[testing](#testing)
-[typings](#typings)
-[utils](#utils)
+Specification and utilities for sexprs.
 
-[fep-types](#fep-types.ts)
-[host](#host.ts)
-[ts](#index.ts)
-[pattern](#pattern)
+## [reader](reader)
+
+Parsing utilities.
+
+## [printer](printer)
+
+Printing utilities.
+
+## [environment](environment)
+
+## [modules](modules)
+
+Racket libraries.
+
+## [typings](typings)
+
+TODO: What does this do
+
+## [fep-types](fep-types)
+
+Specification of a fully expanded program.
+
+## [host](host)
+
+TODO: What does this do
+
+## [pattern](pattern)
+
+Pattern matching utilies for developers.
