@@ -1,3 +1,4 @@
+import { formatReadErr } from '../reader';
 import { compile_and_run_test } from '../testing/test-runner';
 import { readFile } from 'fs';
 import { resolve } from 'path';
@@ -28,8 +29,9 @@ export function startRepl() {
     // Parse error
     const result = compile_and_run_test(processedData);
     if (result['read']) {
-      console.error(result['read']);
-      console.error('error');
+      const readError = result['read'];
+      console.error(readError);
+      console.error(formatReadErr(readError, processedData));
       return;
     }
 
