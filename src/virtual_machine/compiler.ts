@@ -4,23 +4,20 @@ import {
   ExprForm,
   ExprOrDefineAst,
   LetForm,
-  PlainLambdaForm,
   QuoteForm,
   SetForm,
   VariableReferenceForm,
 } from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
 import { homlist_to_arr } from '../sexpr/sexpr';
-import { flatten_compiled_program_tree } from './utils';
 
 export interface ProgramState {
   nameToNameId: Map<string, number>;
   nameIdToName: string[];
   constIdToSExpr: SExpr[];
-  funcIdToCompiledProgram: CompiledProgramTree[][];
 }
 
-export type CompiledProgramTree = number | CompiledProgramTree[];
+export type CompiledProgram = number[];
 
 // OpCodes
 const MAKE_CONST = 0; // followed by a <const id>
@@ -56,36 +53,31 @@ export const make_program_state = (): ProgramState => ({
   nameToNameId: new Map(),
   nameIdToName: [],
   constIdToSExpr: [],
-  funcIdToCompiledProgram: [],
 });
 
 export const compile_fep_to_bytecode = (
   program: ExprOrDefineAst,
   programState: ProgramState
-): CompiledProgramTree[] => {
-  const preFlattenedProgram = fep_to_bytecode_helper(program, programState);
-  // ensures flattening only happens once at the end, avoiding quadratic runtime
-  return flatten_compiled_program_tree(preFlattenedProgram);
+): CompiledProgram => {
+  return fep_to_bytecode_helper(program, programState);
 };
 
 const fep_to_bytecode_helper = (
   program: ExprOrDefineAst,
   programState: ProgramState,
-  compiledProgramTree: CompiledProgramTree[] = []
-): CompiledProgramTree[] => {
+  compiledProgramTree: CompiledProgram = []
+): CompiledProgram => {
   const token_val = val(car(program));
   switch (token_val) {
     case 'quote': {
       const quoteprogram = program as QuoteForm;
 
-      const quoteProgramTree: CompiledProgramTree[] = [];
-      quoteProgramTree.push(MAKE_CONST);
-      quoteProgramTree.push(programState.constIdToSExpr.length);
+      compiledProgramTree.push(MAKE_CONST);
+      compiledProgramTree.push(programState.constIdToSExpr.length);
 
       const sexpr = car(cdr(quoteprogram));
       programState.constIdToSExpr.push(sexpr);
 
-      compiledProgramTree.push(quoteProgramTree);
       return compiledProgramTree;
     }
     case 'begin0': {
@@ -95,7 +87,7 @@ const fep_to_bytecode_helper = (
       let numExprs = 0;
       while (is_list(sequence)) {
         const expr = car(sequence);
-        compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
         sequence = cdr(sequence);
         numExprs++;
       }
@@ -110,12 +102,12 @@ const fep_to_bytecode_helper = (
       const sequence: ExprForm[] = homlist_to_arr(cdr(beginprogram));
       for (let i = 0; i < sequence.length - 1; i++) {
         const expr = sequence[i];
-        compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
       }
       compiledProgramTree.push(POP_N);
       compiledProgramTree.push(sequence.length - 1);
 
-      compiledProgramTree.push(fep_to_bytecode_helper(sequence[sequence.length - 1], programState));
+      fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
 
       return compiledProgramTree;
     }
@@ -133,7 +125,7 @@ const fep_to_bytecode_helper = (
       const set_program = program as SetForm;
 
       const expr = car(cdr(cdr(set_program)));
-      compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+      fep_to_bytecode_helper(expr, programState, compiledProgramTree);
 
       const symbol = car(cdr(set_program));
       compiledProgramTree.push(SET_ENV);
@@ -149,7 +141,7 @@ const fep_to_bytecode_helper = (
         const binding_pair = binding_pairs[i];
         const expr = car(cdr(binding_pair));
 
-        compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
       }
 
       // adding instructions to bind the names on top of stack in reverse order
@@ -166,35 +158,13 @@ const fep_to_bytecode_helper = (
       const sequence: ExprForm[] = homlist_to_arr(cdr(cdr(letprogram)));
       for (let i = 0; i < sequence.length - 1; i++) {
         const expr = sequence[i];
-        compiledProgramTree.push(fep_to_bytecode_helper(expr, programState));
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
       }
       compiledProgramTree.push(POP_N);
       compiledProgramTree.push(sequence.length - 1);
 
-      compiledProgramTree.push(fep_to_bytecode_helper(sequence[sequence.length - 1], programState));
-      return compiledProgramTree;
-    }
-    case '#%plain-lambda': {
-      const plainlambda_program = program as PlainLambdaForm;
-      // during compilation, the formals are probably just added to the name table
-      // probably don't need to loop through them to add, because when compiling the body,
-      // we will add them anyway
+      fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
 
-      // TODO: Actually maybe you need to store this formals information in the programState hmm
-      // let formals = car(cdr(plainlambda_program));
-      const body = cdr(cdr(plainlambda_program));
-
-      const exprs = homlist_to_arr(body);
-      const lambdaBodyProgramTree: CompiledProgramTree[] = [];
-      for (const expr of exprs) {
-        fep_to_bytecode_helper(expr, programState, lambdaBodyProgramTree);
-      }
-      const flattenedProgramTree = flatten_compiled_program_tree(lambdaBodyProgramTree);
-      const funcId = programState.funcIdToCompiledProgram.length;
-      programState.funcIdToCompiledProgram.push(flattenedProgramTree);
-
-      compiledProgramTree.push(MAKE_FUNC);
-      compiledProgramTree.push(funcId);
       return compiledProgramTree;
     }
     default: {
@@ -218,7 +188,7 @@ const getNameId = (name: string, programState: ProgramState): number => {
   return nameId;
 };
 
-export const prettify_compiled_program = (compiledProgram: CompiledProgramTree[]): string[] => {
+export const prettify_compiled_program = (compiledProgram: CompiledProgram): string[] => {
   const opcodeNames = get_opcode_names();
   const paramCounts = get_opcode_paramCounts();
   const prettified: string[] = [];
