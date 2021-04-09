@@ -417,3 +417,95 @@ test('compile set!', () => {
     }
   `);
 });
+
+test('compile if', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(read(`(if (quote #t) (quote 1) (quote 2))`)) as ExprOrDefineForm,
+      programState1
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "JUMP_IF_FALSE",
+      "8",
+      "MAKE_CONST",
+      "1",
+      "JUMP",
+      "10",
+      "MAKE_CONST",
+      "2",
+    ]
+  `);
+  const programState2 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(if (quote #t)
+                  (quote a)
+                  (if (quote #t)
+                      (quote b)
+                      (quote c)))`)
+      ) as ExprOrDefineForm,
+      programState2
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "JUMP_IF_FALSE",
+      "8",
+      "MAKE_CONST",
+      "1",
+      "JUMP",
+      "18",
+      "MAKE_CONST",
+      "2",
+      "JUMP_IF_FALSE",
+      "16",
+      "MAKE_CONST",
+      "3",
+      "JUMP",
+      "18",
+      "MAKE_CONST",
+      "4",
+    ]
+  `);
+
+  const programState3 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(if (quote #t)
+                  (if (quote #t)
+                      (quote a)
+                      (quote b))
+                  (quote c))`)
+      ) as ExprOrDefineForm,
+      programState3
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "JUMP_IF_FALSE",
+      "16",
+      "MAKE_CONST",
+      "1",
+      "JUMP_IF_FALSE",
+      "12",
+      "MAKE_CONST",
+      "2",
+      "JUMP",
+      "14",
+      "MAKE_CONST",
+      "3",
+      "JUMP",
+      "18",
+      "MAKE_CONST",
+      "4",
+    ]
+  `);
+});

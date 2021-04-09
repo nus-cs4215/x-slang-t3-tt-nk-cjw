@@ -3,6 +3,7 @@ import {
   BeginForm,
   ExprForm,
   ExprOrDefineAst,
+  IfForm,
   LetForm,
   QuoteForm,
   SetForm,
@@ -26,6 +27,8 @@ const ADD_BINDING = 2; // followed by a <name id>
 const GET_ENV = 3; // followed by a <name id>
 const SET_ENV = 4; // followed by a <name id>
 const MAKE_FUNC = 5; // followed by a <func id>
+const JUMP_IF_FALSE = 6; // followed by absolute position
+const JUMP = 7; // followed by absolute position
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -35,6 +38,8 @@ const get_opcode_names = (): string[] => {
   names[GET_ENV] = 'GET_ENV';
   names[SET_ENV] = 'SET_ENV';
   names[MAKE_FUNC] = 'MAKE_FUNC';
+  names[JUMP_IF_FALSE] = 'JUMP_IF_FALSE';
+  names[JUMP] = 'JUMP';
   return names;
 };
 
@@ -46,6 +51,8 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[GET_ENV] = 1;
   paramCounts[SET_ENV] = 1;
   paramCounts[MAKE_FUNC] = 1;
+  paramCounts[JUMP_IF_FALSE] = 1;
+  paramCounts[JUMP] = 1;
   return paramCounts;
 };
 
@@ -164,6 +171,34 @@ const fep_to_bytecode_helper = (
       compiledProgramTree.push(sequence.length - 1);
 
       fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
+
+      return compiledProgramTree;
+    }
+    case 'if': {
+      const ifprogram = program as IfForm;
+      const condition = car(cdr(ifprogram));
+      const consequent = car(cdr(cdr(ifprogram)));
+      const alternative = car(cdr(cdr(cdr(ifprogram))));
+
+      const dummyPcPosition = -1; // must be replaced later
+
+      fep_to_bytecode_helper(condition, programState, compiledProgramTree);
+
+      compiledProgramTree.push(JUMP_IF_FALSE);
+      const jumpIfFalseValueIdx = compiledProgramTree.length;
+      compiledProgramTree.push(dummyPcPosition); // replace this with the start of alternative here
+
+      fep_to_bytecode_helper(consequent, programState, compiledProgramTree);
+      compiledProgramTree.push(JUMP);
+      const jumpValueIdx = compiledProgramTree.length;
+      compiledProgramTree.push(dummyPcPosition);
+
+      // alternative is located at last idx after adding consequent and skipping 2 instructions (JUMP <JUMP POSITION>)
+      compiledProgramTree[jumpIfFalseValueIdx] = compiledProgramTree.length;
+
+      fep_to_bytecode_helper(alternative, programState, compiledProgramTree);
+      // finish executing consequent, skip the entire alternative: last instruction and 1 more
+      compiledProgramTree[jumpValueIdx] = compiledProgramTree.length;
 
       return compiledProgramTree;
     }
