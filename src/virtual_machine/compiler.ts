@@ -1,3 +1,4 @@
+import { compile } from '../compiler';
 import {
   Begin0Form,
   BeginForm,
@@ -32,6 +33,7 @@ const MAKE_FUNC = 5; // followed by a <func id>
 const JUMP_IF_FALSE = 6; // followed by absolute position
 const JUMP = 7; // followed by absolute position
 const ADD_BINDING_SYNTAX = 8; // followed by a <name id>
+const EXTEND_ENV = 9;
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -44,6 +46,7 @@ const get_opcode_names = (): string[] => {
   names[JUMP_IF_FALSE] = 'JUMP_IF_FALSE';
   names[JUMP] = 'JUMP';
   names[ADD_BINDING_SYNTAX] = 'ADD_BINDING_SYNTAX';
+  names[EXTEND_ENV] = 'EXTEND_ENV';
   return names;
 };
 
@@ -58,6 +61,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[JUMP_IF_FALSE] = 1;
   paramCounts[JUMP] = 1;
   paramCounts[ADD_BINDING_SYNTAX] = 1;
+  paramCounts[EXTEND_ENV] = 0;
   return paramCounts;
 };
 
@@ -170,6 +174,7 @@ const fep_to_bytecode_helper = (
     }
     case 'let': {
       const letprogram = program as LetForm;
+      compiledProgramTree.push(EXTEND_ENV);
 
       const binding_pairs = homlist_to_arr(car(cdr(letprogram)));
       // adding the exprs into the stack first
