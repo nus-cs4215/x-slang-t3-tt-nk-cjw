@@ -509,3 +509,17 @@ test('compile if', () => {
     ]
   `);
 });
+
+test('compile define', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(getOk(read(`(define x (quote 10))`)) as ExprOrDefineForm, programState1)
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_CONST",
+      "0",
+      "ADD_BINDING",
+      "0",
+    ]
+  `);
+});

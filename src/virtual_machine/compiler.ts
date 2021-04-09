@@ -1,6 +1,8 @@
 import {
   Begin0Form,
   BeginForm,
+  DefineForm,
+  DefineSyntaxForm,
   ExprForm,
   ExprOrDefineAst,
   IfForm,
@@ -29,6 +31,7 @@ const SET_ENV = 4; // followed by a <name id>
 const MAKE_FUNC = 5; // followed by a <func id>
 const JUMP_IF_FALSE = 6; // followed by absolute position
 const JUMP = 7; // followed by absolute position
+const ADD_BINDING_SYNTAX = 8; // followed by a <name id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -40,6 +43,7 @@ const get_opcode_names = (): string[] => {
   names[MAKE_FUNC] = 'MAKE_FUNC';
   names[JUMP_IF_FALSE] = 'JUMP_IF_FALSE';
   names[JUMP] = 'JUMP';
+  names[ADD_BINDING_SYNTAX] = 'ADD_BINDING_SYNTAX';
   return names;
 };
 
@@ -53,6 +57,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[MAKE_FUNC] = 1;
   paramCounts[JUMP_IF_FALSE] = 1;
   paramCounts[JUMP] = 1;
+  paramCounts[ADD_BINDING_SYNTAX] = 1;
   return paramCounts;
 };
 
@@ -115,6 +120,30 @@ const fep_to_bytecode_helper = (
       compiledProgramTree.push(sequence.length - 1);
 
       fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
+
+      return compiledProgramTree;
+    }
+    case 'define': {
+      const defineprogram = program as DefineForm;
+      const expr = car(cdr(cdr(defineprogram)));
+      fep_to_bytecode_helper(expr, programState, compiledProgramTree);
+
+      const symbol = car(cdr(defineprogram));
+      const nameId = getNameId(val(symbol), programState);
+      compiledProgramTree.push(ADD_BINDING);
+      compiledProgramTree.push(nameId);
+
+      return compiledProgramTree;
+    }
+    case 'define-syntax': {
+      const definesyntax_program = program as DefineSyntaxForm;
+      const expr = car(cdr(cdr(definesyntax_program)));
+      fep_to_bytecode_helper(expr, programState, compiledProgramTree);
+
+      const symbol = car(cdr(definesyntax_program));
+      const nameId = getNameId(val(symbol), programState);
+      compiledProgramTree.push(ADD_BINDING);
+      compiledProgramTree.push(nameId);
 
       return compiledProgramTree;
     }
