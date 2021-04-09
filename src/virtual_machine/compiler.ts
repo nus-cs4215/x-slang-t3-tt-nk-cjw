@@ -1,4 +1,3 @@
-import { compile } from '../compiler';
 import {
   Begin0Form,
   BeginForm,
@@ -8,6 +7,7 @@ import {
   ExprOrDefineAst,
   IfForm,
   LetForm,
+  LetrecForm,
   QuoteForm,
   SetForm,
   VariableReferenceForm,
@@ -34,6 +34,7 @@ const JUMP_IF_FALSE = 6; // followed by absolute position
 const JUMP = 7; // followed by absolute position
 const ADD_BINDING_SYNTAX = 8; // followed by a <name id>
 const EXTEND_ENV = 9;
+const ADD_BINDING_UNDEFINED = 10; // followed by a <name id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -47,6 +48,7 @@ const get_opcode_names = (): string[] => {
   names[JUMP] = 'JUMP';
   names[ADD_BINDING_SYNTAX] = 'ADD_BINDING_SYNTAX';
   names[EXTEND_ENV] = 'EXTEND_ENV';
+  names[ADD_BINDING_UNDEFINED] = 'ADD_BINDING_UNDEFINED';
   return names;
 };
 
@@ -62,6 +64,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[JUMP] = 1;
   paramCounts[ADD_BINDING_SYNTAX] = 1;
   paramCounts[EXTEND_ENV] = 0;
+  paramCounts[ADD_BINDING_UNDEFINED] = 1;
   return paramCounts;
 };
 
@@ -197,6 +200,46 @@ const fep_to_bytecode_helper = (
 
       // evaluates the expr in the let body and return the last one
       const sequence: ExprForm[] = homlist_to_arr(cdr(cdr(letprogram)));
+      for (let i = 0; i < sequence.length - 1; i++) {
+        const expr = sequence[i];
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
+      }
+      compiledProgramTree.push(POP_N);
+      compiledProgramTree.push(sequence.length - 1);
+
+      fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
+
+      return compiledProgramTree;
+    }
+    case 'letrec': {
+      const letrecprogram = program as LetrecForm;
+      compiledProgramTree.push(EXTEND_ENV);
+
+      const binding_pairs = homlist_to_arr(car(cdr(letrecprogram)));
+      // add undefined binding first
+      for (let i = 0; i < binding_pairs.length; i++) {
+        const binding_pair = binding_pairs[i];
+        const symbol = car(binding_pair);
+
+        const nameId = getNameId(val(symbol), programState);
+        compiledProgramTree.push(ADD_BINDING_UNDEFINED);
+        compiledProgramTree.push(nameId);
+      }
+
+      // evaluate expr one by one
+      for (let i = 0; i < binding_pairs.length; i++) {
+        const binding_pair = binding_pairs[i];
+        const expr = car(cdr(binding_pair));
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
+
+        const symbol = car(binding_pair);
+        const nameId = getNameId(val(symbol), programState);
+        compiledProgramTree.push(SET_ENV);
+        compiledProgramTree.push(nameId);
+      }
+
+      // evaluates the expr in the let body and return the last one
+      const sequence: ExprForm[] = homlist_to_arr(cdr(cdr(letrecprogram)));
       for (let i = 0; i < sequence.length - 1; i++) {
         const expr = sequence[i];
         fep_to_bytecode_helper(expr, programState, compiledProgramTree);

@@ -375,6 +375,237 @@ test('compile let', () => {
   `);
 });
 
+test('compile letrec', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(read(`(letrec ([x (quote 1)]) (#%variable-reference x))`)) as ExprOrDefineForm,
+      programState1
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "EXTEND_ENV",
+      "ADD_BINDING_UNDEFINED",
+      "0",
+      "MAKE_CONST",
+      "0",
+      "SET_ENV",
+      "0",
+      "POP_N",
+      "0",
+      "GET_ENV",
+      "0",
+    ]
+  `);
+
+  const programState2 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(letrec ([x (#%variable-reference y)]) (#%variable-reference x))`)
+      ) as ExprOrDefineForm,
+      programState2
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "EXTEND_ENV",
+      "ADD_BINDING_UNDEFINED",
+      "0",
+      "GET_ENV",
+      "1",
+      "SET_ENV",
+      "0",
+      "POP_N",
+      "0",
+      "GET_ENV",
+      "0",
+    ]
+  `);
+
+  const programState3 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(
+          `(letrec ([x (quote 2)] [y (quote 3)] [z (quote 4)] [a (quote 5)]) (#%variable-reference y))`
+        )
+      ) as ExprOrDefineForm,
+      programState3
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "EXTEND_ENV",
+      "ADD_BINDING_UNDEFINED",
+      "0",
+      "ADD_BINDING_UNDEFINED",
+      "1",
+      "ADD_BINDING_UNDEFINED",
+      "2",
+      "ADD_BINDING_UNDEFINED",
+      "3",
+      "MAKE_CONST",
+      "0",
+      "SET_ENV",
+      "0",
+      "MAKE_CONST",
+      "1",
+      "SET_ENV",
+      "1",
+      "MAKE_CONST",
+      "2",
+      "SET_ENV",
+      "2",
+      "MAKE_CONST",
+      "3",
+      "SET_ENV",
+      "3",
+      "POP_N",
+      "0",
+      "GET_ENV",
+      "1",
+    ]
+  `);
+  // start assigning the names in reverse order
+  expect(programState3.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+      "z" => 2,
+      "a" => 3,
+    }
+  `);
+
+  const programState4 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(letrec ([x (quote 2)] [y (#%variable-reference x)]) (#%variable-reference y))`)
+      ) as ExprOrDefineForm,
+      programState4
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "EXTEND_ENV",
+      "ADD_BINDING_UNDEFINED",
+      "0",
+      "ADD_BINDING_UNDEFINED",
+      "1",
+      "MAKE_CONST",
+      "0",
+      "SET_ENV",
+      "0",
+      "GET_ENV",
+      "0",
+      "SET_ENV",
+      "1",
+      "POP_N",
+      "0",
+      "GET_ENV",
+      "1",
+    ]
+  `);
+  expect(programState4.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+    }
+  `);
+
+  const programState5 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(
+          `(letrec ([x (quote 2)] [y (quote 3)] [z (quote 4)] [a (quote 5)]) (#%variable-reference y) (#%variable-reference a))`
+        )
+      ) as ExprOrDefineForm,
+      programState5
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "EXTEND_ENV",
+      "ADD_BINDING_UNDEFINED",
+      "0",
+      "ADD_BINDING_UNDEFINED",
+      "1",
+      "ADD_BINDING_UNDEFINED",
+      "2",
+      "ADD_BINDING_UNDEFINED",
+      "3",
+      "MAKE_CONST",
+      "0",
+      "SET_ENV",
+      "0",
+      "MAKE_CONST",
+      "1",
+      "SET_ENV",
+      "1",
+      "MAKE_CONST",
+      "2",
+      "SET_ENV",
+      "2",
+      "MAKE_CONST",
+      "3",
+      "SET_ENV",
+      "3",
+      "GET_ENV",
+      "1",
+      "POP_N",
+      "1",
+      "GET_ENV",
+      "3",
+    ]
+  `);
+  expect(programState5.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+      "z" => 2,
+      "a" => 3,
+    }
+  `);
+
+  const programState6 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(
+          `(letrec ([x (#%variable-reference y)]
+                    [y (#%variable-reference x)])
+            (#%variable-reference y))`
+        )
+      ) as ExprOrDefineForm,
+      programState6
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "EXTEND_ENV",
+      "ADD_BINDING_UNDEFINED",
+      "0",
+      "ADD_BINDING_UNDEFINED",
+      "1",
+      "GET_ENV",
+      "1",
+      "SET_ENV",
+      "0",
+      "GET_ENV",
+      "0",
+      "SET_ENV",
+      "1",
+      "POP_N",
+      "0",
+      "GET_ENV",
+      "1",
+    ]
+  `);
+  expect(programState6.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+    }
+  `);
+});
+
 test('compile set!', () => {
   const programState1 = make_program_state();
   expect(compileAndPrettify(getOk(read(`(set! x (quote 1))`)) as ExprOrDefineForm, programState1))
