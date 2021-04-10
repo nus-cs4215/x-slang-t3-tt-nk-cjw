@@ -7,9 +7,10 @@ import {
   set_binding,
 } from '../environment/environment';
 import { EvalResult, EvalSExpr } from '../evaluator/types';
-import { ok, err, getOk } from '../utils/result';
+import { is_boolean, val } from '../sexpr';
+import { ok, err, getOk, isBadResult } from '../utils/result';
 import { CompiledProgram, ProgramState } from './compiler';
-import { MAKE_CONST, ADD_BINDING, GET_ENV, POP_N, SET_ENV } from './opcodes';
+import { MAKE_CONST, ADD_BINDING, GET_ENV, POP_N, SET_ENV, JUMP, JUMP_IF_FALSE } from './opcodes';
 
 type Microcode = (vm: VirtualMachine) => void;
 const M: Microcode[] = [];
@@ -89,6 +90,30 @@ M[SET_ENV] = (vm: VirtualMachine) => {
   set_binding(found_env.bindings, name, new_binding);
 
   vm.PC += 2;
+};
+
+M[JUMP] = (vm: VirtualMachine) => {
+  vm.PC = vm.P[vm.PC + 1];
+};
+
+M[JUMP_IF_FALSE] = (vm: VirtualMachine) => {
+  const sexpr = vm.OS.pop();
+  if (sexpr === undefined) {
+    console.error('JUMP_IF_FALSE: found an emmpty operand stack');
+    return;
+  }
+
+  if (isBadResult(sexpr)) {
+    console.error(`JUMP_IF_FALSE: bad result found: ${sexpr.v}`);
+    return;
+  }
+
+  if (!(is_boolean(sexpr.v) && val(sexpr.v) === false)) {
+    vm.PC = vm.PC + 2;
+  } else {
+    // jump, since it is false
+    vm.PC = vm.P[vm.PC + 1];
+  }
 };
 
 export class VirtualMachine {

@@ -80,3 +80,33 @@ test('evaluate set!', () => {
   `).run()
   ).toEqual(ok(snumber(2)));
 });
+
+test('evaluate if', () => {
+  expect(
+    init_machine(`
+      (if (quote #t) (quote 1) (quote 2))
+    `).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(`
+      (if (quote #f) (quote 1) (quote 2))
+    `).run()
+  ).toEqual(ok(snumber(2)));
+
+  expect(
+    init_machine(`
+      (if (quote a) (quote 1) (quote 2))
+    `).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(`
+      (if (quote #t)
+        (if (quote #f)
+          (quote 1)
+          (quote 2))
+        (quote 3))
+    `).run()
+  ).toEqual(ok(snumber(2)));
+});
