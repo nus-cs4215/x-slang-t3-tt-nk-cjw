@@ -23,3 +23,49 @@ test('evaluate quote', () => {
   expect(init_machine(`(quote #t)`).run()).toEqual(ok(sboolean(true)));
   expect(init_machine(`(quote a)`).run()).toEqual(ok(ssymbol('a')));
 });
+
+test('evaluate begin and begin0', () => {
+  expect(
+    init_machine(`(begin
+                    (quote a)
+                    (quote b)
+                    (quote 1))`).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(`(begin
+                    (quote a)
+                    (quote b)
+                    (quote c)
+                    (quote d))`).run()
+  ).toEqual(ok(ssymbol('d')));
+
+  expect(
+    init_machine(`(begin0
+                    (quote a)
+                    (quote b)
+                    (quote 1))`).run()
+  ).toEqual(ok(ssymbol('a')));
+
+  expect(
+    init_machine(`(begin0
+                    (quote a)
+                    (quote b)
+                    (quote c)
+                    (quote d))`).run()
+  ).toEqual(ok(ssymbol('a')));
+});
+
+test('evaluate define and #%variable-reference', () => {
+  expect(init_machine(`(define x (quote 10))`).run()).toEqual(ok(snumber(10)));
+  expect(
+    init_machine(`(begin
+                    (define x (quote 1))
+                    (#%variable-reference x))`).run()
+  ).toEqual(ok(snumber(1)));
+  expect(
+    init_machine(`(begin
+                    (define y (quote #t))
+                    (#%variable-reference y))`).run()
+  ).toEqual(ok(sboolean(true)));
+});
