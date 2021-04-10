@@ -2,12 +2,8 @@ import { ExprOrDefineAst, ExprOrDefineForm } from '../../fep-types';
 import { read } from '../../reader';
 import { sboolean, snumber, ssymbol } from '../../sexpr';
 import { getOk } from '../../utils';
-import {
-  compile_fep_to_bytecode,
-  make_program_state,
-  prettify_compiled_program,
-  ProgramState,
-} from '../compiler';
+import { compile_fep_to_bytecode, make_program_state, ProgramState } from '../compiler';
+import { prettify_compiled_program } from '../utils';
 
 const compileAndPrettify = (program: ExprOrDefineAst, programState: ProgramState): string[] => {
   return prettify_compiled_program(compile_fep_to_bytecode(program, programState));

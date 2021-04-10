@@ -16,6 +16,20 @@ import {
 } from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
 import { homlist_to_arr, is_nil } from '../sexpr/sexpr';
+import {
+  ADD_BINDING,
+  ADD_BINDING_SYNTAX,
+  ADD_BINDING_UNDEFINED,
+  CALL,
+  EXTEND_ENV,
+  GET_ENV,
+  JUMP,
+  JUMP_IF_FALSE,
+  MAKE_CONST,
+  MAKE_FUNC,
+  POP_N,
+  SET_ENV,
+} from './opcodes';
 
 export interface ProgramState {
   nameToNameId: Map<string, number>;
@@ -31,54 +45,6 @@ export interface VMClosure {
 }
 
 export type CompiledProgram = number[];
-
-// OpCodes
-const MAKE_CONST = 0; // followed by a <const id>
-const POP_N = 1; // followed by n, number of things to pop
-const ADD_BINDING = 2; // followed by a <name id>
-const GET_ENV = 3; // followed by a <name id>
-const SET_ENV = 4; // followed by a <name id>
-const MAKE_FUNC = 5; // followed by a <closure id>
-const JUMP_IF_FALSE = 6; // followed by absolute position
-const JUMP = 7; // followed by absolute position
-const ADD_BINDING_SYNTAX = 8; // followed by a <name id>
-const EXTEND_ENV = 9;
-const ADD_BINDING_UNDEFINED = 10; // followed by a <name id>
-const CALL = 11; // followed by a <closure id>
-
-const get_opcode_names = (): string[] => {
-  const names = [];
-  names[MAKE_CONST] = 'MAKE_CONST';
-  names[POP_N] = 'POP_N';
-  names[ADD_BINDING] = 'ADD_BINDING';
-  names[GET_ENV] = 'GET_ENV';
-  names[SET_ENV] = 'SET_ENV';
-  names[MAKE_FUNC] = 'MAKE_FUNC';
-  names[JUMP_IF_FALSE] = 'JUMP_IF_FALSE';
-  names[JUMP] = 'JUMP';
-  names[ADD_BINDING_SYNTAX] = 'ADD_BINDING_SYNTAX';
-  names[EXTEND_ENV] = 'EXTEND_ENV';
-  names[ADD_BINDING_UNDEFINED] = 'ADD_BINDING_UNDEFINED';
-  names[CALL] = 'CALL';
-  return names;
-};
-
-const get_opcode_paramCounts = (): number[] => {
-  const paramCounts = [];
-  paramCounts[MAKE_CONST] = 1;
-  paramCounts[POP_N] = 1;
-  paramCounts[ADD_BINDING] = 1;
-  paramCounts[GET_ENV] = 1;
-  paramCounts[SET_ENV] = 1;
-  paramCounts[MAKE_FUNC] = 1;
-  paramCounts[JUMP_IF_FALSE] = 1;
-  paramCounts[JUMP] = 1;
-  paramCounts[ADD_BINDING_SYNTAX] = 1;
-  paramCounts[EXTEND_ENV] = 0;
-  paramCounts[ADD_BINDING_UNDEFINED] = 1;
-  paramCounts[CALL] = 1;
-  return paramCounts;
-};
 
 export const make_program_state = (): ProgramState => ({
   nameToNameId: new Map(),
@@ -172,7 +138,7 @@ const fep_to_bytecode_helper = (
 
       const symbol = car(cdr(definesyntax_program));
       const nameId = getNameId(val(symbol), programState);
-      compiledProgramTree.push(ADD_BINDING);
+      compiledProgramTree.push(ADD_BINDING_SYNTAX);
       compiledProgramTree.push(nameId);
 
       return compiledProgramTree;
@@ -365,27 +331,4 @@ const getNameId = (name: string, programState: ProgramState): number => {
   }
 
   return nameId;
-};
-
-export const prettify_compiled_program = (compiledProgram: CompiledProgram): string[] => {
-  const opcodeNames = get_opcode_names();
-  const paramCounts = get_opcode_paramCounts();
-  const prettified: string[] = [];
-  for (let i = 0; i < compiledProgram.length; i++) {
-    const opcode = compiledProgram[i];
-    if (Array.isArray(opcode)) {
-      prettified.push('EARLY TERMINATION. Compiled Program not flattened');
-      return prettified;
-    }
-
-    prettified.push(opcodeNames[opcode]); // push opcodes
-
-    // push the n parameters behind it
-    let paramCount = paramCounts[opcode];
-    while (paramCount > 0) {
-      prettified.push(compiledProgram[++i].toString());
-      paramCount--;
-    }
-  }
-  return prettified;
 };
