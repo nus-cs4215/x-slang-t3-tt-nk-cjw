@@ -760,3 +760,209 @@ test('compile define', () => {
     ]
   `);
 });
+
+test('compile #%plain-lambda', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(read(`(#%plain-lambda (x) (#%variable-reference x))`)) as ExprOrDefineForm,
+      programState1
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+    ]
+  `);
+  expect(prettify_compiled_program(programState1.closureIdToClosure[0].body))
+    .toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState1.closureIdToClosure[0].formals).toMatchInlineSnapshot(`
+    Array [
+      0,
+    ]
+  `);
+  expect(programState1.closureIdToClosure[0].rest).toMatchInlineSnapshot(`undefined`);
+  // ---
+
+  const programState2 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(read(`(#%plain-lambda x (#%variable-reference x))`)) as ExprOrDefineForm,
+      programState2
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+    ]
+  `);
+  expect(prettify_compiled_program(programState2.closureIdToClosure[0].body))
+    .toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState2.closureIdToClosure[0].formals).toMatchInlineSnapshot(`Array []`);
+  expect(programState2.closureIdToClosure[0].rest).toMatchInlineSnapshot(`0`);
+
+  // ---
+
+  const programState3 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(read(`(#%plain-lambda (x y . z) (#%variable-reference x))`)) as ExprOrDefineForm,
+      programState3
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+    ]
+  `);
+  expect(prettify_compiled_program(programState3.closureIdToClosure[0].body))
+    .toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "0",
+    ]
+  `);
+  expect(programState3.closureIdToClosure[0].formals).toMatchInlineSnapshot(`
+    Array [
+      0,
+      1,
+    ]
+  `);
+  expect(programState3.closureIdToClosure[0].rest).toMatchInlineSnapshot(`2`);
+  expect(programState3.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "x" => 0,
+      "y" => 1,
+      "z" => 2,
+    }
+  `);
+});
+
+test('compiler #%plain-app', () => {
+  const programState1 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(#%plain-app (#%plain-lambda (x) (#%variable-reference x)) (quote 1))`)
+      ) as ExprOrDefineForm,
+      programState1
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+      "MAKE_CONST",
+      "0",
+      "CALL",
+      "1",
+    ]
+  `);
+
+  const programState2 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2))`)
+      ) as ExprOrDefineForm,
+      programState2
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+      "MAKE_CONST",
+      "0",
+      "MAKE_CONST",
+      "1",
+      "CALL",
+      "2",
+    ]
+  `);
+
+  const programState3 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(
+          `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2) (quote 3))`
+        )
+      ) as ExprOrDefineForm,
+      programState3
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+      "MAKE_CONST",
+      "0",
+      "MAKE_CONST",
+      "1",
+      "MAKE_CONST",
+      "2",
+      "CALL",
+      "3",
+    ]
+  `);
+
+  const programState4 = make_program_state();
+  expect(
+    compileAndPrettify(
+      getOk(
+        read(`(#%plain-app 
+                (#%plain-lambda
+                  (f x)
+                  (#%plain-app (#%variable-reference f) (#%variable-reference x)))
+                (#%plain-lambda (y) (#%variable-reference y))
+                (quote 100))`)
+      ) as ExprOrDefineForm,
+      programState4
+    )
+  ).toMatchInlineSnapshot(`
+    Array [
+      "MAKE_FUNC",
+      "0",
+      "MAKE_FUNC",
+      "1",
+      "MAKE_CONST",
+      "0",
+      "CALL",
+      "2",
+    ]
+  `);
+  expect(programState4.nameToNameId).toMatchInlineSnapshot(`
+    Map {
+      "f" => 0,
+      "x" => 1,
+      "y" => 2,
+    }
+  `);
+  // the first lambda
+  expect(programState4.closureIdToClosure[0].formals).toMatchInlineSnapshot(`
+    Array [
+      0,
+      1,
+    ]
+  `);
+  expect(programState4.closureIdToClosure[0].rest).toMatchInlineSnapshot(`undefined`);
+  expect(prettify_compiled_program(programState4.closureIdToClosure[0].body))
+    .toMatchInlineSnapshot(`
+    Array [
+      "GET_ENV",
+      "0",
+      "GET_ENV",
+      "1",
+      "CALL",
+      "1",
+    ]
+  `);
+});

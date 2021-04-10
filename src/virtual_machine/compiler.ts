@@ -8,17 +8,26 @@ import {
   IfForm,
   LetForm,
   LetrecForm,
+  PlainAppForm,
+  PlainLambdaForm,
   QuoteForm,
   SetForm,
   VariableReferenceForm,
 } from '../fep-types';
 import { car, cdr, is_list, SExpr, SHomList, val } from '../sexpr';
-import { homlist_to_arr } from '../sexpr/sexpr';
+import { homlist_to_arr, is_nil } from '../sexpr/sexpr';
 
 export interface ProgramState {
   nameToNameId: Map<string, number>;
   nameIdToName: string[];
   constIdToSExpr: SExpr[];
+  closureIdToClosure: VMClosure[];
+}
+
+export interface VMClosure {
+  formals: number[];
+  rest: number | undefined;
+  body: CompiledProgram;
 }
 
 export type CompiledProgram = number[];
@@ -29,12 +38,13 @@ const POP_N = 1; // followed by n, number of things to pop
 const ADD_BINDING = 2; // followed by a <name id>
 const GET_ENV = 3; // followed by a <name id>
 const SET_ENV = 4; // followed by a <name id>
-const MAKE_FUNC = 5; // followed by a <func id>
+const MAKE_FUNC = 5; // followed by a <closure id>
 const JUMP_IF_FALSE = 6; // followed by absolute position
 const JUMP = 7; // followed by absolute position
 const ADD_BINDING_SYNTAX = 8; // followed by a <name id>
 const EXTEND_ENV = 9;
 const ADD_BINDING_UNDEFINED = 10; // followed by a <name id>
+const CALL = 11; // followed by a <closure id>
 
 const get_opcode_names = (): string[] => {
   const names = [];
@@ -49,6 +59,7 @@ const get_opcode_names = (): string[] => {
   names[ADD_BINDING_SYNTAX] = 'ADD_BINDING_SYNTAX';
   names[EXTEND_ENV] = 'EXTEND_ENV';
   names[ADD_BINDING_UNDEFINED] = 'ADD_BINDING_UNDEFINED';
+  names[CALL] = 'CALL';
   return names;
 };
 
@@ -65,6 +76,7 @@ const get_opcode_paramCounts = (): number[] => {
   paramCounts[ADD_BINDING_SYNTAX] = 1;
   paramCounts[EXTEND_ENV] = 0;
   paramCounts[ADD_BINDING_UNDEFINED] = 1;
+  paramCounts[CALL] = 1;
   return paramCounts;
 };
 
@@ -72,6 +84,17 @@ export const make_program_state = (): ProgramState => ({
   nameToNameId: new Map(),
   nameIdToName: [],
   constIdToSExpr: [],
+  closureIdToClosure: [],
+});
+
+export const make_vm_closure = (
+  formals: number[],
+  rest: number | undefined,
+  body: number[]
+): VMClosure => ({
+  formals,
+  rest,
+  body,
 });
 
 export const compile_fep_to_bytecode = (
@@ -277,6 +300,50 @@ const fep_to_bytecode_helper = (
       // finish executing consequent, skip the entire alternative: last instruction and 1 more
       compiledProgramTree[jumpValueIdx] = compiledProgramTree.length;
 
+      return compiledProgramTree;
+    }
+    case '#%plain-lambda': {
+      const plainlambda_program = program as PlainLambdaForm;
+      let unparsed_formals = car(cdr(plainlambda_program));
+      const uncompiled_body = homlist_to_arr(cdr(cdr(plainlambda_program)));
+
+      // compile formals and the rest
+      const formals: number[] = [];
+      while (is_list(unparsed_formals)) {
+        const formal = val(car(unparsed_formals));
+        formals.push(getNameId(formal, programState));
+        unparsed_formals = cdr(unparsed_formals);
+      }
+
+      let rest: number | undefined;
+      if (is_nil(unparsed_formals)) {
+        rest = undefined;
+      } else {
+        rest = getNameId(val(unparsed_formals), programState);
+      }
+
+      // compile body
+      const body: CompiledProgram = [];
+      for (const expr of uncompiled_body) {
+        fep_to_bytecode_helper(expr, programState, body);
+      }
+
+      const closure = make_vm_closure(formals, rest, body);
+      compiledProgramTree.push(MAKE_FUNC);
+      compiledProgramTree.push(programState.closureIdToClosure.length);
+      programState.closureIdToClosure.push(closure);
+      return compiledProgramTree;
+    }
+    case '#%plain-app': {
+      const plainapp_program = program as PlainAppForm;
+      const exprs = homlist_to_arr(cdr(plainapp_program));
+
+      for (const expr of exprs) {
+        fep_to_bytecode_helper(expr, programState, compiledProgramTree);
+      }
+      compiledProgramTree.push(CALL);
+      // the length of exprs include the function expression, hence - 1
+      compiledProgramTree.push(exprs.length - 1);
       return compiledProgramTree;
     }
     default: {
