@@ -69,3 +69,14 @@ test('evaluate define and #%variable-reference', () => {
                     (#%variable-reference y))`).run()
   ).toEqual(ok(sboolean(true)));
 });
+
+test('evaluate set!', () => {
+  expect(
+    init_machine(`
+    (begin
+      (define x (quote 1))
+      (set! x (quote 2))
+      (#%variable-reference x))
+  `).run()
+  ).toEqual(ok(snumber(2)));
+});

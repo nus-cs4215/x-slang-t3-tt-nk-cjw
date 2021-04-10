@@ -1,9 +1,15 @@
 import { Environment, set_define } from '../environment';
-import { BindingType, find_env, get_binding } from '../environment/environment';
+import {
+  BindingType,
+  define_binding,
+  find_env,
+  get_binding,
+  set_binding,
+} from '../environment/environment';
 import { EvalResult, EvalSExpr } from '../evaluator/types';
 import { ok, err, getOk } from '../utils/result';
 import { CompiledProgram, ProgramState } from './compiler';
-import { MAKE_CONST, ADD_BINDING, GET_ENV, POP_N } from './opcodes';
+import { MAKE_CONST, ADD_BINDING, GET_ENV, POP_N, SET_ENV } from './opcodes';
 
 export class VirtualMachine {
   P: CompiledProgram;
@@ -50,7 +56,7 @@ export class VirtualMachine {
     };
 
     M[ADD_BINDING] = () => {
-      const sexpr = this.OS[this.OS.length - 1];
+      const sexpr = this.OS[this.OS.length - 1]; // stays on top of the stack
       if (sexpr === undefined) {
         console.error(`ADD_BINDING: found an empty operand stack`);
         return;
@@ -83,6 +89,33 @@ export class VirtualMachine {
       this.PC += 2;
     };
 
+    M[SET_ENV] = () => {
+      const sexpr = this.OS[this.OS.length - 1]; // stays on top of the stack
+      if (sexpr === undefined) {
+        console.error(`SET_ENV: found an empty operand stack`);
+        return;
+      }
+      const nameId = this.P[this.PC + 1];
+      const name = this.getName(nameId);
+
+      const found_env = find_env(name, this.env);
+      if (found_env === undefined) {
+        console.error(
+          `SET_ENV: assignment disallowed; cannot set variable ${name} before its definition`
+        );
+        return;
+      }
+
+      const binding = get_binding(found_env.bindings, name)!;
+      if (binding._type !== BindingType.Define || binding.val === undefined) {
+        console.error(`SET_ENV: tried to set variable ${name} before initialization`);
+        return;
+      }
+      const new_binding = define_binding(getOk(sexpr));
+      set_binding(found_env.bindings, name, new_binding);
+
+      this.PC += 2;
+    };
     return M;
   }
 
