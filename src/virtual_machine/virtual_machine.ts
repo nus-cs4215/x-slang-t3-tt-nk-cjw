@@ -11,6 +11,86 @@ import { ok, err, getOk } from '../utils/result';
 import { CompiledProgram, ProgramState } from './compiler';
 import { MAKE_CONST, ADD_BINDING, GET_ENV, POP_N, SET_ENV } from './opcodes';
 
+type Microcode = (vm: VirtualMachine) => void;
+const M: Microcode[] = [];
+M[MAKE_CONST] = (vm: VirtualMachine) => {
+  const id = vm.P[vm.PC + 1];
+  const sexpr = vm.programState.constIdToSExpr[id];
+  vm.OS.push(ok(sexpr));
+  vm.PC += 2;
+};
+
+M[POP_N] = (vm: VirtualMachine) => {
+  const n = vm.P[vm.PC + 1];
+  for (let i = 0; i < n; i++) {
+    vm.OS.pop();
+  }
+
+  vm.PC += 2;
+};
+
+M[ADD_BINDING] = (vm: VirtualMachine) => {
+  const sexpr = vm.OS[vm.OS.length - 1]; // stays on top of the stack
+  if (sexpr === undefined) {
+    console.error(`ADD_BINDING: found an empty operand stack`);
+    return;
+  }
+  const nameId = vm.P[vm.PC + 1];
+  const name = vm.getName(nameId);
+
+  set_define(vm.env!.bindings, name, getOk(sexpr));
+
+  vm.PC += 2;
+};
+
+M[GET_ENV] = (vm: VirtualMachine) => {
+  const nameId = vm.P[vm.PC + 1];
+  const name = vm.getName(nameId);
+
+  const found_env = find_env(name, vm.env);
+  if (found_env === undefined) {
+    console.error(`GET_ENV: could not find variable ${name}`);
+    return;
+  }
+
+  const binding = get_binding(found_env.bindings, name)!;
+  if (binding._type !== BindingType.Define || binding.val === undefined) {
+    console.error(`GET_ENV: tried to use variable ${name} before initialization`);
+    return;
+  }
+
+  vm.OS.push(ok(binding.val as EvalSExpr));
+  vm.PC += 2;
+};
+
+M[SET_ENV] = (vm: VirtualMachine) => {
+  const sexpr = vm.OS[vm.OS.length - 1]; // stays on top of the stack
+  if (sexpr === undefined) {
+    console.error(`SET_ENV: found an empty operand stack`);
+    return;
+  }
+  const nameId = vm.P[vm.PC + 1];
+  const name = vm.getName(nameId);
+
+  const found_env = find_env(name, vm.env);
+  if (found_env === undefined) {
+    console.error(
+      `SET_ENV: assignment disallowed; cannot set variable ${name} before its definition`
+    );
+    return;
+  }
+
+  const binding = get_binding(found_env.bindings, name)!;
+  if (binding._type !== BindingType.Define || binding.val === undefined) {
+    console.error(`SET_ENV: tried to set variable ${name} before initialization`);
+    return;
+  }
+  const new_binding = define_binding(getOk(sexpr));
+  set_binding(found_env.bindings, name, new_binding);
+
+  vm.PC += 2;
+};
+
 export class VirtualMachine {
   P: CompiledProgram;
   programState: ProgramState;
@@ -19,7 +99,6 @@ export class VirtualMachine {
   closureId: number;
   PC: number;
   registers: EvalResult[];
-  M: Microcode[];
 
   constructor(
     P: CompiledProgram,
@@ -35,97 +114,15 @@ export class VirtualMachine {
     this.env = env;
     this.closureId = closureId;
     this.PC = PC;
-    this.M = this.initMicrocode();
   }
 
-  private initMicrocode(): Microcode[] {
-    const M: Microcode[] = [];
-    M[MAKE_CONST] = () => {
-      const id = this.P[this.PC + 1];
-      const sexpr = this.programState.constIdToSExpr[id];
-      this.OS.push(ok(sexpr));
-      this.PC += 2;
-    };
-    M[POP_N] = () => {
-      const n = this.P[this.PC + 1];
-      for (let i = 0; i < n; i++) {
-        this.OS.pop();
-      }
-
-      this.PC += 2;
-    };
-
-    M[ADD_BINDING] = () => {
-      const sexpr = this.OS[this.OS.length - 1]; // stays on top of the stack
-      if (sexpr === undefined) {
-        console.error(`ADD_BINDING: found an empty operand stack`);
-        return;
-      }
-      const nameId = this.P[this.PC + 1];
-      const name = this.getName(nameId);
-
-      set_define(this.env!.bindings, name, getOk(sexpr));
-
-      this.PC += 2;
-    };
-
-    M[GET_ENV] = () => {
-      const nameId = this.P[this.PC + 1];
-      const name = this.getName(nameId);
-
-      const found_env = find_env(name, this.env);
-      if (found_env === undefined) {
-        console.error(`GET_ENV: could not find variable ${name}`);
-        return;
-      }
-
-      const binding = get_binding(found_env.bindings, name)!;
-      if (binding._type !== BindingType.Define || binding.val === undefined) {
-        console.error(`GET_ENV: tried to use variable ${name} before initialization`);
-        return;
-      }
-
-      this.OS.push(ok(binding.val as EvalSExpr));
-      this.PC += 2;
-    };
-
-    M[SET_ENV] = () => {
-      const sexpr = this.OS[this.OS.length - 1]; // stays on top of the stack
-      if (sexpr === undefined) {
-        console.error(`SET_ENV: found an empty operand stack`);
-        return;
-      }
-      const nameId = this.P[this.PC + 1];
-      const name = this.getName(nameId);
-
-      const found_env = find_env(name, this.env);
-      if (found_env === undefined) {
-        console.error(
-          `SET_ENV: assignment disallowed; cannot set variable ${name} before its definition`
-        );
-        return;
-      }
-
-      const binding = get_binding(found_env.bindings, name)!;
-      if (binding._type !== BindingType.Define || binding.val === undefined) {
-        console.error(`SET_ENV: tried to set variable ${name} before initialization`);
-        return;
-      }
-      const new_binding = define_binding(getOk(sexpr));
-      set_binding(found_env.bindings, name, new_binding);
-
-      this.PC += 2;
-    };
-    return M;
-  }
-
-  private getName(nameId: number): string {
+  getName(nameId: number): string {
     return this.programState.nameIdToName[nameId];
   }
 
   run(): EvalResult {
-    while (this.P[this.PC] !== undefined) {
-      this.M[this.P[this.PC]]();
+    while (this.PC < this.P.length) {
+      M[this.P[this.PC]](this);
     }
 
     const last = this.OS.pop();
@@ -135,5 +132,3 @@ export class VirtualMachine {
     return last;
   }
 }
-
-type Microcode = () => void;
