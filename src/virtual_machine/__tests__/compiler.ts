@@ -212,9 +212,9 @@ test('compile let', () => {
     )
   ).toMatchInlineSnapshot(`
     Array [
-      "EXTEND_ENV",
       "MAKE_CONST",
       "0",
+      "EXTEND_ENV",
       "ADD_BINDING",
       "0",
       "POP_N",
@@ -235,9 +235,9 @@ test('compile let', () => {
     )
   ).toMatchInlineSnapshot(`
     Array [
-      "EXTEND_ENV",
       "GET_ENV",
       "0",
+      "EXTEND_ENV",
       "ADD_BINDING",
       "1",
       "POP_N",
@@ -260,7 +260,6 @@ test('compile let', () => {
     )
   ).toMatchInlineSnapshot(`
     Array [
-      "EXTEND_ENV",
       "MAKE_CONST",
       "0",
       "MAKE_CONST",
@@ -269,6 +268,7 @@ test('compile let', () => {
       "2",
       "MAKE_CONST",
       "3",
+      "EXTEND_ENV",
       "ADD_BINDING",
       "0",
       "ADD_BINDING",
@@ -304,11 +304,11 @@ test('compile let', () => {
     )
   ).toMatchInlineSnapshot(`
     Array [
-      "EXTEND_ENV",
       "MAKE_CONST",
       "0",
       "GET_ENV",
       "0",
+      "EXTEND_ENV",
       "ADD_BINDING",
       "1",
       "ADD_BINDING",
@@ -339,7 +339,6 @@ test('compile let', () => {
     )
   ).toMatchInlineSnapshot(`
     Array [
-      "EXTEND_ENV",
       "MAKE_CONST",
       "0",
       "MAKE_CONST",
@@ -348,6 +347,7 @@ test('compile let', () => {
       "2",
       "MAKE_CONST",
       "3",
+      "EXTEND_ENV",
       "ADD_BINDING",
       "0",
       "ADD_BINDING",
@@ -640,9 +640,9 @@ test('compile set!', () => {
     )
   ).toMatchInlineSnapshot(`
     Array [
-      "EXTEND_ENV",
       "MAKE_CONST",
       "0",
+      "EXTEND_ENV",
       "ADD_BINDING",
       "0",
       "MAKE_CONST",

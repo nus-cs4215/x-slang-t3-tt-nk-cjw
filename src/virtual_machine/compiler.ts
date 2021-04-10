@@ -172,7 +172,6 @@ const fep_to_bytecode_helper = (
     }
     case 'let': {
       const letprogram = program as LetForm;
-      compiledProgramTree.push(EXTEND_ENV);
 
       const binding_pairs = homlist_to_arr(car(cdr(letprogram)));
       // adding the exprs into the stack first
@@ -182,6 +181,8 @@ const fep_to_bytecode_helper = (
 
         fep_to_bytecode_helper(expr, programState, compiledProgramTree);
       }
+
+      compiledProgramTree.push(EXTEND_ENV);
 
       // adding instructions to bind the names on top of stack in reverse order
       for (let i = binding_pairs.length - 1; i >= 0; i--) {
