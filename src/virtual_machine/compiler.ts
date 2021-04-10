@@ -36,6 +36,7 @@ export interface ProgramState {
   nameIdToName: string[];
   constIdToSExpr: SExpr[];
   closureIdToClosure: VMClosure[];
+  topLevelClosure: VMClosure | undefined; // could be part of the array but I separate it to be clearer
 }
 
 export interface VMClosure {
@@ -51,6 +52,7 @@ export const make_program_state = (): ProgramState => ({
   nameIdToName: [],
   constIdToSExpr: [],
   closureIdToClosure: [],
+  topLevelClosure: undefined,
 });
 
 export const make_vm_closure = (
@@ -67,7 +69,10 @@ export const compile_fep_to_bytecode = (
   program: ExprOrDefineAst,
   programState: ProgramState
 ): CompiledProgram => {
-  return fep_to_bytecode_helper(program, programState);
+  const topLevelProgram = fep_to_bytecode_helper(program, programState);
+  const topLevelClosure = make_vm_closure([], undefined, topLevelProgram);
+  programState.topLevelClosure = topLevelClosure;
+  return topLevelProgram;
 };
 
 const fep_to_bytecode_helper = (
