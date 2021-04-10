@@ -221,6 +221,7 @@ test('compile let', () => {
       "0",
       "GET_ENV",
       "0",
+      "END_SCOPE",
     ]
   `);
 
@@ -243,6 +244,7 @@ test('compile let', () => {
       "0",
       "GET_ENV",
       "1",
+      "END_SCOPE",
     ]
   `);
 
@@ -279,6 +281,7 @@ test('compile let', () => {
       "0",
       "GET_ENV",
       "2",
+      "END_SCOPE",
     ]
   `);
   // start assigning the names in reverse order
@@ -314,6 +317,7 @@ test('compile let', () => {
       "0",
       "GET_ENV",
       "1",
+      "END_SCOPE",
     ]
   `);
   expect(programState4.nameToNameId).toMatchInlineSnapshot(`
@@ -358,6 +362,7 @@ test('compile let', () => {
       "1",
       "GET_ENV",
       "0",
+      "END_SCOPE",
     ]
   `);
   // starts assigning the name in reverse order
@@ -391,6 +396,7 @@ test('compile letrec', () => {
       "0",
       "GET_ENV",
       "0",
+      "END_SCOPE",
     ]
   `);
 
@@ -415,6 +421,7 @@ test('compile letrec', () => {
       "0",
       "GET_ENV",
       "0",
+      "END_SCOPE",
     ]
   `);
 
@@ -459,6 +466,7 @@ test('compile letrec', () => {
       "0",
       "GET_ENV",
       "1",
+      "END_SCOPE",
     ]
   `);
   // start assigning the names in reverse order
@@ -498,6 +506,7 @@ test('compile letrec', () => {
       "0",
       "GET_ENV",
       "1",
+      "END_SCOPE",
     ]
   `);
   expect(programState4.nameToNameId).toMatchInlineSnapshot(`
@@ -550,6 +559,7 @@ test('compile letrec', () => {
       "1",
       "GET_ENV",
       "3",
+      "END_SCOPE",
     ]
   `);
   expect(programState5.nameToNameId).toMatchInlineSnapshot(`
@@ -592,6 +602,7 @@ test('compile letrec', () => {
       "0",
       "GET_ENV",
       "1",
+      "END_SCOPE",
     ]
   `);
   expect(programState6.nameToNameId).toMatchInlineSnapshot(`
@@ -642,6 +653,7 @@ test('compile set!', () => {
       "1",
       "GET_ENV",
       "0",
+      "END_SCOPE",
     ]
   `);
   expect(programState2.nameToNameId).toMatchInlineSnapshot(`

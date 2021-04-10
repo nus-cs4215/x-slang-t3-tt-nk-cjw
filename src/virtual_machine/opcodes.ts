@@ -11,6 +11,7 @@ export const ADD_BINDING_SYNTAX = 8; // followed by a <name id>
 export const EXTEND_ENV = 9;
 export const ADD_BINDING_UNDEFINED = 10; // followed by a <name id>
 export const CALL = 11; // followed by a <closure id>
+export const END_SCOPE = 12;
 
 export const get_opcode_names = (): string[] => {
   const names = [];
@@ -26,6 +27,7 @@ export const get_opcode_names = (): string[] => {
   names[EXTEND_ENV] = 'EXTEND_ENV';
   names[ADD_BINDING_UNDEFINED] = 'ADD_BINDING_UNDEFINED';
   names[CALL] = 'CALL';
+  names[END_SCOPE] = 'END_SCOPE';
   return names;
 };
 
@@ -43,5 +45,6 @@ export const get_opcode_paramCounts = (): number[] => {
   paramCounts[EXTEND_ENV] = 0;
   paramCounts[ADD_BINDING_UNDEFINED] = 1;
   paramCounts[CALL] = 1;
+  paramCounts[END_SCOPE] = 0;
   return paramCounts;
 };

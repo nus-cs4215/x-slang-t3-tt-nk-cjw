@@ -21,6 +21,7 @@ import {
   ADD_BINDING_SYNTAX,
   ADD_BINDING_UNDEFINED,
   CALL,
+  END_SCOPE,
   EXTEND_ENV,
   GET_ENV,
   JUMP,
@@ -202,6 +203,7 @@ const fep_to_bytecode_helper = (
       compiledProgramTree.push(sequence.length - 1);
 
       fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
+      compiledProgramTree.push(END_SCOPE);
 
       return compiledProgramTree;
     }
@@ -242,6 +244,7 @@ const fep_to_bytecode_helper = (
       compiledProgramTree.push(sequence.length - 1);
 
       fep_to_bytecode_helper(sequence[sequence.length - 1], programState, compiledProgramTree);
+      compiledProgramTree.push(END_SCOPE);
 
       return compiledProgramTree;
     }
