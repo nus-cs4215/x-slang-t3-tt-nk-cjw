@@ -4,13 +4,25 @@ import {
   define_binding,
   find_env,
   get_binding,
+  make_empty_bindings,
+  make_env,
   set_binding,
 } from '../environment/environment';
 import { EvalResult, EvalSExpr } from '../evaluator/types';
 import { is_boolean, val } from '../sexpr';
 import { ok, err, getOk, isBadResult } from '../utils/result';
 import { CompiledProgram, ProgramState } from './compiler';
-import { MAKE_CONST, ADD_BINDING, GET_ENV, POP_N, SET_ENV, JUMP, JUMP_IF_FALSE } from './opcodes';
+import {
+  MAKE_CONST,
+  ADD_BINDING,
+  GET_ENV,
+  POP_N,
+  SET_ENV,
+  JUMP,
+  JUMP_IF_FALSE,
+  EXTEND_ENV,
+  END_SCOPE,
+} from './opcodes';
 
 type Microcode = (vm: VirtualMachine) => void;
 const M: Microcode[] = [];
@@ -114,6 +126,16 @@ M[JUMP_IF_FALSE] = (vm: VirtualMachine) => {
     // jump, since it is false
     vm.PC = vm.P[vm.PC + 1];
   }
+};
+
+M[EXTEND_ENV] = (vm: VirtualMachine) => {
+  vm.env = make_env(make_empty_bindings(), vm.env);
+  vm.PC += 1;
+};
+
+M[END_SCOPE] = (vm: VirtualMachine) => {
+  vm.env = vm.env?.parent;
+  vm.PC += 1;
 };
 
 export class VirtualMachine {
