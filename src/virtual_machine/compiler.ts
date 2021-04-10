@@ -231,7 +231,9 @@ const fep_to_bytecode_helper = (
 
         const symbol = car(binding_pair);
         const nameId = getNameId(val(symbol), programState);
-        compiledProgramTree.push(SET_ENV);
+        // not SET_ENV because SET_ENV will error when we try to set
+        // to an undefined value
+        compiledProgramTree.push(ADD_BINDING);
         compiledProgramTree.push(nameId);
       }
 
