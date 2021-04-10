@@ -22,6 +22,7 @@ import {
   JUMP_IF_FALSE,
   EXTEND_ENV,
   END_SCOPE,
+  ADD_BINDING_UNDEFINED,
 } from './opcodes';
 
 type Microcode = (vm: VirtualMachine) => void;
@@ -52,6 +53,15 @@ M[ADD_BINDING] = (vm: VirtualMachine) => {
   const name = vm.getName(nameId);
 
   set_define(vm.env!.bindings, name, getOk(sexpr));
+
+  vm.PC += 2;
+};
+
+M[ADD_BINDING_UNDEFINED] = (vm: VirtualMachine) => {
+  const nameId = vm.P[vm.PC + 1];
+  const name = vm.getName(nameId);
+
+  set_define(vm.env!.bindings, name, undefined);
 
   vm.PC += 2;
 };

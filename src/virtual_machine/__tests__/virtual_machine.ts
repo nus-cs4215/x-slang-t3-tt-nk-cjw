@@ -152,3 +152,45 @@ test('evaluate let', () => {
   `).run()
   ).toEqual(ok(snumber(10)));
 });
+
+test('evaluate letrec', () => {
+  expect(
+    init_machine(`
+    (letrec
+      ([x (quote 1)])
+      (#%variable-reference x))
+  `).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(`
+    (begin
+      (define x (quote 10))
+      (letrec
+        ([x (quote 20)])
+        (#%variable-reference x))
+      (#%variable-reference x))
+  `).run()
+  ).toEqual(ok(snumber(10)));
+
+  expect(
+    init_machine(`
+    (begin
+      (define x (quote 10))
+      (letrec
+        ([x (quote 20)])
+        (#%variable-reference x)))
+  `).run()
+  ).toEqual(ok(snumber(20)));
+
+  expect(
+    init_machine(`
+    (begin
+      (define x (quote 10))
+      (letrec
+        ([x (quote 20)]
+         [y (#%variable-reference x)])
+        (#%variable-reference y)))
+  `).run()
+  ).toEqual(ok(snumber(20))); // different from let
+});
