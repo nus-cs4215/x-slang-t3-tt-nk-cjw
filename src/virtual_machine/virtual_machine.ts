@@ -10,6 +10,7 @@ import {
 } from '../environment/environment';
 import { EvalResult, EvalSExpr } from '../evaluator/types';
 import { is_boolean, val } from '../sexpr';
+import { sbox } from '../sexpr/sexpr';
 import { ok, err, getOk, isBadResult } from '../utils/result';
 import { CompiledProgram, ProgramState } from './compiler';
 import {
@@ -23,6 +24,7 @@ import {
   EXTEND_ENV,
   END_SCOPE,
   ADD_BINDING_UNDEFINED,
+  MAKE_FUNC,
 } from './opcodes';
 
 type Microcode = (vm: VirtualMachine) => void;
@@ -31,6 +33,13 @@ M[MAKE_CONST] = (vm: VirtualMachine) => {
   const id = vm.P[vm.PC + 1];
   const sexpr = vm.programState.constIdToSExpr[id];
   vm.OS.push(ok(sexpr));
+  vm.PC += 2;
+};
+
+M[MAKE_FUNC] = (vm: VirtualMachine) => {
+  const id = vm.P[vm.PC + 1];
+  const vmClosure = vm.programState.closureIdToClosure[id];
+  vm.OS.push(ok(sbox(vmClosure)));
   vm.PC += 2;
 };
 
