@@ -1,3 +1,4 @@
+import { make_vm_closure, VMClosure } from '../evaluator/datatypes';
 import {
   Begin0Form,
   BeginForm,
@@ -40,12 +41,6 @@ export interface ProgramState {
   topLevelClosure: VMClosure | undefined; // could be part of the array but I separate it to be clearer
 }
 
-export interface VMClosure {
-  formals: number[];
-  rest: number | undefined;
-  body: CompiledProgram;
-}
-
 export type CompiledProgram = number[];
 
 export const make_program_state = (): ProgramState => ({
@@ -54,16 +49,6 @@ export const make_program_state = (): ProgramState => ({
   constIdToSExpr: [],
   closureIdToClosure: [],
   topLevelClosure: undefined,
-});
-
-export const make_vm_closure = (
-  formals: number[],
-  rest: number | undefined,
-  body: number[]
-): VMClosure => ({
-  formals,
-  rest,
-  body,
 });
 
 export const compile_fep_to_bytecode = (
