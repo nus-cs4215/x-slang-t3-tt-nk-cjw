@@ -157,6 +157,13 @@ M[END_SCOPE] = (vm: VirtualMachine) => {
   vm.PC += 1;
 };
 
+export interface StackFrame {
+  env: Environment;
+  closureId: number;
+  PC: number;
+  OS: EvalResult[];
+}
+
 export class VirtualMachine {
   P: CompiledProgram;
   programState: ProgramState;
@@ -164,7 +171,7 @@ export class VirtualMachine {
   env: Environment;
   closureId: number;
   PC: number;
-  registers: EvalResult[];
+  RTS: StackFrame[];
 
   constructor(
     P: CompiledProgram,
@@ -172,7 +179,8 @@ export class VirtualMachine {
     env: Environment,
     OS: EvalResult[] = [],
     closureId: number = -1, // denotes top level closure
-    PC: number = 0
+    PC: number = 0,
+    RTS: StackFrame[] = []
   ) {
     this.P = P;
     this.programState = programState;
@@ -180,6 +188,7 @@ export class VirtualMachine {
     this.env = env;
     this.closureId = closureId;
     this.PC = PC;
+    this.RTS = RTS;
   }
 
   getName(nameId: number): string {
@@ -187,8 +196,33 @@ export class VirtualMachine {
   }
 
   run(): EvalResult {
-    while (this.PC < this.P.length) {
-      M[this.P[this.PC]](this);
+    for (;;) {
+      // set compiled program based on closure ID
+      if (this.closureId === -1) {
+        this.P = this.programState.topLevelClosure!.body;
+      } else {
+        this.P = this.programState.closureIdToClosure[this.closureId].body;
+      }
+
+      // main runner
+      while (this.PC < this.P.length) {
+        M[this.P[this.PC]](this);
+      }
+
+      // after done with this closure, pop to return to previous closure
+      const stackFrameTop = this.RTS.pop();
+      if (stackFrameTop === undefined) {
+        // no more closure signals end of the program
+        break;
+      }
+
+      // else, restore the stack frame
+      const currTop = this.OS.pop()!; // closures should always return smth at the end
+      this.env = stackFrameTop.env;
+      this.closureId = stackFrameTop.closureId;
+      this.OS = stackFrameTop.OS;
+      this.PC = stackFrameTop.PC;
+      this.OS.push(currTop);
     }
 
     const last = this.OS.pop();
