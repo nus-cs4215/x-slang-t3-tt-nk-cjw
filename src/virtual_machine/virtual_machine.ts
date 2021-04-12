@@ -1,5 +1,6 @@
 import { Environment, set_define } from '../environment';
 import {
+  Bindings,
   BindingType,
   define_binding,
   find_env,
@@ -8,9 +9,10 @@ import {
   make_env,
   set_binding,
 } from '../environment/environment';
+import { EvalDataType } from '../evaluator/datatypes';
 import { EvalResult, EvalSExpr } from '../evaluator/types';
 import { is_boolean, val } from '../sexpr';
-import { sbox } from '../sexpr/sexpr';
+import { sbox, is_boxed, SExprT, snil, scons } from '../sexpr/sexpr';
 import { ok, err, getOk, isBadResult } from '../utils/result';
 import { CompiledProgram, ProgramState } from './compiler';
 import {
@@ -25,6 +27,7 @@ import {
   END_SCOPE,
   ADD_BINDING_UNDEFINED,
   MAKE_FUNC,
+  CALL,
 } from './opcodes';
 
 type Microcode = (vm: VirtualMachine) => void;
@@ -157,12 +160,68 @@ M[END_SCOPE] = (vm: VirtualMachine) => {
   vm.PC += 1;
 };
 
+M[CALL] = (vm: VirtualMachine) => {
+  // vm.PC + 2 as we want it to resume from there
+  const stackFrame = make_stack_frame(vm.env, vm.closureId, vm.PC + 2, vm.OS);
+
+  const noOfArgs = vm.P[vm.PC + 1];
+  const wrappedClosure = getOk(vm.OS[vm.OS.length - 1 - noOfArgs]); // peek the OS
+  const args: EvalResult[] = [];
+  for (let i = 0; i < noOfArgs; i++) {
+    args.push(vm.OS.pop()!);
+  }
+  // args is in reverse order, since the one on top of the OS is the nth item
+  args.reverse();
+  vm.OS.pop(); // don't need the closure anymore
+
+  if (is_boxed(wrappedClosure)) {
+    const closure = wrappedClosure.val;
+    if (closure.variant === EvalDataType.VMClosure) {
+      // do error checking here which is not implemented
+      const bindings: Bindings = make_empty_bindings();
+      for (let i = 0; i < closure.formals.length; i++) {
+        set_define(bindings, vm.getName(closure.formals[i]), getOk(args[i]));
+      }
+      let rest_args: SExprT<unknown> = snil();
+      for (let i = args.length - 1; i > closure.formals.length - 1; i--) {
+        rest_args = scons(getOk(args[i]), rest_args);
+      }
+
+      if (closure.rest !== undefined) {
+        set_define(bindings, vm.getName(closure.rest), rest_args);
+      }
+      vm.env = make_env(bindings, vm.env);
+      vm.OS = [];
+      vm.PC = 0;
+      vm.closureId = closure.closureId;
+      vm.P = vm.programState.closureIdToClosure[vm.closureId].body;
+    } else if (closure.variant === EvalDataType.Primitive) {
+      // closure is a primitive
+      console.error('eval data type is primitive');
+    }
+  }
+
+  vm.RTS.push(stackFrame);
+};
+
 export interface StackFrame {
   env: Environment;
   closureId: number;
   PC: number;
   OS: EvalResult[];
 }
+
+const make_stack_frame = (
+  env: Environment,
+  closureId: number,
+  PC: number,
+  OS: EvalResult[] = []
+): StackFrame => ({
+  env,
+  closureId,
+  PC,
+  OS,
+});
 
 export class VirtualMachine {
   P: CompiledProgram;

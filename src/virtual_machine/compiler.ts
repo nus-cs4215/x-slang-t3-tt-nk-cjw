@@ -56,7 +56,7 @@ export const compile_fep_to_bytecode = (
   programState: ProgramState
 ): CompiledProgram => {
   const topLevelProgram = fep_to_bytecode_helper(program, programState);
-  const topLevelClosure = make_vm_closure([], undefined, topLevelProgram);
+  const topLevelClosure = make_vm_closure([], -1, undefined, topLevelProgram);
   programState.topLevelClosure = topLevelClosure;
   return topLevelProgram;
 };
@@ -290,9 +290,10 @@ const fep_to_bytecode_helper = (
         fep_to_bytecode_helper(expr, programState, body);
       }
 
-      const closure = make_vm_closure(formals, rest, body);
+      const closureId = programState.closureIdToClosure.length;
+      const closure = make_vm_closure(formals, closureId, rest, body);
       compiledProgramTree.push(MAKE_FUNC);
-      compiledProgramTree.push(programState.closureIdToClosure.length);
+      compiledProgramTree.push(closureId);
       programState.closureIdToClosure.push(closure);
       return compiledProgramTree;
     }

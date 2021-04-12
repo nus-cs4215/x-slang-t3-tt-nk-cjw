@@ -2,7 +2,8 @@ import { make_empty_bindings, make_env, make_env_list } from '../../environment'
 import { ExprOrDefineForm } from '../../fep-types';
 import { primitives_module } from '../../modules';
 import { read } from '../../reader';
-import { sboolean, snumber, ssymbol } from '../../sexpr';
+import { sboolean, snil, snumber, ssymbol } from '../../sexpr';
+import { slist } from '../../sexpr/sexpr';
 import { getOk, ok } from '../../utils/result';
 import { compile_fep_to_bytecode, make_program_state } from '../compiler';
 import { VirtualMachine } from '../virtual_machine';
@@ -193,4 +194,36 @@ test('evaluate letrec', () => {
         (#%variable-reference y)))
   `).run()
   ).toEqual(ok(snumber(20))); // different from let
+});
+
+test('evaluate simple #%plain-lambda and #%plain-app', () => {
+  expect(
+    init_machine(`(#%plain-app (#%plain-lambda (x) (#%variable-reference x)) (quote 1))`).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(`(#%plain-app (#%plain-lambda (x . y) (#%variable-reference x)) (quote 1))`).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(`(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1))`).run()
+  ).toEqual(ok(snil()));
+
+  expect(
+    init_machine(
+      `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference x)) (quote 1) (quote 2) (quote 3))`
+    ).run()
+  ).toEqual(ok(snumber(1)));
+
+  expect(
+    init_machine(
+      `(#%plain-app (#%plain-lambda (x . y) (#%variable-reference y)) (quote 1) (quote 2) (quote 3))`
+    ).run()
+  ).toEqual(ok(slist([snumber(2), snumber(3)], snil())));
+
+  expect(
+    init_machine(
+      `(#%plain-app (#%plain-lambda x (#%variable-reference x)) (quote 1) (quote 2) (quote 3))`
+    ).run()
+  ).toEqual(ok(slist([snumber(1), snumber(2), snumber(3)], snil())));
 });

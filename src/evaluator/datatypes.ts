@@ -30,6 +30,7 @@ export interface FEPClosure {
 
 export interface VMClosure {
   variant: EvalDataType.VMClosure;
+  closureId: number;
   formals: number[];
   rest: number | undefined;
   body: CompiledProgram;
@@ -69,10 +70,12 @@ export const make_fep_closure = (
 
 export const make_vm_closure = (
   formals: number[],
+  closureId: number,
   rest: number | undefined,
   body: number[]
 ): VMClosure => ({
   variant: EvalDataType.VMClosure,
+  closureId,
   formals,
   rest,
   body,
