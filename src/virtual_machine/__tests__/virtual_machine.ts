@@ -227,3 +227,61 @@ test('evaluate simple #%plain-lambda and #%plain-app', () => {
     ).run()
   ).toEqual(ok(slist([snumber(1), snumber(2), snumber(3)], snil())));
 });
+
+test('evaluate higher order #%plain-lambdas', () => {
+  expect(
+    init_machine(
+      `(#%plain-app (#%plain-lambda
+                      (f x)
+                      (#%plain-app (#%variable-reference f) (#%variable-reference x)))
+          (#%plain-lambda (y) (#%variable-reference y))
+          (quote 100))`
+    ).run()
+  ).toEqual(ok(snumber(100)));
+});
+
+test('evaluate #%plain-lambdas with scope', () => {
+  expect(
+    init_machine(
+      `(begin
+        (define x (quote 10))
+        (define f (#%plain-lambda (x) (#%variable-reference x)))
+        (#%plain-app (#%variable-reference f) (quote 100))
+        (#%variable-reference x))`
+    ).run()
+  ).toEqual(ok(snumber(10)));
+
+  expect(
+    init_machine(
+      `(begin
+        (define x (quote 10))
+        (define f (#%plain-lambda (x) (#%variable-reference x)))
+        (#%plain-app (#%variable-reference f) (quote 100)))`
+    ).run()
+  ).toEqual(ok(snumber(100)));
+
+  expect(
+    init_machine(
+      `(begin
+        (define x (quote 10))
+        (define f (#%plain-lambda (x)
+                    (begin
+                      (set! x (quote 2))
+                      (#%variable-reference x))))
+        (#%plain-app (#%variable-reference f) (quote 100)))`
+    ).run()
+  ).toEqual(ok(snumber(2)));
+
+  expect(
+    init_machine(
+      `(begin
+        (define x (quote 10))
+        (define f (#%plain-lambda (x)
+                    (begin
+                      (set! x (quote 2))
+                      (#%variable-reference x))))
+        (#%plain-app (#%variable-reference f) (quote 100))
+        (#%variable-reference x))`
+    ).run()
+  ).toEqual(ok(snumber(10)));
+});
