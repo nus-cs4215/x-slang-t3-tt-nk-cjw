@@ -47,7 +47,8 @@
     "eslint": "eslint --ext \".ts\" src",
     "copy-rkt-files": "yarn copyfiles -u 1 $(find src -name *.rkt) dist/",
     "build": "yarn tsc && yarn copy-rkt-files",
-    "cleanBuild": "yarn tsc --incremental false && yarn copy-rkt-files",
+    "clean": "rm -r dist tsconfig.tsbuildinfo",
+    "cleanBuild": "yarn clean && yarn build",
     "benchmark": "jest --testPathPattern='.*benchmark.*'",
     "repl": "yarn build && node dist/repl/main.js"
   },
