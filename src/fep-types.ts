@@ -15,7 +15,7 @@ export type ExprOrDefineAst = ExprOrDefineForm;
 
 export type Token<V> = SSymbol & { val: V };
 
-// These are subtypes of SExpr, and is the type of compile's output.
+// These are subtypes of SExpr, and is the type of compile's output (A Fully Expanded Program, FEP)
 // This is so we can be sure that what compile outputs is always serializable by the writer into valid FEP.
 export type ModuleForm = ModuleFileParentForm | ModuleBuiltinParentForm;
 export type ModuleFileParentForm = SCons<
