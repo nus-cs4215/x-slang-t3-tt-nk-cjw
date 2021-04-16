@@ -45,8 +45,9 @@
     "test:ci": "jest --ci",
     "test-coverage": "jest --coverage",
     "eslint": "eslint --ext \".ts\" src",
-    "copy-rkt-files": "yarn copyfiles -u 1 src/**/*.rkt dist/",
+    "copy-rkt-files": "yarn copyfiles -u 1 $(find src -name *.rkt) dist/",
     "build": "yarn tsc && yarn copy-rkt-files",
+    "cleanBuild": "yarn tsc --incremental false && yarn copy-rkt-files",
     "benchmark": "jest --testPathPattern='.*benchmark.*'",
     "repl": "yarn build && node dist/repl/main.js"
   },
