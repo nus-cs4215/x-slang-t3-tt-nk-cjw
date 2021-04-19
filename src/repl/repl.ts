@@ -1,57 +1,72 @@
-import { formatReadErr } from '../reader';
-import { builtin_compiler_host } from '../compiler/compiler-base';
 import { compile, compile_entrypoint } from '../compiler';
+import { ts_based_modules } from '../compiler/compiler-base';
 import { make_initial_compilation_environment } from '../compiler/initial-compilation-environment';
+import { primitives_module } from '../modules';
 import { CompileErr, ExpansionContext } from '../compiler/types';
-import { DefineBinding, get_binding, make_env } from '../environment';
+import { DefineBinding, get_binding, make_env, make_empty_bindings, make_env_list } from '../environment';
 import { evaluate_module } from '../evaluator';
 import { EvalErr } from '../evaluator/types';
 import { ModuleForm } from '../fep-types';
 import { print } from '../printer';
+import { formatReadErr } from '../reader';
 import { read, ReadErr } from '../reader';
-import { SExprT } from '../sexpr';
 import { getOk, isBadResult, ok, Result } from '../utils';
+import test_compiler from './rkt/test-compiler.rkt';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import test_compiler from './rkt/test-compiler.rkt';
+import { maps_to_compiler_host } from '../host';
+import { libs } from '../modules/rkt-modules';
+import repl_compiler from './rkt/repl-compiler.rkt';
 
 type CompileResult = string;
 type EvaluateResult = string;
 
-export function compile_and_run_test(
+export function compile_and_run(
   program: string
 ): {
   read?: ReadErr;
   compiled?: Result<CompileResult, CompileErr>;
   evaluated?: Result<EvaluateResult, EvalErr>;
 } {
-  // Put our fancy lib in
-  const host = builtin_compiler_host();
-  host.write_file('/testing/test-compiler.rkt', test_compiler);
-  // Compile the compiler
-  const test_compiler_fep = getOk(
-    compile_entrypoint('/testing/test-compiler.rkt', host)
+
+  // INIT VIRTUAL FS
+  // 1. Import rkt stdlibs
+  // 2. Import built-ins
+  // 3. Include our repl's compiler
+
+  // Steps 1 & 2
+  const host = maps_to_compiler_host(
+    new Map([...libs]), // rkt stdlibs
+    ts_based_modules // built-ins
+  );
+
+  // Step 3: Include our repl's compiler
+  host.write_file('/repl-compiler.rkt', repl_compiler);
+
+  const repl_compiler_fep = getOk(
+    compile_entrypoint('/repl-compiler.rkt', host)
   ) as ModuleForm;
-  const test_compiler_module = getOk(
-    evaluate_module(test_compiler_fep, '/testing/test-compiler.rkt', host)
+
+  const repl_compiler_module = getOk(
+    evaluate_module(repl_compiler_fep, '/repl-compiler.rkt', host)
   );
 
   const compile_env = make_env(
-    test_compiler_module.provides,
+    repl_compiler_module.provides,
     make_initial_compilation_environment()
   );
 
-  // Now we RCEP (read, compile, evaluate, and print) our user program
+  // COMPILATION
 
-  const filename = '/test.rkt';
+  const filename = '/input.rkt'; // Instantiate a virtual file, in the host. This maps to out input file.
+  // const compile_env = make_env(make_empty_bindings(), make_initial_compilation_environment());
 
-  // read
-  const program_stx_r = read(program);
+  const program_stx_r = read(program); // Text -> Program Syntax
   if (isBadResult(program_stx_r)) {
     return { read: program_stx_r.err };
   }
 
-  // compile
+  // compile (Syntax -> FEP)
   const program_fep_r = compile(
     program_stx_r.v,
     ExpansionContext.TopLevelContext,
@@ -64,11 +79,13 @@ export function compile_and_run_test(
     },
     { filename }
   );
+
   if (isBadResult(program_fep_r)) {
     return { compiled: program_fep_r };
   }
 
-  // evaluate
+  // EVALUATE
+
   const program_result_r = evaluate_module(program_fep_r.v as ModuleForm, filename, host);
   if (isBadResult(program_result_r)) {
     return { compiled: ok(print(program_fep_r.v)), evaluated: program_result_r };
@@ -76,8 +93,8 @@ export function compile_and_run_test(
   return {
     compiled: ok(print(program_fep_r.v)),
     evaluated: ok(
-      print((get_binding(program_result_r.v.provides, 'test-result') as DefineBinding).val!)
-    ),
+      print((get_binding(program_result_r.v.provides, 'repl-result') as DefineBinding).val!)
+    )
   };
 }
 
@@ -102,10 +119,10 @@ export function startRepl() {
     }
 
     // Preprocessing
-    const processedData = `(test ${data})`;
+    const processedData = `(repl ${data})`;
 
     // Parse error
-    const result = compile_and_run_test(processedData);
+    const result = compile_and_run(processedData);
     if (result['read']) {
       const readError = result['read'];
       console.error(readError);
