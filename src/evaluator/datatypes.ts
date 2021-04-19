@@ -74,7 +74,7 @@ export const make_vm_closure = (
   env: Environment | undefined,
   closureId: number,
   rest: number | undefined,
-  body: number[]
+  body: CompiledProgram
 ): VMClosure => ({
   variant: EvalDataType.VMClosure,
   env,

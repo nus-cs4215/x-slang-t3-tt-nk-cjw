@@ -41,7 +41,8 @@ export interface ProgramState {
   topLevelClosure: VMClosure | undefined; // could be part of the array but I separate it to be clearer
 }
 
-export type CompiledProgram = number[];
+export type CompiledProgram = Uint32Array;
+export type IntermediateCompiledProgram = number[];
 
 export const make_program_state = (): ProgramState => ({
   nameToNameId: new Map(),
@@ -55,7 +56,7 @@ export const compile_fep_to_bytecode = (
   program: ExprOrDefineAst,
   programState: ProgramState
 ): CompiledProgram => {
-  const topLevelProgram = fep_to_bytecode_helper(program, programState);
+  const topLevelProgram = new Uint32Array(fep_to_bytecode_helper(program, programState));
   const topLevelClosure = make_vm_closure([], undefined, -1, undefined, topLevelProgram);
   programState.topLevelClosure = topLevelClosure;
   return topLevelProgram;
@@ -64,8 +65,8 @@ export const compile_fep_to_bytecode = (
 const fep_to_bytecode_helper = (
   program: ExprOrDefineAst,
   programState: ProgramState,
-  compiledProgramTree: CompiledProgram = []
-): CompiledProgram => {
+  compiledProgramTree: IntermediateCompiledProgram = []
+): IntermediateCompiledProgram => {
   const token_val = val(car(program));
   switch (token_val) {
     case 'quote': {
@@ -285,13 +286,13 @@ const fep_to_bytecode_helper = (
       }
 
       // compile body
-      const body: CompiledProgram = [];
+      const body: IntermediateCompiledProgram = [];
       for (const expr of uncompiled_body) {
         fep_to_bytecode_helper(expr, programState, body);
       }
 
       const closureId = programState.closureIdToClosure.length;
-      const closure = make_vm_closure(formals, undefined, closureId, rest, body);
+      const closure = make_vm_closure(formals, undefined, closureId, rest, new Uint32Array(body));
       compiledProgramTree.push(MAKE_FUNC);
       compiledProgramTree.push(closureId);
       programState.closureIdToClosure.push(closure);
