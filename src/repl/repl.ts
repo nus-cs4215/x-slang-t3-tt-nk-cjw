@@ -1,34 +1,31 @@
 import { compile, compile_entrypoint } from '../compiler';
 import { ts_based_modules } from '../compiler/compiler-base';
 import { make_initial_compilation_environment } from '../compiler/initial-compilation-environment';
-import { primitives_module } from '../modules';
 import { CompileErr, ExpansionContext } from '../compiler/types';
-import { DefineBinding, get_binding, make_env, make_empty_bindings, make_env_list } from '../environment';
+import { DefineBinding, get_binding, make_env } from '../environment';
 import { evaluate_module } from '../evaluator';
 import { EvalErr } from '../evaluator/types';
 import { ModuleForm } from '../fep-types';
+import { maps_to_compiler_host } from '../host';
+import { libs } from '../modules/rkt-modules';
 import { print } from '../printer';
 import { formatReadErr } from '../reader';
 import { read, ReadErr } from '../reader';
 import { getOk, isBadResult, ok, Result } from '../utils';
-import test_compiler from './rkt/test-compiler.rkt';
+import repl_compiler from './rkt/repl-compiler.rkt';
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { maps_to_compiler_host } from '../host';
-import { libs } from '../modules/rkt-modules';
-import repl_compiler from './rkt/repl-compiler.rkt';
 
 type CompileResult = string;
 type EvaluateResult = string;
 
-export function compile_and_run(
+export function compile_and_run_repl(
   program: string
 ): {
   read?: ReadErr;
   compiled?: Result<CompileResult, CompileErr>;
   evaluated?: Result<EvaluateResult, EvalErr>;
 } {
-
   // INIT VIRTUAL FS
   // 1. Import rkt stdlibs
   // 2. Import built-ins
@@ -43,9 +40,7 @@ export function compile_and_run(
   // Step 3: Include our repl's compiler
   host.write_file('/repl-compiler.rkt', repl_compiler);
 
-  const repl_compiler_fep = getOk(
-    compile_entrypoint('/repl-compiler.rkt', host)
-  ) as ModuleForm;
+  const repl_compiler_fep = getOk(compile_entrypoint('/repl-compiler.rkt', host)) as ModuleForm;
 
   const repl_compiler_module = getOk(
     evaluate_module(repl_compiler_fep, '/repl-compiler.rkt', host)
@@ -94,7 +89,7 @@ export function compile_and_run(
     compiled: ok(print(program_fep_r.v)),
     evaluated: ok(
       print((get_binding(program_result_r.v.provides, 'repl-result') as DefineBinding).val!)
-    )
+    ),
   };
 }
 
@@ -122,7 +117,7 @@ export function startRepl() {
     const processedData = `(repl ${data})`;
 
     // Parse error
-    const result = compile_and_run(processedData);
+    const result = compile_and_run_repl(processedData);
     if (result['read']) {
       const readError = result['read'];
       console.error(readError);

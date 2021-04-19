@@ -54,6 +54,7 @@ test('exports', () => {
       "get_module_info",
       "primitives_module",
       "empty_module",
+      "compile_and_run_repl",
       "startRepl",
     ]
   `);
