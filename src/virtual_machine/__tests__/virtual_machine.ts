@@ -284,4 +284,14 @@ test('evaluate #%plain-lambdas with scope', () => {
         (#%variable-reference x))`
     ).run()
   ).toEqual(ok(snumber(10)));
+
+  expect(
+    init_machine(
+      `(begin
+        (define x (quote 10))
+        (define f (#%plain-lambda (x)
+                    (#%plain-lambda (y) (#%variable-reference x))))
+        (#%plain-app (#%plain-app (#%variable-reference f) (quote 100)) (quote blah)))`
+    ).run()
+  ).toEqual(ok(snumber(100)));
 });

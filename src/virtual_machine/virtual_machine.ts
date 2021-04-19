@@ -9,7 +9,7 @@ import {
   make_env,
   set_binding,
 } from '../environment/environment';
-import { EvalDataType } from '../evaluator/datatypes';
+import { EvalDataType, make_vm_closure } from '../evaluator/datatypes';
 import { EvalResult, EvalSExpr } from '../evaluator/types';
 import { is_boolean, val } from '../sexpr';
 import { sbox, is_boxed, SExprT, snil, scons } from '../sexpr/sexpr';
@@ -42,7 +42,16 @@ M[MAKE_CONST] = (vm: VirtualMachine) => {
 M[MAKE_FUNC] = (vm: VirtualMachine) => {
   const id = vm.P[vm.PC + 1];
   const vmClosure = vm.programState.closureIdToClosure[id];
-  vm.OS.push(ok(sbox(vmClosure)));
+
+  const vmClosureWithEnv = make_vm_closure(
+    vmClosure.formals,
+    vm.env,
+    vmClosure.closureId,
+    vmClosure.rest,
+    vmClosure.body
+  );
+
+  vm.OS.push(ok(sbox(vmClosureWithEnv)));
   vm.PC += 2;
 };
 
@@ -190,7 +199,7 @@ M[CALL] = (vm: VirtualMachine) => {
       if (closure.rest !== undefined) {
         set_define(bindings, vm.getName(closure.rest), rest_args);
       }
-      vm.env = make_env(bindings, vm.env);
+      vm.env = make_env(bindings, closure.env);
       vm.OS = [];
       vm.PC = 0;
       vm.closureId = closure.closureId;
