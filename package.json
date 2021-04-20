@@ -32,6 +32,7 @@
     "jest-html-reporter": "^3.3.0",
     "prettier": "^2.2.1",
     "ts-jest": "^26.5.1",
+    "ts_dependency_graph": "^1.2.0",
     "typescript": "^4.1.5"
   },
   "private": true,
@@ -50,7 +51,8 @@
     "clean": "rm -r dist tsconfig.tsbuildinfo",
     "cleanBuild": "yarn clean && yarn build",
     "benchmark": "jest --testPathPattern='.*benchmark.*'",
-    "repl": "yarn cleanBuild && node dist/repl/main.js"
+    "repl": "yarn cleanBuild && node dist/repl/main.js",
+    "dep-graph": "ts_dependency_graph --start src/index.ts | dot -T svg > dependencies.svg"
   },
   "repository": {
     "type": "git",
