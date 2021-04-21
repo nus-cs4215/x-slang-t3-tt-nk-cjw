@@ -1,11 +1,13 @@
 import { Environment, NonemptyEnvironment } from '../environment';
 import { ExprForm } from '../fep-types';
 import { SNonemptyHomList } from '../sexpr';
+import { CompiledProgram } from '../virtual_machine';
 import { EvalResult, EvalSExpr } from './types';
 
 export enum EvalDataType {
   Closure,
   FEPClosure,
+  VMClosure,
   Primitive,
   PrimitiveTransformer,
 }
@@ -26,6 +28,15 @@ export interface FEPClosure {
   body: SNonemptyHomList<ExprForm>;
 }
 
+export interface VMClosure {
+  variant: EvalDataType.VMClosure;
+  env: Environment | undefined;
+  closureId: number;
+  formals: number[];
+  rest: number | undefined;
+  body: CompiledProgram;
+}
+
 export interface Primitive {
   variant: EvalDataType.Primitive;
   fun: (...args: EvalSExpr[]) => EvalResult;
@@ -36,7 +47,7 @@ export interface PrimitiveTransformer {
   fun: (stx: EvalSExpr, env: Environment) => EvalResult;
 }
 
-export type EvalData = Closure | FEPClosure | Primitive | PrimitiveTransformer;
+export type EvalData = Closure | FEPClosure | VMClosure | Primitive | PrimitiveTransformer;
 
 export const make_closure = (env: Environment, params: string[], body: EvalSExpr[]): Closure => ({
   variant: EvalDataType.Closure,
@@ -53,6 +64,21 @@ export const make_fep_closure = (
 ): FEPClosure => ({
   variant: EvalDataType.FEPClosure,
   env,
+  formals,
+  rest,
+  body,
+});
+
+export const make_vm_closure = (
+  formals: number[],
+  env: Environment | undefined,
+  closureId: number,
+  rest: number | undefined,
+  body: CompiledProgram
+): VMClosure => ({
+  variant: EvalDataType.VMClosure,
+  env,
+  closureId,
   formals,
   rest,
   body,
