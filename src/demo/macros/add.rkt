@@ -1,5 +1,7 @@
-(define add
-  (#%plain-lambda (a b)
-    (+ a b)))
+(module add '#%builtin-base-lang
+  (define add
+    (#%plain-lambda (a b)
+      (+ a b)))
 
-(add 1 2)
+  (add 1 2)
+  )
