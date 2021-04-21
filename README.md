@@ -23,15 +23,15 @@ The [Base Libraries](https://github.com/nus-cs4215/x-slang-t3-tt-nk-cjw/tree/mas
 
 #### A Quick Macro Tutorial <3
 
-[add.rkt](src/demo/macros/add.rkt)
+src/demo/macros/add.rkt
 
-[add-macros-v1.rkt](src/demo/macros/add.rkt)
+src/demo/macros/add-with-defun-v1.rkt
 
-[add-macros-v2.rkt](src/demo/macros/add.rkt)
+src/demo/macros/add-with-defun-v2.rkt
 
-[add-macros-v3.rkt](src/demo/macros/add.rkt)
+src/demo/macros/add-with-defun-v3.rkt
 
-[add-macros-v4.rkt](src/demo/macros/add.rkt)
+src/demo/macros/add-with-defun-v4.rkt
 
 ## Developer Guide
 
