@@ -7,10 +7,7 @@
 ;;
 (module kanren '#%builtin-base-lang
     ;; Compat
-    (#%require /libs/racket/private/syntax-case)
     (#%require /libs/racket/base)
-    (#%require /libs/racket/private/cond)
-    (#%require /libs/racket/private/let)
     (define-syntax def
       (lambda (stx)
         (syntax-case stx
