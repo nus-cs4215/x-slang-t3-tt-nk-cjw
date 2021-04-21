@@ -21,6 +21,18 @@ You can also view [`__tests__/compiler.ts`](https://github.com/nus-cs4215/x-slan
 
 The [Base Libraries](https://github.com/nus-cs4215/x-slang-t3-tt-nk-cjw/tree/master/src/modules/rkt) we provide can be imported with `(#%require /libs/racket/base)`.
 
+#### A Quick Macro Tutorial <3
+
+[add.rkt](src/demo/macros/add.rkt)
+
+[add-macros-v1.rkt](src/demo/macros/add.rkt)
+
+[add-macros-v2.rkt](src/demo/macros/add.rkt)
+
+[add-macros-v3.rkt](src/demo/macros/add.rkt)
+
+[add-macros-v4.rkt](src/demo/macros/add.rkt)
+
 ## Developer Guide
 
 See the [wiki](https://github.com/nus-cs4215/x-slang-t3-tt-nk-cjw/wiki).
