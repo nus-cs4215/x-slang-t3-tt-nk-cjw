@@ -11,8 +11,8 @@ We currently provide a cli tool for running Racket scripts. Run `yarn start` to 
 Look at `/examples` for sample `*.rkt` source files. You can run these:
 
 ``` sh
-yarn runscript -v examples/basic.rkt
-yarn runscript examples/kanren.rkt
+yarn start -v examples/basic.rkt
+yarn start examples/kanren.rkt
 ```
 
 You can also view [`__tests__/compiler.ts`](https://github.com/nus-cs4215/x-slang-t3-tt-nk-cjw/blob/master/src/compiler/__tests__/compiler.ts), for more examples.
