@@ -162,7 +162,7 @@ function parseArgs(args: string[]): Args | undefined {
     }
     return { isVerbose: false, filePath: resolve(process.argv[2]) };
   } catch (_e) {
-    console.log('Usage: yarn repl [-v | --verbose] FILEPATH');
+    console.log('USAGE: yarn start [-v | --verbose] FILEPATH');
     return undefined;
   }
 }
