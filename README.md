@@ -4,15 +4,15 @@
 
 ## User Guide
 
-We currently provide a non-interactive repl. Run `yarn repl` to see USAGE.
+We currently provide a cli tool for running Racket scripts. Run `yarn start` to see USAGE.
 
 #### Examples
 
 Look at `/examples` for sample `*.rkt` source files. You can run these:
 
 ``` sh
-yarn repl -v examples/basic.rkt
-yarn repl examples/kanren.rkt
+yarn runscript -v examples/basic.rkt
+yarn runscript examples/kanren.rkt
 ```
 
 You can also view [`__tests__/compiler.ts`](https://github.com/nus-cs4215/x-slang-t3-tt-nk-cjw/blob/master/src/compiler/__tests__/compiler.ts), for more examples.

@@ -51,7 +51,7 @@
     "clean": "rm -r dist tsconfig.tsbuildinfo",
     "cleanBuild": "yarn clean && yarn build",
     "benchmark": "jest --testPathPattern='.*benchmark.*'",
-    "repl": "yarn cleanBuild && node dist/repl/main.js",
+    "start": "yarn cleanBuild && node dist/frontend/main.js",
     "dep-graph": "ts_dependency_graph --start src/index.ts | dot -T svg > dependencies.svg"
   },
   "repository": {
